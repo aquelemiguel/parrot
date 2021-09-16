@@ -57,7 +57,7 @@ async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
         }
     };
 
-    let manager = songbird::get(ctx).await.expect("").clone();
+    let manager = songbird::get(ctx).await.expect("");
     let lock = manager.join(guild.id, connect_to).await.0;
 
     let mut handler = lock.lock().await;

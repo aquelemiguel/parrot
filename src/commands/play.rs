@@ -1,4 +1,5 @@
 use std::{
+    fmt::format,
     sync::{atomic::AtomicUsize, Arc},
     time::Duration,
 };
@@ -17,6 +18,7 @@ use songbird::{
     input::{Input, Restartable},
     Event,
 };
+use youtube_dl::{Playlist, YoutubeDl, YoutubeDlOutput};
 
 #[command]
 #[aliases("p")]
@@ -77,26 +79,54 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     if let Some(handler_lock) = manager.get(guild.id) {
         let mut handler = handler_lock.lock().await;
-        let source: Restartable;
 
-        // Play via URL
+        // Handle an URL
         if url.clone().starts_with("http") {
-            source = Restartable::ytdl(url, true).await?;
+            // If is a playlist
+            if url.clone().contains("youtube.com/playlist?list=") {
+                match YoutubeDl::new(url).flat_playlist(true).run() {
+                    Ok(result) => {
+                        if let YoutubeDlOutput::Playlist(playlist) = result {
+                            let entries = playlist.entries.unwrap();
+
+                            for entry in entries {
+                                let uri = format!(
+                                    "https://www.youtube.com/watch?v={}",
+                                    entry.url.unwrap()
+                                );
+                                println!("Enqueued {}", uri);
+                                let source = Restartable::ytdl(uri, true).await?;
+                                handler.enqueue_source(source.into());
+                            }
+                        }
+                    }
+                    Err(_) => todo!("Show failed to fetch playlist message!"),
+                }
+            }
+            // Just a single song
+            else {
+                let source = Restartable::ytdl(url, true).await?;
+                handler.enqueue_source(source.into());
+            }
         }
         // Play via search
         else {
             let query = args.rewind().remains().unwrap(); // Rewind and fetch the entire query
-            source = Restartable::ytdl_search(query, true).await?;
+            let source = Restartable::ytdl_search(query, true).await?;
+            handler.enqueue_source(source.into());
         }
 
-        let input: Input = source.into();
-        let metadata = input.metadata.clone();
+        let queue = handler.queue().current_queue();
+
+        let current_track = queue.first().unwrap();
+        let metadata = current_track.metadata().clone();
+        let position = current_track.get_info().await?.position;
+
+        println!("{}", queue.len());
+        println!("{}", current_track.metadata().clone().title.unwrap());
 
         // If it's not going to be played immediately, notify it has been enqueued
-        if !handler.queue().is_empty() {
-            let queue = handler.queue().current_queue();
-            let top_track_position = queue.first().unwrap().get_info().await?.position;
-
+        if handler.queue().len() == 1 {
             msg.channel_id
                 .send_message(&ctx.http, |m| {
                     m.embed(|e| {
@@ -109,14 +139,12 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                             metadata.source_url.unwrap()
                         ));
 
-                        let queue = handler.queue().current_queue();
-
                         let mut estimated_time = queue
                             .into_iter()
                             .map(|track| track.metadata().duration.unwrap())
                             .sum();
 
-                        estimated_time -= top_track_position;
+                        estimated_time -= position;
 
                         let footer_text = format!(
                             "Track duration: {}\nEstimated time until play: {}",
@@ -156,8 +184,6 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 })
                 .await?;
         }
-
-        handler.enqueue_source(input);
     } else {
         msg.channel_id
             .send_message(&ctx.http, |m| {

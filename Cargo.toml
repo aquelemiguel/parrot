@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 dotenv = "0.15"
+youtube_dl = "0.6.3"
 
 [dependencies.songbird]
 version = "0.2.0"
