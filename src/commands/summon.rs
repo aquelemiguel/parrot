@@ -1,10 +1,16 @@
+use std::sync::atomic::AtomicUsize;
+use std::sync::Arc;
+use std::time::Duration;
+
 use serenity::prelude::Mentionable;
 use serenity::{
     client::Context,
     framework::standard::{macros::command, CommandResult},
     model::channel::Message,
 };
+use songbird::Event;
 
+use crate::events::idle_notifier::IdleNotifier;
 use crate::util::create_default_embed;
 
 #[command]
@@ -52,7 +58,18 @@ async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
     };
 
     let manager = songbird::get(ctx).await.expect("").clone();
-    let _res = manager.join(guild.id, connect_to).await;
+    let lock = manager.join(guild.id, connect_to).await.0;
+
+    let mut handler = lock.lock().await;
+    handler.add_global_event(
+        Event::Periodic(Duration::from_secs(60), None),
+        IdleNotifier {
+            message: msg.clone(),
+            manager,
+            count: Arc::new(AtomicUsize::new(1)),
+            http: ctx.http.clone(),
+        },
+    );
 
     Ok(())
 }
