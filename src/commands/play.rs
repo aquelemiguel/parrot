@@ -1,11 +1,22 @@
-use crate::util::{create_default_embed, get_human_readable_timestamp};
+use std::{
+    sync::{atomic::AtomicUsize, Arc},
+    time::Duration,
+};
+
+use crate::{
+    events::idle_notifier::IdleNotifier,
+    util::{create_default_embed, get_human_readable_timestamp},
+};
 use serenity::{
     builder::CreateEmbedFooter,
     client::Context,
     framework::standard::{macros::command, Args, CommandResult},
     model::channel::Message,
 };
-use songbird::input::{Input, Restartable};
+use songbird::{
+    input::{Input, Restartable},
+    Event,
+};
 
 #[command]
 #[aliases("p")]
@@ -49,7 +60,18 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 .await?;
             return Ok(());
         } else {
-            let _res = manager.join(guild.id, channel_id.unwrap()).await;
+            let lock = manager.join(guild.id, channel_id.unwrap()).await.0;
+            let mut handler = lock.lock().await;
+
+            handler.add_global_event(
+                Event::Periodic(Duration::from_secs(60), None),
+                IdleNotifier {
+                    message: msg.clone(),
+                    manager: manager.clone(),
+                    count: Arc::new(AtomicUsize::new(1)),
+                    http: ctx.http.clone(),
+                },
+            );
         }
     }
 

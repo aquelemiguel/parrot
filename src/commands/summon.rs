@@ -62,7 +62,7 @@ async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
 
     let mut handler = lock.lock().await;
     handler.add_global_event(
-        Event::Periodic(Duration::from_secs(60), None),
+        Event::Periodic(Duration::from_secs(1), None),
         IdleNotifier {
             message: msg.clone(),
             manager,
