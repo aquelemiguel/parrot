@@ -9,11 +9,23 @@ use songbird::SerenityInit;
 use std::env;
 
 use parrot::commands::{
-    now_playing::*, pause::*, play::*, queue::*, repeat::*, resume::*, seek::*, skip::*, summon::*,
+    clear::*, now_playing::*, pause::*, play::*, queue::*, repeat::*, resume::*, seek::*, skip::*,
+    summon::*,
 };
 
 #[group]
-#[commands(summon, play, pause, resume, seek, skip, now_playing, queue, repeat)]
+#[commands(
+    clear,
+    summon,
+    play,
+    pause,
+    resume,
+    seek,
+    skip,
+    now_playing,
+    queue,
+    repeat
+)]
 struct General;
 
 struct Handler;

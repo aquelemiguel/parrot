@@ -37,6 +37,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             .get(&msg.author.id)
             .and_then(|voice_state| voice_state.channel_id);
 
+        // Abort if it cannot find the author in any voice channels
         if channel_id.is_none() {
             msg.channel_id
                 .send_message(&ctx.http, |m| {
@@ -93,7 +94,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                             .map(|track| track.metadata().duration.unwrap())
                             .sum();
 
-                        estimated_time = estimated_time - top_track_position;
+                        estimated_time -= top_track_position;
 
                         let footer_text = format!(
                             "Track duration: {}\nEstimated time until play: {}",

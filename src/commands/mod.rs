@@ -1,3 +1,4 @@
+pub mod clear;
 pub mod now_playing;
 pub mod pause;
 pub mod play;

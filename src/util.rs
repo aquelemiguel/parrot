@@ -1,8 +1,8 @@
 use serenity::{builder::CreateEmbed, utils::Colour};
 use std::time::Duration;
 
-pub fn create_default_embed(embed: &mut CreateEmbed, title: &str, description: &str) -> () {
-    embed.title(format!("{}", title));
+pub fn create_default_embed(embed: &mut CreateEmbed, title: &str, description: &str) {
+    embed.title(title);
     embed.description(description);
     embed.colour(Colour::ORANGE);
 }
