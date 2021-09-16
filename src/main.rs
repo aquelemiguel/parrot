@@ -10,21 +10,22 @@ use std::env;
 
 use parrot::commands::{
     clear::*, now_playing::*, pause::*, play::*, queue::*, repeat::*, resume::*, seek::*, skip::*,
-    summon::*,
+    stop::*, summon::*,
 };
 
 #[group]
 #[commands(
     clear,
-    summon,
-    play,
+    now_playing,
     pause,
+    play,
+    queue,
+    repeat,
     resume,
     seek,
     skip,
-    now_playing,
-    queue,
-    repeat
+    stop,
+    summon
 )]
 struct General;
 
