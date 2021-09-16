@@ -30,6 +30,28 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild = msg.guild(&ctx.cache).await.unwrap();
     let manager = songbird::get(ctx).await.expect("").clone();
 
+    // Try to join a voice channel if not in one just yet
+    if manager.get(guild.id).is_none() {
+        let channel_id = guild
+            .voice_states
+            .get(&msg.author.id)
+            .and_then(|voice_state| voice_state.channel_id);
+
+        if channel_id.is_none() {
+            msg.channel_id
+                .send_message(&ctx.http, |m| {
+                    m.embed(|e| {
+                        create_default_embed(e, "Play", "Could not find you in any voice channel!");
+                        e
+                    })
+                })
+                .await?;
+            return Ok(());
+        } else {
+            let _res = manager.join(guild.id, channel_id.unwrap()).await;
+        }
+    }
+
     if let Some(handler_lock) = manager.get(guild.id) {
         let mut handler = handler_lock.lock().await;
         let source: Restartable;
