@@ -30,7 +30,7 @@ impl VoiceEventHandler for IdleNotifier {
                             m.embed(|e| {
                                 e.description(
                                     "I've been idle for over 5 minutes, so I'll leave for now.
-                                Feel free to summon me back any time!",
+                            Feel free to summon me back any time!",
                                 )
                             })
                         })
