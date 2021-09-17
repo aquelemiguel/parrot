@@ -1,4 +1,3 @@
-use crate::util::create_default_embed;
 use serenity::{
     client::Context,
     framework::standard::{macros::command, CommandResult},

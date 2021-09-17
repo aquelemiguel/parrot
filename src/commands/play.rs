@@ -1,5 +1,4 @@
 use std::{
-    fmt::format,
     sync::{atomic::AtomicUsize, Arc},
     time::Duration,
 };
@@ -15,7 +14,7 @@ use serenity::{
     model::channel::Message,
 };
 use songbird::{
-    input::{Input, Restartable},
+    input::Restartable,
     Event,
 };
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
@@ -27,15 +26,9 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let url = match args.single::<String>() {
         Ok(url) => url,
         Err(_) => {
-            msg.channel_id
-                .send_message(&ctx.http, |m| {
-                    m.embed(|e| {
-                        create_default_embed(e, "Play", "Must provide a URL to a video or audio");
-                        e
-                    })
-                })
-                .await?;
-
+            msg.channel_id.send_message(&ctx.http, |m| {
+                m.embed(|e| e.description("Must provide an URL to a video!"))
+            }).await?;
             return Ok(());
         }
     };
@@ -55,19 +48,19 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             }).await?;
 
             return Ok(());
-        } else {
+        }
+        else {
             let lock = manager.join(guild.id, channel_id.unwrap()).await.0;
             let mut handler = lock.lock().await;
 
-            handler.add_global_event(
-                Event::Periodic(Duration::from_secs(60), None),
-                IdleNotifier {
-                    message: msg.clone(),
-                    manager: manager.clone(),
-                    count: Arc::new(AtomicUsize::new(1)),
-                    http: ctx.http.clone(),
-                },
-            );
+            let action = IdleNotifier {
+                message: msg.clone(),
+                manager: manager.clone(),
+                count: Arc::new(AtomicUsize::new(1)),
+                http: ctx.http.clone()
+            };
+
+            handler.add_global_event(Event::Periodic(Duration::from_secs(1), None), action);
         }
     }
 
