@@ -11,65 +11,38 @@ use serenity::{
 use songbird::Event;
 
 use crate::events::idle_notifier::IdleNotifier;
-use crate::util::create_default_embed;
 
 #[command]
 async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
     let guild = msg.guild(&ctx.cache).await.unwrap();
 
-    let channel_id = guild
-        .voice_states
-        .get(&msg.author.id)
+    // Find the voice channel where the author is at
+    let channel_opt = guild.voice_states.get(&msg.author.id)
         .and_then(|voice_state| voice_state.channel_id);
 
-    let connect_to = match channel_id {
-        Some(channel) => {
-            msg.channel_id
-                .send_message(&ctx.http, |m| {
-                    m.embed(|e| {
-                        create_default_embed(
-                            e,
-                            "Summon",
-                            &format!("Joining **{}**!", channel.mention()),
-                        );
-                        e
-                    })
-                })
-                .await?;
+    if let Some(channel_id) = channel_opt {
+        msg.channel_id.send_message(&ctx.http, |m| {
+            m.embed(|e| e.description(format!("Joining **{}**!", channel_id.mention())))
+        }).await?;
 
-            channel
-        }
-        None => {
-            msg.channel_id
-                .send_message(&ctx.http, |m| {
-                    m.embed(|e| {
-                        create_default_embed(
-                            e,
-                            "Summon",
-                            "Could not find you in any voice channel!",
-                        );
-                        e
-                    })
-                })
-                .await?;
+        let manager = songbird::get(ctx).await.expect("Could not retrieve Songbird voice client");
+        let call = manager.join(guild.id, channel_id).await.0;
+        let mut handler = call.lock().await;
 
-            return Ok(());
-        }
-    };
-
-    let manager = songbird::get(ctx).await.expect("");
-    let lock = manager.join(guild.id, connect_to).await.0;
-
-    let mut handler = lock.lock().await;
-    handler.add_global_event(
-        Event::Periodic(Duration::from_secs(1), None),
-        IdleNotifier {
+        let action = IdleNotifier {
             message: msg.clone(),
             manager,
             count: Arc::new(AtomicUsize::new(1)),
-            http: ctx.http.clone(),
-        },
-    );
+            http: ctx.http.clone()
+        };
+
+        handler.add_global_event(Event::Periodic(Duration::from_secs(1), None), action);
+    }
+    else {
+        msg.channel_id.send_message(&ctx.http, |m| {
+            m.embed(|e| e.description("Could not find you in any voice channel!"))
+        }).await?;
+    }
 
     Ok(())
 }
