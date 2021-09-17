@@ -14,7 +14,7 @@ async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
         }).await?;
     } else {
         msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| e.description("Not connected to any voice channel!"))
+            m.embed(|e| e.description("I'm not connected to any voice channel!"))
         }).await?;
     }
 

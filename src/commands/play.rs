@@ -18,7 +18,7 @@ use songbird::{
     input::{Input, Restartable},
     Event,
 };
-use youtube_dl::{Playlist, YoutubeDl, YoutubeDlOutput};
+use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
 #[command]
 #[aliases("p")]
@@ -41,25 +41,19 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     };
 
     let guild = msg.guild(&ctx.cache).await.unwrap();
-    let manager = songbird::get(ctx).await.expect("").clone();
+    let manager = songbird::get(ctx).await.expect("Could not retrieve Songbird voice client");
 
     // Try to join a voice channel if not in one just yet
     if manager.get(guild.id).is_none() {
-        let channel_id = guild
-            .voice_states
-            .get(&msg.author.id)
+        let channel_id = guild.voice_states.get(&msg.author.id)
             .and_then(|voice_state| voice_state.channel_id);
 
         // Abort if it cannot find the author in any voice channels
         if channel_id.is_none() {
-            msg.channel_id
-                .send_message(&ctx.http, |m| {
-                    m.embed(|e| {
-                        create_default_embed(e, "Play", "Could not find you in any voice channel!");
-                        e
-                    })
-                })
-                .await?;
+            msg.channel_id.send_message(&ctx.http, |m| {
+                m.embed(|e| e.description("Could not find you in any voice channel!"))
+            }).await?;
+
             return Ok(());
         } else {
             let lock = manager.join(guild.id, channel_id.unwrap()).await.0;
@@ -185,14 +179,9 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 .await?;
         }
     } else {
-        msg.channel_id
-            .send_message(&ctx.http, |m| {
-                m.embed(|e| {
-                    create_default_embed(e, "Play", "Not in a voice channel!");
-                    e
-                })
-            })
-            .await?;
+        msg.channel_id.send_message(&ctx.http, |m| {
+            m.embed(|e| e.description("I'm not connected to any voice channel!"))
+        }).await?;
     }
 
     Ok(())
