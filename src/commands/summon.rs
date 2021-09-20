@@ -11,6 +11,7 @@ use serenity::{
 use songbird::Event;
 
 use crate::events::idle_notifier::IdleNotifier;
+use crate::strings::AUTHOR_NOT_FOUND;
 use crate::utils::send_simple_message;
 
 #[command]
@@ -38,7 +39,7 @@ async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
         handler.add_global_event(Event::Periodic(Duration::from_secs(1), None), action);
     }
     else {
-        send_simple_message(&ctx.http, msg, "Could not find you in any voice channel!").await;
+        send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await;
     }
 
     Ok(())

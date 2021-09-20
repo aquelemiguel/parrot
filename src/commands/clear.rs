@@ -4,7 +4,7 @@ use serenity::{
     model::channel::Message,
 };
 
-use crate::utils::send_simple_message;
+use crate::{strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY}, utils::send_simple_message};
 
 #[command]
 async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
@@ -16,13 +16,13 @@ async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
         let queue = handler.queue();
 
         if queue.is_empty() {
-            send_simple_message(&ctx.http, msg, "Queue is already empty!").await;
+            send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
         } else {
             queue.modify_queue(|v| { v.drain(1..); });
             send_simple_message(&ctx.http, msg, "Cleared!").await;
         }
     } else {
-        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
+        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
     }
 
     Ok(())

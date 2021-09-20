@@ -3,17 +3,24 @@ use std::{
     time::Duration,
 };
 
-use crate::{events::idle_notifier::IdleNotifier, utils::{get_human_readable_timestamp, send_simple_message}};
+use crate::{
+    events::idle_notifier::IdleNotifier,
+    strings::{AUTHOR_NOT_FOUND, MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
+    utils::{get_human_readable_timestamp, send_simple_message}
+};
+
 use serenity::{
     builder::CreateEmbedFooter,
     client::Context,
     framework::standard::{macros::command, Args, CommandResult},
     model::channel::Message,
 };
+
 use songbird::{
     input::Restartable,
     Event,
 };
+
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
 #[command]
@@ -23,7 +30,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let url = match args.single::<String>() {
         Ok(url) => url,
         Err(_) => {
-            send_simple_message(&ctx.http, msg, "Must provide an URL to a video!").await;
+            send_simple_message(&ctx.http, msg, MISSING_PLAY_QUERY).await;
             return Ok(());
         }
     };
@@ -38,7 +45,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
         // Abort if it cannot find the author in any voice channels
         if channel_id.is_none() {
-            send_simple_message(&ctx.http, msg, "Could not find you in any voice channel!").await;
+            send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await;
             return Ok(());
         }
         else {
@@ -164,7 +171,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 .await?;
         }
     } else {
-        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
+        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
     }
 
     Ok(())

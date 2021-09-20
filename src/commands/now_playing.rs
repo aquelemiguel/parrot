@@ -1,4 +1,4 @@
-use crate::utils::{get_human_readable_timestamp, send_simple_message};
+use crate::{strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY}, utils::{get_human_readable_timestamp, send_simple_message}};
 use serenity::{
     builder::CreateEmbedFooter,
     client::Context,
@@ -38,10 +38,10 @@ async fn now_playing(ctx: &Context, msg: &Message) -> CommandResult {
                 })
             }).await?;
         } else {
-            send_simple_message(&ctx.http, msg, "The queue is empty!").await;
+            send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
         }
     } else {
-        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
+        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
     }
 
     Ok(())

@@ -5,6 +5,8 @@ use std::sync::{
     Arc,
 };
 
+use crate::{strings::IDLE_ALERT, utils::send_simple_message};
+
 pub struct IdleNotifier {
     pub message: Message,
     pub manager: Arc<Songbird>,
@@ -24,13 +26,7 @@ impl VoiceEventHandler for IdleNotifier {
                 self.count.store(0, Ordering::Relaxed); // If the bot is playing, reset the counter
             } else {
                 if self.count.fetch_add(1, Ordering::Relaxed) >= 10 {
-                    self.message.channel_id.send_message(&self.http, |m| {
-                        m.embed(|e| e.description(
-                            "I've been idle for over 5 minutes, so I'll leave for now.
-                            Feel free to summon me back any time!",
-                        ))
-                    }).await.unwrap();
-
+                    send_simple_message(&self.http, &self.message, IDLE_ALERT).await;
                     handler.leave().await.expect("Failed to leave voice channel");
                 }
             }

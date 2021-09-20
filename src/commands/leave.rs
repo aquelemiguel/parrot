@@ -1,6 +1,6 @@
 use serenity::{client::Context, framework::standard::{macros::command, CommandResult}, model::channel::Message};
 
-use crate::utils::send_simple_message;
+use crate::{strings::NO_VOICE_CONNECTION, utils::send_simple_message};
 
 #[command]
 async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
@@ -12,7 +12,7 @@ async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
         handler.leave().await.expect("Failed to leave voice channel");
         send_simple_message(&ctx.http, msg, "See you soon!").await;
     } else {
-        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
+        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
     }
 
     Ok(())

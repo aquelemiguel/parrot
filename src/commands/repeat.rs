@@ -5,7 +5,7 @@ use serenity::{
 };
 use songbird::tracks::LoopState;
 
-use crate::utils::send_simple_message;
+use crate::{strings::NO_VOICE_CONNECTION, utils::send_simple_message};
 
 #[command("loop")]
 async fn repeat(ctx: &Context, msg: &Message) -> CommandResult {
@@ -26,7 +26,7 @@ async fn repeat(ctx: &Context, msg: &Message) -> CommandResult {
             }
         }
     } else {
-        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
+        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
     }
 
     Ok(())

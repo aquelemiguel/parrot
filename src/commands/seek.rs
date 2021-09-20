@@ -6,7 +6,10 @@ use serenity::{
     model::channel::Message,
 };
 
-use crate::utils::send_simple_message;
+use crate::{
+    strings::{MISSING_TIMESTAMP, NO_VOICE_CONNECTION, TIMESTAMP_PARSING_FAILED},
+    utils::send_simple_message
+};
 
 #[command]
 async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -19,7 +22,7 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         let seek_time = match args.single::<String>() {
             Ok(t) => t,
             Err(_) => {
-                send_simple_message(&ctx.http, msg, "Include a timestamp!").await;
+                send_simple_message(&ctx.http, msg, MISSING_TIMESTAMP).await;
                 return Ok(());
             }
         };
@@ -28,7 +31,7 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         let (minutes, seconds) = (timestamp.single::<u64>(), timestamp.single::<u64>());
 
         if minutes.as_ref().and(seconds.as_ref()).is_err() {
-            send_simple_message(&ctx.http, msg, "Could not parse timestamp!").await;
+            send_simple_message(&ctx.http, msg, TIMESTAMP_PARSING_FAILED).await;
             return Ok(());
         }
 
@@ -40,7 +43,7 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         send_simple_message(&ctx.http, msg, &format!("Seeked current track to **{}**!", seek_time)).await;
     }
     else {
-        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
+        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
 
     }
 
