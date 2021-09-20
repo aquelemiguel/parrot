@@ -3,10 +3,7 @@ use std::{
     time::Duration,
 };
 
-use crate::{
-    events::idle_notifier::IdleNotifier,
-    util::{create_default_embed, get_human_readable_timestamp},
-};
+use crate::{events::idle_notifier::IdleNotifier, utils::{get_human_readable_timestamp, send_simple_message}};
 use serenity::{
     builder::CreateEmbedFooter,
     client::Context,
@@ -26,9 +23,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let url = match args.single::<String>() {
         Ok(url) => url,
         Err(_) => {
-            msg.channel_id.send_message(&ctx.http, |m| {
-                m.embed(|e| e.description("Must provide an URL to a video!"))
-            }).await?;
+            send_simple_message(&ctx.http, msg, "Must provide an URL to a video!").await;
             return Ok(());
         }
     };
@@ -43,10 +38,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
         // Abort if it cannot find the author in any voice channels
         if channel_id.is_none() {
-            msg.channel_id.send_message(&ctx.http, |m| {
-                m.embed(|e| e.description("Could not find you in any voice channel!"))
-            }).await?;
-
+            send_simple_message(&ctx.http, msg, "Could not find you in any voice channel!").await;
             return Ok(());
         }
         else {
@@ -172,9 +164,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 .await?;
         }
     } else {
-        msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| e.description("I'm not connected to any voice channel!"))
-        }).await?;
+        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
     }
 
     Ok(())

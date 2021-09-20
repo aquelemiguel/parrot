@@ -1,4 +1,4 @@
-use crate::util::{get_human_readable_timestamp};
+use crate::utils::{get_human_readable_timestamp, send_simple_message};
 use serenity::{
     client::Context,
     framework::standard::{macros::command, CommandResult},
@@ -36,9 +36,7 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
             })
         }).await?;
     } else {
-        msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| e.description("I'm not connected to any voice channel!"))
-        }).await?;
+        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
     }
 
     Ok(())

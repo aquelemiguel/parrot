@@ -11,6 +11,7 @@ use serenity::{
 use songbird::Event;
 
 use crate::events::idle_notifier::IdleNotifier;
+use crate::utils::send_simple_message;
 
 #[command]
 async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
@@ -21,9 +22,7 @@ async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
         .and_then(|voice_state| voice_state.channel_id);
 
     if let Some(channel_id) = channel_opt {
-        msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| e.description(format!("Joining **{}**!", channel_id.mention())))
-        }).await?;
+        send_simple_message(&ctx.http, msg, &format!("Joining **{}**!", channel_id.mention())).await;
 
         let manager = songbird::get(ctx).await.expect("Could not retrieve Songbird voice client");
         let call = manager.join(guild.id, channel_id).await.0;
@@ -39,9 +38,7 @@ async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
         handler.add_global_event(Event::Periodic(Duration::from_secs(1), None), action);
     }
     else {
-        msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| e.description("Could not find you in any voice channel!"))
-        }).await?;
+        send_simple_message(&ctx.http, msg, "Could not find you in any voice channel!").await;
     }
 
     Ok(())

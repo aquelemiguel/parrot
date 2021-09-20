@@ -4,6 +4,8 @@ use serenity::{
     model::channel::Message,
 };
 
+use crate::utils::send_simple_message;
+
 #[command]
 async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
@@ -13,19 +15,13 @@ async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
         let handler = call.lock().await;
 
         if handler.queue().is_empty() {
-            msg.channel_id.send_message(&ctx.http, |m| {
-                m.embed(|e| e.description("Queue is already empty!"))
-            }).await?;
+            send_simple_message(&ctx.http, msg, "Queue is already empty!").await;
         }
         else if handler.queue().pause().is_ok() {
-            msg.channel_id.send_message(&ctx.http, |m| {
-                m.embed(|e| e.description("Paused!"))
-            }).await?;
+            send_simple_message(&ctx.http, msg, "Paused!").await;
         }
     } else {
-        msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| e.description("I'm not connected to any voice channel!"))
-        }).await?;
+        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
     }
 
     Ok(())

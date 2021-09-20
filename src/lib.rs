@@ -1,3 +1,3 @@
 pub mod commands;
 pub mod events;
-pub mod util;
+pub mod utils;

@@ -1,5 +1,7 @@
 use serenity::{client::Context, framework::standard::{macros::command, CommandResult}, model::channel::Message};
 
+use crate::utils::send_simple_message;
+
 #[command]
 async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
@@ -8,14 +10,9 @@ async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
     if let Some(lock) = manager.get(guild_id) {
         let mut handler = lock.lock().await;
         handler.leave().await.expect("Failed to leave voice channel");
-
-        msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| e.description("See you soon!"))
-        }).await?;
+        send_simple_message(&ctx.http, msg, "See you soon!").await;
     } else {
-        msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| e.description("I'm not connected to any voice channel!"))
-        }).await?;
+        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
     }
 
     Ok(())

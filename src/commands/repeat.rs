@@ -5,6 +5,8 @@ use serenity::{
 };
 use songbird::tracks::LoopState;
 
+use crate::utils::send_simple_message;
+
 #[command("loop")]
 async fn repeat(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
@@ -16,21 +18,15 @@ async fn repeat(ctx: &Context, msg: &Message) -> CommandResult {
 
         if track.get_info().await?.loops == LoopState::Infinite {
             if track.disable_loop().is_ok() {
-                msg.channel_id.send_message(&ctx.http, |m| {
-                    m.embed(|e| e.description("Disabled!"))
-                }).await?;
+                send_simple_message(&ctx.http, msg, "Disabled loop!").await;
             }
         } else {
             if track.enable_loop().is_ok() {
-                msg.channel_id.send_message(&ctx.http, |m| {
-                    m.embed(|e| e.description("Enabled!"))
-                }).await?;
+                send_simple_message(&ctx.http, msg, "Enabled loop!").await;
             }
         }
     } else {
-        msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| e.description("I'm not connected to any voice channel!"))
-        }).await?;
+        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
     }
 
     Ok(())

@@ -6,6 +6,8 @@ use serenity::{
     model::channel::Message,
 };
 
+use crate::utils::send_simple_message;
+
 #[command]
 async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
@@ -17,9 +19,7 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         let seek_time = match args.single::<String>() {
             Ok(t) => t,
             Err(_) => {
-                msg.channel_id.send_message(&ctx.http, |m| {
-                    m.embed(|e| e.description("Include a timestamp!"))
-                }).await?;
+                send_simple_message(&ctx.http, msg, "Include a timestamp!").await;
                 return Ok(());
             }
         };
@@ -28,9 +28,7 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         let (minutes, seconds) = (timestamp.single::<u64>(), timestamp.single::<u64>());
 
         if minutes.as_ref().and(seconds.as_ref()).is_err() {
-            msg.channel_id.send_message(&ctx.http, |m| {
-                m.embed(|e| e.description("Could not parse timestamp!"))
-            }).await?;
+            send_simple_message(&ctx.http, msg, "Could not parse timestamp!").await;
             return Ok(());
         }
 
@@ -39,14 +37,11 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         let track = handler.queue().current().expect("Failed to fetch handle for current track");
         track.seek_time(Duration::from_secs(timestamp)).expect("Failed to seek on track");
 
-        msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| e.description(format!("Seeked current track to **{}**!", seek_time)))
-        }).await?;
+        send_simple_message(&ctx.http, msg, &format!("Seeked current track to **{}**!", seek_time)).await;
     }
     else {
-        msg.channel_id.send_message(&ctx.http, |m| {
-            m.embed(|e| e.description("I'm not connected to any voice channel!"))
-        }).await?;
+        send_simple_message(&ctx.http, msg, "I'm not connected to any voice channel!").await;
+
     }
 
     Ok(())
