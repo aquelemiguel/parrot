@@ -12,7 +12,7 @@ apt install build-essential autoconf automake libtool m4 youtube_dl ffmpeg
 
 ### Windows 
 
-In Windows you will need to download [FFmpeg](https://ffmpeg.org/download.html) and install `youtube_dl` through `pip`, like so: 
+In Windows you will only need to download [FFmpeg](https://ffmpeg.org/download.html), and install `youtube_dl` through `pip`.
 ```shell
 pip install youtube_dl
 ```
