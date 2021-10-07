@@ -59,7 +59,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 http: ctx.http.clone()
             };
 
-            handler.add_global_event(Event::Periodic(Duration::from_secs(1), None), action);
+            // handler.add_global_event(Event::Periodic(Duration::from_secs(1), None), action);
         }
     }
 
@@ -98,21 +98,18 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         // Play via search
         else {
             let query = args.rewind().remains().unwrap(); // Rewind and fetch the entire query
-            let source = Restartable::ytdl_search(query, true).await?;
+            let source = Restartable::ytdl_search(query, false).await?;
             handler.enqueue_source(source.into());
         }
 
         let queue = handler.queue().current_queue();
 
-        let current_track = queue.first().unwrap();
-        let metadata = current_track.metadata().clone();
-        let position = current_track.get_info().await?.position;
-
-        println!("{}", queue.len());
-        println!("{}", current_track.metadata().clone().title.unwrap());
-
         // If it's not going to be played immediately, notify it has been enqueued
-        if handler.queue().len() == 1 {
+        if handler.queue().len() > 1 {
+            let last_track = queue.last().unwrap();
+            let metadata = last_track.metadata().clone();
+            let position = last_track.get_info().await?.position;
+
             msg.channel_id
                 .send_message(&ctx.http, |m| {
                     m.embed(|e| {
@@ -146,6 +143,9 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 })
                 .await?;
         } else {
+            let current_track = queue.first().unwrap();
+            let metadata = current_track.metadata().clone();
+
             msg.channel_id
                 .send_message(&ctx.http, |m| {
                     m.embed(|e| {

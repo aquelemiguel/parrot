@@ -1,10 +1,4 @@
-use serenity::{
-    async_trait,
-    client::{Context, EventHandler},
-    framework::{standard::macros::group, StandardFramework},
-    model::gateway::Ready,
-    Client,
-};
+use serenity::{Client, async_trait, client::{Context, EventHandler}, framework::{standard::macros::group, StandardFramework}, model::{gateway::Ready, prelude::Activity}};
 use songbird::SerenityInit;
 use std::env;
 
@@ -34,8 +28,9 @@ struct Handler;
 
 #[async_trait]
 impl EventHandler for Handler {
-    async fn ready(&self, _ctx: Context, ready: Ready) {
+    async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
+        ctx.set_activity(Activity::listening("!play")).await;
     }
 }
 
@@ -44,7 +39,7 @@ async fn main() {
     dotenv::dotenv().expect("Failed to load .env file");
 
     let framework = StandardFramework::new()
-        .configure(|c| c.prefix("."))
+        .configure(|c| c.prefix("!"))
         .group(&GENERAL_GROUP);
 
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
