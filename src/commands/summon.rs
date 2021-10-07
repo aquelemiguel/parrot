@@ -36,7 +36,7 @@ async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
             http: ctx.http.clone()
         };
 
-        handler.add_global_event(Event::Periodic(Duration::from_secs(1), None), action);
+        handler.add_global_event(Event::Periodic(Duration::from_secs(300), None), action);
     }
     else {
         send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await;

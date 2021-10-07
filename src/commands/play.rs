@@ -59,7 +59,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                 http: ctx.http.clone()
             };
 
-            handler.add_global_event(Event::Periodic(Duration::from_secs(1), None), action);
+            handler.add_global_event(Event::Periodic(Duration::from_secs(300), None), action);
         }
     }
 
