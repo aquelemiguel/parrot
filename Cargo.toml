@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 dotenv = "0.15"
 youtube_dl = "0.6.3"
-rand = "0.7.3"
+rand = "0.8.4"
 
 [dependencies.songbird]
 version = "0.2.0"
