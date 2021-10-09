@@ -45,7 +45,9 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
                         }).await.unwrap();
 
                         // If we're on the first page, we can't navigate to previous.
-                        if current_page == 0 {
+                        if current_page > 0 {
+                            message.react(&ctx.http, ReactionType::Unicode("◀️".to_string())).await.unwrap();
+                        } else {
                             message.delete_reaction_emoji(&ctx.http, ReactionType::Unicode("◀️".to_string())).await.unwrap();
                         }
 
@@ -62,12 +64,14 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
                             m.embed(|e| create_queue_embed(e, &tracks, current_page))
                         }).await.unwrap();
 
+                        message.react(&ctx.http, ReactionType::Unicode("◀️".to_string())).await.unwrap();
+
                         // If the next page exceeds the size of the queue, disable navigating to next page.
-                        if 1 + (current_page + 1) * 8 > tracks.len() {
+                        if 1 + (current_page + 1) * 8 <= tracks.len() {
+                            message.react(&ctx.http, ReactionType::Unicode("▶️".to_string())).await.unwrap();
+                        } else {
                             message.delete_reaction_emoji(&ctx.http, ReactionType::Unicode("▶️".to_string())).await.unwrap();
                         }
-
-                        message.react(&ctx.http, ReactionType::Unicode("◀️".to_string())).await.unwrap();
                     },
                     _ => ()
                 };
