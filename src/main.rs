@@ -4,7 +4,7 @@ use std::env;
 
 use parrot::commands::{
     clear::*, leave::*, now_playing::*, pause::*, play::*, queue::*, repeat::*, resume::*, seek::*,
-    skip::*, stop::*, summon::*,
+    skip::*, stop::*, summon::*, remove::*,
 };
 
 #[group]
@@ -20,7 +20,8 @@ use parrot::commands::{
     seek,
     skip,
     stop,
-    summon
+    summon,
+    remove
 )]
 struct General;
 
