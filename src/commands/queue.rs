@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::{strings::NO_VOICE_CONNECTION, utils::{get_human_readable_timestamp, send_simple_message}};
 use serenity::{builder::{CreateEmbed}, client::Context, framework::standard::{macros::command, CommandResult}, futures::{StreamExt, future}, model::channel::{Message, ReactionType}};
 use songbird::tracks::TrackHandle;
@@ -24,59 +26,58 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
             m
         }).await?;
 
-        let ctx = ctx.clone();
-        let handler = handler.clone();
+        drop(handler); // Release the handler for other commands to use it.
 
-        tokio::spawn(async move {
-            let mut current_page: usize = 0;
-            let mut reactions = message.await_reactions(&ctx).author_id(author_id).await;
+        let mut current_page: usize = 0;
+        let mut stream = message.await_reactions(&ctx).author_id(author_id).await;        
 
-            while let Some(reaction) = reactions.next().await {
-                let emoji = &reaction.as_inner_ref().emoji;
-                let tracks = handler.queue().current_queue();   // Refetch the queue in case it changed. 
+        while let Some(reaction) = stream.next().await {
+            let handler = call.lock().await;
 
-                match emoji.as_data().as_str() {
-                    "◀️" => {
-                        message.delete_reactions(&ctx.http).await.unwrap();
+            let emoji = &reaction.as_inner_ref().emoji;
+            let tracks = handler.queue().current_queue();   // Refetch the queue in case it changed. 
 
-                        message.edit(&ctx, |m| {
-                            current_page = current_page.saturating_sub(1);
-                            m.embed(|e| create_queue_embed(e, &tracks, current_page))
-                        }).await.unwrap();
+            match emoji.as_data().as_str() {
+                "◀️" => {
+                    message.delete_reactions(&ctx.http).await.unwrap();
 
-                        // If we're on the first page, we can't navigate to previous.
-                        if current_page > 0 {
-                            message.react(&ctx.http, ReactionType::Unicode("◀️".to_string())).await.unwrap();
-                        } else {
-                            message.delete_reaction_emoji(&ctx.http, ReactionType::Unicode("◀️".to_string())).await.unwrap();
-                        }
+                    message.edit(&ctx, |m| {
+                        current_page = current_page.saturating_sub(1);
+                        m.embed(|e| create_queue_embed(e, &tracks, current_page))
+                    }).await.unwrap();
 
-                        // If there's enough songs for another page, allow navigating to it.
-                        if 1 + (current_page + 1) * 8 <= tracks.len() {
-                            message.react(&ctx.http, ReactionType::Unicode("▶️".to_string())).await.unwrap();
-                        }
-                    },
-                    "▶️" => {
-                        message.delete_reactions(&ctx.http).await.unwrap();
-
-                        message.edit(&ctx, |m| {
-                            current_page = current_page.saturating_add(1);
-                            m.embed(|e| create_queue_embed(e, &tracks, current_page))
-                        }).await.unwrap();
-
+                    // If we're on the first page, we can't navigate to previous.
+                    if current_page > 0 {
                         message.react(&ctx.http, ReactionType::Unicode("◀️".to_string())).await.unwrap();
+                    } else {
+                        message.delete_reaction_emoji(&ctx.http, ReactionType::Unicode("◀️".to_string())).await.unwrap();
+                    }
 
-                        // If the next page exceeds the size of the queue, disable navigating to next page.
-                        if 1 + (current_page + 1) * 8 <= tracks.len() {
-                            message.react(&ctx.http, ReactionType::Unicode("▶️".to_string())).await.unwrap();
-                        } else {
-                            message.delete_reaction_emoji(&ctx.http, ReactionType::Unicode("▶️".to_string())).await.unwrap();
-                        }
-                    },
-                    _ => ()
-                };
-            } 
-        });
+                    // If there's enough songs for another page, allow navigating to it.
+                    if 1 + (current_page + 1) * 8 <= tracks.len() {
+                        message.react(&ctx.http, ReactionType::Unicode("▶️".to_string())).await.unwrap();
+                    }
+                },
+                "▶️" => {
+                    message.delete_reactions(&ctx.http).await.unwrap();
+
+                    message.edit(&ctx, |m| {
+                        current_page = current_page.saturating_add(1);
+                        m.embed(|e| create_queue_embed(e, &tracks, current_page))
+                    }).await.unwrap();
+
+                    message.react(&ctx.http, ReactionType::Unicode("◀️".to_string())).await.unwrap();
+
+                    // If the next page exceeds the size of the queue, disable navigating to next page.
+                    if 1 + (current_page + 1) * 8 <= tracks.len() {
+                        message.react(&ctx.http, ReactionType::Unicode("▶️".to_string())).await.unwrap();
+                    } else {
+                        message.delete_reaction_emoji(&ctx.http, ReactionType::Unicode("▶️".to_string())).await.unwrap();
+                    }
+                },
+                _ => ()
+            };
+        }
     } else {
         send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
     }
