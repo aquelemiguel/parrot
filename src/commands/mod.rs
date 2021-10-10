@@ -10,3 +10,4 @@ pub mod seek;
 pub mod skip;
 pub mod stop;
 pub mod summon;
+pub mod remove;
