@@ -25,8 +25,14 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
 
     if let Some(call) = manager.get(guild_id) {
         let handler = call.lock().await;
-
         let mut tracks = handler.queue().current_queue();
+
+        // If the queue is empty, end the command.
+        if tracks.len() == 0 {
+            send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
+            return Ok(());
+        }
+
         let top_track = tracks.remove(0);
 
         let mut message = msg
