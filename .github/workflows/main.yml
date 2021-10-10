@@ -1,0 +1,14 @@
+name: Main Workflow
+on: [push]
+jobs:
+  build:
+    name: Build
+    strategy:
+      matrix:
+        rust-version: ["1.53", "1.54", latest]
+    runs-on: ubuntu-latest
+    container: rust:${{ matrix.rust-version }}
+    steps:
+      - uses: actions/checkout@v1
+      - run: cargo build --release
+      - run: cargo test
