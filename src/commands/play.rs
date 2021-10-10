@@ -1,10 +1,4 @@
-use std::{
-    sync::{atomic::AtomicUsize, Arc},
-    time::Duration,
-};
-
 use crate::{
-    events::idle_notifier::IdleNotifier,
     strings::{AUTHOR_NOT_FOUND, MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
     utils::{get_human_readable_timestamp, send_simple_message}
 };
@@ -18,7 +12,6 @@ use serenity::{
 
 use songbird::{
     input::Restartable,
-    Event,
 };
 
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
@@ -50,16 +43,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
         else {
             let lock = manager.join(guild.id, channel_id.unwrap()).await.0;
-            let mut handler = lock.lock().await;
-
-            let action = IdleNotifier {
-                message: msg.clone(),
-                manager: manager.clone(),
-                count: Arc::new(AtomicUsize::new(1)),
-                http: ctx.http.clone()
-            };
-
-            // handler.add_global_event(Event::Periodic(Duration::from_secs(1), None), action);
+            lock.lock().await;
         }
     }
 
