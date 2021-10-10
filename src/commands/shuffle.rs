@@ -29,9 +29,8 @@ async fn shuffle(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     if let Some(call) = manager.get(guild_id) {
         let handler = call.lock().await;
         handler.queue().modify_queue(|queue| {
-            let length = queue.len();
             // Skip the first track on queue - it's currently played
-            fisher_yates(queue.make_contiguous()[1..length].as_mut(), &mut rand::thread_rng())
+            fisher_yates(queue.make_contiguous()[1..].as_mut(), &mut rand::thread_rng())
         });
         send_simple_message(&ctx.http, msg, &format!("Shuffled successfully")).await;
     } else {
