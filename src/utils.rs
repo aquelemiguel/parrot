@@ -1,10 +1,17 @@
-use serenity::{http::Http, model::channel::Message, utils::Color};
+use serenity::{
+    http::Http,
+    model::{channel::Message, prelude::User},
+    utils::Color,
+};
 use std::{sync::Arc, time::Duration};
 
 pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> Message {
-    msg.channel_id.send_message(http, |m| {
-        m.embed(|e| e.description(format!("**{}**", content)).color(Color::RED))
-    }).await.expect("Unable to send message")
+    msg.channel_id
+        .send_message(http, |m| {
+            m.embed(|e| e.description(format!("**{}**", content)).color(Color::RED))
+        })
+        .await
+        .expect("Unable to send message")
 }
 
 pub fn get_human_readable_timestamp(duration: Duration) -> String {
@@ -19,4 +26,8 @@ pub fn get_human_readable_timestamp(duration: Duration) -> String {
     };
 
     timestamp
+}
+
+pub fn get_full_username(user: &User) -> String {
+    format!("{}#{:04}", user.name, user.discriminator)
 }
