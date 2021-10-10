@@ -3,6 +3,7 @@ pub mod leave;
 pub mod now_playing;
 pub mod pause;
 pub mod play;
+pub mod playtop;
 pub mod queue;
 pub mod repeat;
 pub mod resume;
