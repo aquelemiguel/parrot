@@ -18,3 +18,9 @@ pub const TIMESTAMP_PARSING_FAILED: &'static str =
 
 pub const MISSING_PLAY_QUERY: &'static str =
     "Missing query for this command! Either add a URL or keywords.";
+
+pub const MISSING_INDEX_QUEUE: &'static str =
+    "Missing an index!";
+
+pub const NO_SONG_ON_INDEX: &'static str =
+"There is no queued song on that index!";
