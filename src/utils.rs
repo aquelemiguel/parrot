@@ -19,13 +19,11 @@ pub fn get_human_readable_timestamp(duration: Duration) -> String {
     let minutes = (duration.as_secs() / 60) % 60;
     let hours = duration.as_secs() / 3600;
 
-    let timestamp = if hours < 1 {
+    if hours < 1 {
         format!("{}:{:02}", minutes, seconds)
     } else {
         format!("{}:{:02}:{:02}", hours, minutes, seconds)
-    };
-
-    timestamp
+    }
 }
 
 pub fn get_full_username(user: &User) -> String {
