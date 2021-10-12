@@ -1,4 +1,7 @@
-use std::{cmp::min, time::Duration};
+use std::{
+    cmp::{max, min},
+    time::Duration,
+};
 
 use crate::{
     strings::{NO_VOICE_CONNECTION, QUEUE_EXPIRED, QUEUE_IS_EMPTY},
@@ -27,7 +30,7 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
 
     if let Some(call) = manager.get(guild_id) {
         let handler = call.lock().await;
-        let mut tracks = handler.queue().current_queue();
+        let tracks = handler.queue().current_queue();
 
         // If the queue is empty, end the command.
         if tracks.is_empty() {
@@ -35,32 +38,25 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
             return Ok(());
         }
 
-        let top_track = tracks.remove(0);
+        let reactions = vec!["⏪", "◀️", "▶️", "⏩"]
+            .iter()
+            .map(|r| ReactionType::Unicode(r.to_string()))
+            .collect::<Vec<ReactionType>>();
 
         let mut message = msg
             .channel_id
             .send_message(&ctx.http, |m| {
-                m.embed(|e| create_queue_embed(e, &author_username, &top_track, &tracks, 0));
-
-                if tracks.len() > PAGE_SIZE {
-                    m.reactions(vec![ReactionType::Unicode("▶️".to_string())]);
-                }
-
-                m
+                m.embed(|e| create_queue_embed(e, &author_username, &tracks, 0));
+                m.reactions(reactions.clone())
             })
             .await?;
-
-        // If the queue only has the currently playing song, end the command.
-        if tracks.is_empty() {
-            return Ok(());
-        }
 
         drop(handler); // Release the handler for other commands to use it.
 
         let mut current_page: usize = 0;
         let mut stream = message
             .await_reactions(&ctx)
-            .timeout(Duration::from_secs(60 * 60)) // Stop collection reactions after an hour.
+            .timeout(Duration::from_secs(60 * 60)) // Stop collecting reactions after an hour.
             .author_id(author_id) // Only collect reactions from the invoker.
             .await;
 
@@ -69,103 +65,33 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
             let emoji = &reaction.as_inner_ref().emoji;
 
             // Refetch the queue in case it changed.
-            let mut tracks = handler.queue().current_queue();
+            let tracks = handler.queue().current_queue();
 
-            // If the queue is now empty, stop handling reactions.
-            if tracks.len() == 0 {
-                message.delete_reactions(&ctx.http).await?;
+            // Clean previous reactions.
+            message.delete_reactions(&ctx.http).await?;
 
-                message
-                    .edit(&ctx, |m| {
-                        m.embed(|e| e.description(format!("**{}**", QUEUE_IS_EMPTY)))
-                    })
-                    .await?;
-
-                break;
+            for reaction in reactions.clone() {
+                message.react(&ctx.http, reaction).await?;
             }
 
-            let top_track = tracks.remove(0);
-            let max_page = tracks.len() / PAGE_SIZE;
+            let num_pages = calculate_num_pages(&tracks);
 
-            match emoji.as_data().as_str() {
-                "◀️" => {
-                    message.delete_reactions(&ctx.http).await?;
-                    current_page = min(current_page.saturating_sub(1), max_page);
-
-                    message
-                        .edit(&ctx, |m| {
-                            m.embed(|e| {
-                                create_queue_embed(
-                                    e,
-                                    &author_username,
-                                    &top_track,
-                                    &tracks,
-                                    current_page,
-                                )
-                            })
-                        })
-                        .await?;
-
-                    // If we're on the first page, we can't navigate to previous.
-                    if current_page > 0 {
-                        message
-                            .react(&ctx.http, ReactionType::Unicode("◀️".to_string()))
-                            .await?;
-                    } else {
-                        message
-                            .delete_reaction_emoji(
-                                &ctx.http,
-                                ReactionType::Unicode("◀️".to_string()),
-                            )
-                            .await?;
-                    }
-
-                    // If there's enough songs for another page, allow navigating to it.
-                    if current_page + 1 <= max_page {
-                        message
-                            .react(&ctx.http, ReactionType::Unicode("▶️".to_string()))
-                            .await?;
-                    }
-                }
-                "▶️" => {
-                    message.delete_reactions(&ctx.http).await.unwrap();
-                    current_page = min(current_page.saturating_add(1), max_page);
-
-                    message
-                        .edit(&ctx, |m| {
-                            m.embed(|e| {
-                                create_queue_embed(
-                                    e,
-                                    &author_username,
-                                    &top_track,
-                                    &tracks,
-                                    current_page,
-                                )
-                            })
-                        })
-                        .await?;
-
-                    message
-                        .react(&ctx.http, ReactionType::Unicode("◀️".to_string()))
-                        .await?;
-
-                    if current_page + 1 <= max_page {
-                        message
-                            .react(&ctx.http, ReactionType::Unicode("▶️".to_string()))
-                            .await?;
-                    } else {
-                        message
-                            .delete_reaction_emoji(
-                                &ctx.http,
-                                ReactionType::Unicode("▶️".to_string()),
-                            )
-                            .await?;
-                    }
-                }
-                _ => (),
+            current_page = match emoji.as_data().as_str() {
+                "⏪" => 0,
+                "◀️" => min(current_page.saturating_sub(1), num_pages - 1),
+                "▶️" => min(current_page + 1, num_pages - 1),
+                "⏩" => num_pages - 1,
+                _ => continue,
             };
+
+            message
+                .edit(&ctx, |m| {
+                    m.embed(|e| create_queue_embed(e, &author_username, &tracks, current_page))
+                })
+                .await?;
         }
 
+        // If it reaches this point, the stream has expired.
         message.delete_reactions(&ctx.http).await.unwrap();
         message
             .edit(&ctx, |m| {
@@ -182,43 +108,50 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
 pub fn create_queue_embed<'a>(
     embed: &'a mut CreateEmbed,
     author: &str,
-    top_track: &TrackHandle,
-    queue: &Vec<TrackHandle>,
+    tracks: &[TrackHandle],
     page: usize,
 ) -> &'a mut CreateEmbed {
     embed.title("Queue");
+    let description;
 
-    let metadata = top_track.metadata();
-    embed.thumbnail(top_track.metadata().thumbnail.as_ref().unwrap());
+    if !tracks.is_empty() {
+        let metadata = tracks[0].metadata();
+        embed.thumbnail(tracks[0].metadata().thumbnail.as_ref().unwrap());
 
-    let description = format!(
-        "[{}]({}) • `{}`",
-        metadata.title.as_ref().unwrap(),
-        metadata.source_url.as_ref().unwrap(),
-        get_human_readable_timestamp(metadata.duration.unwrap())
-    );
+        description = format!(
+            "[{}]({}) • `{}`",
+            metadata.title.as_ref().unwrap(),
+            metadata.source_url.as_ref().unwrap(),
+            get_human_readable_timestamp(metadata.duration.unwrap())
+        );
+    } else {
+        description = String::from("Nothing is playing!");
+    }
 
     embed.field("🔊  Now playing", description, false);
-
-    if !queue.is_empty() {
-        embed.field("⌛  Up next", build_queue_page(queue, page), false);
-    }
+    embed.field("⌛  Up next", build_queue_page(tracks, page), false);
 
     embed.footer(|f| {
         f.text(format!(
             "Page {} of {} • Requested by {}",
             page + 1,
-            queue.len() / PAGE_SIZE + 1,
+            calculate_num_pages(tracks),
             author
         ))
     })
 }
 
-fn build_queue_page(tracks: &Vec<TrackHandle>, page: usize) -> String {
-    let mut description = String::new();
+fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
     let start_idx = PAGE_SIZE * page;
+    let queue: Vec<&TrackHandle> = tracks.iter().skip(start_idx + 1).take(PAGE_SIZE).collect();
 
-    for (i, t) in tracks.iter().skip(start_idx).take(PAGE_SIZE).enumerate() {
+    if queue.is_empty() {
+        return String::from("There's no songs up next!");
+    }
+
+    let mut description = String::new();
+
+    for (i, t) in queue.iter().enumerate() {
         let title = t.metadata().title.as_ref().unwrap();
         let url = t.metadata().source_url.as_ref().unwrap();
         let duration = get_human_readable_timestamp(t.metadata().duration.unwrap());
@@ -233,4 +166,9 @@ fn build_queue_page(tracks: &Vec<TrackHandle>, page: usize) -> String {
     }
 
     description
+}
+
+fn calculate_num_pages(tracks: &[TrackHandle]) -> usize {
+    let num_pages = ((tracks.len() as f64 - 1.0) / PAGE_SIZE as f64).ceil() as usize;
+    max(1, num_pages)
 }
