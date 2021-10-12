@@ -16,7 +16,8 @@ use serenity::{
 };
 use songbird::tracks::TrackHandle;
 
-const PAGE_SIZE: usize = 6;
+const EMBED_TIMEOUT: u64 = 60 * 60;
+const EMBED_PAGE_SIZE: usize = 6;
 
 #[command]
 async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
@@ -56,7 +57,7 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
         let mut current_page: usize = 0;
         let mut stream = message
             .await_reactions(&ctx)
-            .timeout(Duration::from_secs(60 * 60)) // Stop collecting reactions after an hour.
+            .timeout(Duration::from_secs(EMBED_TIMEOUT)) // Stop collecting reactions after an hour.
             .author_id(author_id) // Only collect reactions from the invoker.
             .await;
 
@@ -142,8 +143,12 @@ pub fn create_queue_embed<'a>(
 }
 
 fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
-    let start_idx = PAGE_SIZE * page;
-    let queue: Vec<&TrackHandle> = tracks.iter().skip(start_idx + 1).take(PAGE_SIZE).collect();
+    let start_idx = EMBED_PAGE_SIZE * page;
+    let queue: Vec<&TrackHandle> = tracks
+        .iter()
+        .skip(start_idx + 1)
+        .take(EMBED_PAGE_SIZE)
+        .collect();
 
     if queue.is_empty() {
         return String::from("There's no songs up next!");
@@ -169,6 +174,6 @@ fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
 }
 
 fn calculate_num_pages(tracks: &[TrackHandle]) -> usize {
-    let num_pages = ((tracks.len() as f64 - 1.0) / PAGE_SIZE as f64).ceil() as usize;
+    let num_pages = ((tracks.len() as f64 - 1.0) / EMBED_PAGE_SIZE as f64).ceil() as usize;
     max(1, num_pages)
 }
