@@ -16,13 +16,18 @@ use serenity::{
     model::channel::Message,
 };
 
-use songbird::{input::Restartable, Event};
+use songbird::{
+    input::Restartable,
+    tracks::{self, TrackHandle},
+    Event,
+};
 
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
 #[command]
 #[aliases("pt")]
 async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+    // Handle empty requests
     let url = match args.single::<String>() {
         Ok(url) => url,
         Err(_) => {
@@ -36,18 +41,88 @@ async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
         .await
         .expect("Could not retrieve Songbird voice client");
 
+    // Try to join a voice channel if not in one just yet
+    if manager.get(guild.id).is_none() {
+        let channel_id = guild
+            .voice_states
+            .get(&msg.author.id)
+            .and_then(|voice_state| voice_state.channel_id);
+
+        // Abort if it cannot find the author in any voice channels
+        if channel_id.is_none() {
+            send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await;
+            return Ok(());
+        } else {
+            let lock = manager.join(guild.id, channel_id.unwrap()).await.0;
+            let mut handler = lock.lock().await;
+
+            let action = IdleNotifier {
+                message: msg.clone(),
+                manager: manager.clone(),
+                count: Arc::new(AtomicUsize::new(1)),
+                http: ctx.http.clone(),
+            };
+
+            // handler.add_global_event(Event::Periodic(Duration::from_secs(1), None), action);
+        }
+    }
+
     if let Some(handler_lock) = manager.get(guild.id) {
         let mut handler = handler_lock.lock().await;
 
+        // Handle an URL
+        if url.clone().starts_with("http") {
+            // If is a playlist
+            if url.clone().contains("youtube.com/playlist?list=") {
+                match YoutubeDl::new(url).flat_playlist(true).run() {
+                    Ok(result) => {
+                        if let YoutubeDlOutput::Playlist(playlist) = result {
+                            let entries = playlist.entries.unwrap();
+
+                            for entry in entries {
+                                let uri = format!(
+                                    "https://www.youtube.com/watch?v={}",
+                                    entry.url.unwrap()
+                                );
+                                println!("Enqueued {}", uri);
+                                let source = Restartable::ytdl(uri, true).await?;
+                                handler.enqueue_source(source.into());
+                            }
+                        }
+                    }
+                    Err(_) => todo!("Show failed to fetch playlist message!"),
+                }
+            }
+            // Just a single song
+            else {
+                let source = Restartable::ytdl(url, true).await?;
+                handler.enqueue_source(source.into());
+            }
+        }
+        // Play via search
+        else {
+            println!("In play by search");
+            let query = args.rewind().remains().unwrap(); // Rewind and fetch the entire query
+            let source = Restartable::ytdl_search(query, false).await?;
+            handler.enqueue_source(source.into());
+            let mut queue = handler.queue().current_queue();
+            if queue.len() > 2 {
+                println!("In if statement");
+                let mut temp = queue.split_off(1);
+                temp.rotate_right(1);
+                queue.append(&mut temp);
+                println!("{:#?}", queue);
+            }
+        }
+
         let queue = handler.queue().current_queue();
 
-        // Check if there are any songs in the queue/currently playing
+        // If it's not going to be played immediately, notify it has been enqueued
         if handler.queue().len() > 1 {
-            //Shift current songs to the right and
-            queue.insert(1, 5);
             let last_track = queue.last().unwrap();
             let metadata = last_track.metadata().clone();
             let position = last_track.get_info().await?.position;
+
             msg.channel_id
                 .send_message(&ctx.http, |m| {
                     m.embed(|e| {

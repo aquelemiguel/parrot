@@ -1,10 +1,16 @@
-use serenity::{Client, async_trait, client::{Context, EventHandler}, framework::{standard::macros::group, StandardFramework}, model::{gateway::Ready, prelude::Activity}};
+use serenity::{
+    async_trait,
+    client::{Context, EventHandler},
+    framework::{standard::macros::group, StandardFramework},
+    model::{gateway::Ready, prelude::Activity},
+    Client,
+};
 use songbird::SerenityInit;
 use std::env;
 
 use parrot::commands::{
-    clear::*, leave::*, now_playing::*, pause::*, play::*, queue::*, repeat::*, resume::*, seek::*,
-    skip::*, stop::*, summon::*,
+    clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*, repeat::*,
+    resume::*, seek::*, skip::*, stop::*, summon::*,
 };
 
 #[group]
@@ -14,6 +20,7 @@ use parrot::commands::{
     now_playing,
     pause,
     play,
+    playtop,
     queue,
     repeat,
     resume,
