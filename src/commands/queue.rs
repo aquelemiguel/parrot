@@ -39,19 +39,14 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
             return Ok(());
         }
 
-        let reactions = vec!["⏪", "◀️", "▶️", "⏩"]
-            .iter()
-            .map(|r| ReactionType::Unicode(r.to_string()))
-            .collect::<Vec<ReactionType>>();
-
         let mut message = msg
             .channel_id
             .send_message(&ctx.http, |m| {
-                m.embed(|e| create_queue_embed(e, &author_username, &tracks, 0));
-                m.reactions(reactions.clone())
+                m.embed(|e| create_queue_embed(e, &author_username, &tracks, 0))
             })
             .await?;
 
+        reset_reactions(ctx, &message).await;
         drop(handler); // Release the handler for other commands to use it.
 
         let mut current_page: usize = 0;
@@ -67,14 +62,6 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
 
             // Refetch the queue in case it changed.
             let tracks = handler.queue().current_queue();
-
-            // Clean previous reactions.
-            message.delete_reactions(&ctx.http).await?;
-
-            for reaction in reactions.clone() {
-                message.react(&ctx.http, reaction).await?;
-            }
-
             let num_pages = calculate_num_pages(&tracks);
 
             current_page = match emoji.as_data().as_str() {
@@ -90,6 +77,9 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
                     m.embed(|e| create_queue_embed(e, &author_username, &tracks, current_page))
                 })
                 .await?;
+
+            // Cleanup message for next loop.
+            reset_reactions(ctx, &message).await;
         }
 
         // If it reaches this point, the stream has expired.
@@ -104,6 +94,19 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     }
 
     Ok(())
+}
+
+async fn reset_reactions(ctx: &Context, message: &Message) {
+    message.delete_reactions(&ctx.http).await.unwrap();
+
+    let reactions = vec!["⏪", "◀️", "▶️", "⏩"]
+        .iter()
+        .map(|r| ReactionType::Unicode(r.to_string()))
+        .collect::<Vec<ReactionType>>();
+
+    for reaction in reactions.clone() {
+        message.react(&ctx.http, reaction).await.unwrap();
+    }
 }
 
 pub fn create_queue_embed<'a>(
