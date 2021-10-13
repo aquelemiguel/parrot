@@ -19,7 +19,7 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
             send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
         }
         else if handler.queue().skip().is_ok() {
-            send_simple_message(&ctx.http, msg, "Skipped!").await;
+            send_simple_message(&ctx.http, msg, "⏭️ Skipped!").await;
         }
     } else {
         send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;

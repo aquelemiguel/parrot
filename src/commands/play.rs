@@ -1,10 +1,4 @@
-use std::{
-    sync::{atomic::AtomicUsize, Arc},
-    time::Duration,
-};
-
 use crate::{
-    events::idle_notifier::IdleNotifier,
     strings::{AUTHOR_NOT_FOUND, MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
     utils::{get_human_readable_timestamp, send_simple_message},
 };
@@ -16,7 +10,9 @@ use serenity::{
     model::channel::Message,
 };
 
-use songbird::{input::Restartable, Event};
+use songbird::{
+    input::Restartable,
+};
 
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
