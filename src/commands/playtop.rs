@@ -104,8 +104,6 @@ async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
                     if !is_playlist {
                         //rotate the vec to place last added song to the front and maintain order of songs
                         temp.rotate_right(1);
-                        //append to queue the new order
-                        queue.append(&mut temp);
                     } else {
                         //We subtract num of songs from temp length so that the first song of playlist is first
                         let rotate_num = temp.len() - num_of_songs;
