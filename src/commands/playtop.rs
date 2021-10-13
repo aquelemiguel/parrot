@@ -100,17 +100,17 @@ async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
             //Check if we need to move new item to top
             if handler.queue().len() > 2 {
                 handler.queue().modify_queue(|queue| {
-                    let mut temp = queue.split_off(1);
+                    let mut non_playing = queue.split_off(1);
                     if !is_playlist {
                         //rotate the vec to place last added song to the front and maintain order of songs
-                        temp.rotate_right(1);
+                        non_playing.rotate_right(1);
                     } else {
                         //We subtract num of songs from temp length so that the first song of playlist is first
-                        let rotate_num = temp.len() - num_of_songs;
-                        temp.rotate_left(rotate_num);
+                        let rotate_num = non_playing.len() - num_of_songs;
+                        non_playing.rotate_left(rotate_num);
                     }
                     //Append the new order to current queue which is just the current playing song
-                    queue.append(&mut temp);
+                    queue.append(&mut non_playing);
                 });
             }
 
