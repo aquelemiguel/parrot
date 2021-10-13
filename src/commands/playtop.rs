@@ -67,6 +67,10 @@ async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
         }
     }
 
+    //These are needed to place playlist songs at the top of queue if url is playlist
+    let mut is_playlist = false;
+    let mut num_of_songs = 0;
+
     if let Some(handler_lock) = manager.get(guild.id) {
         let mut handler = handler_lock.lock().await;
 
@@ -78,6 +82,8 @@ async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
                     Ok(result) => {
                         if let YoutubeDlOutput::Playlist(playlist) = result {
                             let entries = playlist.entries.unwrap();
+                            is_playlist = true;
+                            num_of_songs = entries.len();
 
                             for entry in entries {
                                 let uri = format!(
@@ -101,24 +107,27 @@ async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
         }
         // Play via search
         else {
-            println!("In play by search");
             let query = args.rewind().remains().unwrap(); // Rewind and fetch the entire query
             let source = Restartable::ytdl_search(query, false).await?;
             handler.enqueue_source(source.into());
-            let mut queue = handler.queue().current_queue();
-            if queue.len() > 2 {
-                println!("In if statement");
-                let mut temp = queue.split_off(1);
-                temp.rotate_right(1);
-                queue.append(&mut temp);
-                println!("{:#?}", queue);
-            }
         }
 
         let queue = handler.queue().current_queue();
 
         // If it's not going to be played immediately, notify it has been enqueued
         if handler.queue().len() > 1 {
+            //Check if we need to move new item to top
+            if handler.queue().len() > 2 {
+                handler.queue().modify_queue(|queue| {
+                    if !is_playlist {
+                        let mut temp = queue.split_off(1);
+                        temp.rotate_right(1);
+                        queue.append(&mut temp);
+                    } else {
+                        let mut temp = queue.split_off(1);
+                    }
+                });
+            }
             let last_track = queue.last().unwrap();
             let metadata = last_track.metadata().clone();
             let position = last_track.get_info().await?.position;
