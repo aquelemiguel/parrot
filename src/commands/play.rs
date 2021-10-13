@@ -50,16 +50,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             return Ok(());
         } else {
             let lock = manager.join(guild.id, channel_id.unwrap()).await.0;
-            let mut handler = lock.lock().await;
-
-            let action = IdleNotifier {
-                message: msg.clone(),
-                manager: manager.clone(),
-                count: Arc::new(AtomicUsize::new(1)),
-                http: ctx.http.clone(),
-            };
-
-            // handler.add_global_event(Event::Periodic(Duration::from_secs(1), None), action);
+            lock.lock().await;
         }
     }
 

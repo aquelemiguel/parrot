@@ -47,14 +47,7 @@ async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
             return Ok(());
         } else {
             let lock = manager.join(guild.id, channel_id.unwrap()).await.0;
-            let _handler = lock.lock().await;
-
-            let _action = IdleNotifier {
-                message: msg.clone(),
-                manager: manager.clone(),
-                count: Arc::new(AtomicUsize::new(1)),
-                http: ctx.http.clone(),
-            };
+            lock.lock().await;
         }
     }
 
