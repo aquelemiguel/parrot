@@ -8,13 +8,15 @@ use serenity::{
 
 use crate::{
     strings::{MISSING_TIMESTAMP, NO_VOICE_CONNECTION, TIMESTAMP_PARSING_FAILED},
-    utils::send_simple_message
+    utils::send_simple_message,
 };
 
 #[command]
 async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-    let manager = songbird::get(ctx).await.expect("Could not retrieve Songbird voice client");
+    let manager = songbird::get(ctx)
+        .await
+        .expect("Could not retrieve Songbird voice client");
 
     if let Some(call) = manager.get(guild_id) {
         let handler = call.lock().await;
@@ -37,14 +39,22 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
         let timestamp = minutes.unwrap() * 60 + seconds.unwrap();
 
-        let track = handler.queue().current().expect("Failed to fetch handle for current track");
-        track.seek_time(Duration::from_secs(timestamp)).expect("Failed to seek on track");
+        let track = handler
+            .queue()
+            .current()
+            .expect("Failed to fetch handle for current track");
+        track
+            .seek_time(Duration::from_secs(timestamp))
+            .expect("Failed to seek on track");
 
-        send_simple_message(&ctx.http, msg, &format!("Seeked current track to **{}**!", seek_time)).await;
-    }
-    else {
+        send_simple_message(
+            &ctx.http,
+            msg,
+            &format!("Seeked current track to **{}**!", seek_time),
+        )
+        .await;
+    } else {
         send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
-
     }
 
     Ok(())

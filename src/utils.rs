@@ -2,9 +2,12 @@ use serenity::{http::Http, model::channel::Message, utils::Colour};
 use std::{sync::Arc, time::Duration};
 
 pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> Message {
-    msg.channel_id.send_message(http, |m| {
-        m.embed(|e| e.description(content).colour(Colour::ORANGE))
-    }).await.expect("Unable to send message")
+    msg.channel_id
+        .send_message(http, |m| {
+            m.embed(|e| e.description(content).colour(Colour::ORANGE))
+        })
+        .await
+        .expect("Unable to send message")
 }
 
 pub fn get_human_readable_timestamp(duration: Duration) -> String {

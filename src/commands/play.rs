@@ -1,6 +1,6 @@
 use crate::{
     strings::{AUTHOR_NOT_FOUND, MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
-    utils::{get_human_readable_timestamp, send_simple_message}
+    utils::{get_human_readable_timestamp, send_simple_message},
 };
 
 use serenity::{
@@ -10,9 +10,7 @@ use serenity::{
     model::channel::Message,
 };
 
-use songbird::{
-    input::Restartable,
-};
+use songbird::input::Restartable;
 
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
@@ -29,19 +27,22 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     };
 
     let guild = msg.guild(&ctx.cache).await.unwrap();
-    let manager = songbird::get(ctx).await.expect("Could not retrieve Songbird voice client");
+    let manager = songbird::get(ctx)
+        .await
+        .expect("Could not retrieve Songbird voice client");
 
     // Try to join a voice channel if not in one just yet
     if manager.get(guild.id).is_none() {
-        let channel_id = guild.voice_states.get(&msg.author.id)
+        let channel_id = guild
+            .voice_states
+            .get(&msg.author.id)
             .and_then(|voice_state| voice_state.channel_id);
 
         // Abort if it cannot find the author in any voice channels
         if channel_id.is_none() {
             send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await;
             return Ok(());
-        }
-        else {
+        } else {
             let lock = manager.join(guild.id, channel_id.unwrap()).await.0;
             lock.lock().await;
         }

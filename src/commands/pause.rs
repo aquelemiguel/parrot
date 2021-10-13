@@ -4,7 +4,10 @@ use serenity::{
     model::channel::Message,
 };
 
-use crate::{strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY}, utils::send_simple_message};
+use crate::{
+    strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    utils::send_simple_message,
+};
 
 #[command]
 async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
@@ -16,8 +19,7 @@ async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
 
         if handler.queue().is_empty() {
             send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
-        }
-        else if handler.queue().pause().is_ok() {
+        } else if handler.queue().pause().is_ok() {
             send_simple_message(&ctx.http, msg, "Paused!").await;
         }
     } else {
