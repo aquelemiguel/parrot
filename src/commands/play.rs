@@ -1,6 +1,6 @@
 use crate::{
     strings::{AUTHOR_NOT_FOUND, MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
-    utils::{get_human_readable_timestamp, send_simple_message}
+    utils::{get_human_readable_timestamp, send_simple_message},
 };
 
 use serenity::{
@@ -10,9 +10,7 @@ use serenity::{
     model::channel::Message,
 };
 
-use songbird::{
-    input::Restartable,
-};
+use songbird::input::Restartable;
 
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
@@ -29,27 +27,27 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     };
 
     let guild = msg.guild(&ctx.cache).await.unwrap();
-    let manager = songbird::get(ctx).await.expect("Could not retrieve Songbird voice client");
+    let manager = songbird::get(ctx)
+        .await
+        .expect("Could not retrieve Songbird voice client");
 
     // Try to join a voice channel if not in one just yet
     if manager.get(guild.id).is_none() {
-        let channel_id = guild.voice_states.get(&msg.author.id)
+        let channel_id = guild
+            .voice_states
+            .get(&msg.author.id)
             .and_then(|voice_state| voice_state.channel_id);
 
         // Abort if it cannot find the author in any voice channels
         if channel_id.is_none() {
             send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await;
             return Ok(());
-        }
-        else {
-            let lock = manager.join(guild.id, channel_id.unwrap()).await.0;
-            lock.lock().await;
+        } else {
+            manager.join(guild.id, channel_id.unwrap()).await.0;
         }
     }
 
-    if let Some(handler_lock) = manager.get(guild.id) {
-        let mut handler = handler_lock.lock().await;
-
+    if let Some(call) = manager.get(guild.id) {
         // Handle an URL
         if url.clone().starts_with("http") {
             // If is a playlist
@@ -64,8 +62,8 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                                     "https://www.youtube.com/watch?v={}",
                                     entry.url.unwrap()
                                 );
-                                println!("Enqueued {}", uri);
                                 let source = Restartable::ytdl(uri, true).await?;
+                                let mut handler = call.lock().await;
                                 handler.enqueue_source(source.into());
                             }
                         }
@@ -76,6 +74,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
             // Just a single song
             else {
                 let source = Restartable::ytdl(url, true).await?;
+                let mut handler = call.lock().await;
                 handler.enqueue_source(source.into());
             }
         }
@@ -83,13 +82,16 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         else {
             let query = args.rewind().remains().unwrap(); // Rewind and fetch the entire query
             let source = Restartable::ytdl_search(query, false).await?;
+            let mut handler = call.lock().await;
             handler.enqueue_source(source.into());
         }
 
+        let handler = call.lock().await;
         let queue = handler.queue().current_queue();
+        drop(handler);
 
         // If it's not going to be played immediately, notify it has been enqueued
-        if handler.queue().len() > 1 {
+        if queue.len() > 1 {
             let last_track = queue.last().unwrap();
             let metadata = last_track.metadata().clone();
             let position = last_track.get_info().await?.position;
