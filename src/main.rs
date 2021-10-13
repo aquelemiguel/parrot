@@ -9,8 +9,8 @@ use songbird::SerenityInit;
 use std::env;
 
 use parrot::commands::{
-    clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*, repeat::*,
-    resume::*, seek::*, skip::*, stop::*, summon::*,
+    clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*, remove::*,
+    repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
 };
 
 #[group]
