@@ -134,14 +134,18 @@ async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
                     queue.append(&mut temp);
                 });
             }
-            let last_track = queue.last().unwrap();
-            let metadata = last_track.metadata().clone();
-            let position = last_track.get_info().await?.position;
+
+            //We refetch queue to get latest changes
+            let queue = handler.queue().current_queue();
+
+            let top_track = &queue[1];
+            let metadata = top_track.metadata().clone();
+            let position = top_track.get_info().await?.position;
 
             msg.channel_id
                 .send_message(&ctx.http, |m| {
                     m.embed(|e| {
-                        e.title("Added to queue");
+                        e.title("Added to top of queue");
                         e.thumbnail(metadata.thumbnail.unwrap());
 
                         e.description(format!(
