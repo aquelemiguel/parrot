@@ -15,8 +15,8 @@ use songbird::SerenityInit;
 use std::env;
 
 use parrot::commands::{
-    clear::*, leave::*, now_playing::*, pause::*, play::*, queue::*, repeat::*, resume::*, seek::*,
-    skip::*, stop::*, summon::*,
+    clear::*, leave::*, now_playing::*, pause::*, play::*, queue::*, remove::*, repeat::*,
+    resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
 };
 
 #[group]
@@ -30,9 +30,11 @@ use parrot::commands::{
     repeat,
     resume,
     seek,
+    shuffle,
     skip,
     stop,
-    summon
+    summon,
+    remove
 )]
 struct General;
 
@@ -41,7 +43,7 @@ struct Handler;
 #[async_trait]
 impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
-        println!("{} is connected!", ready.user.name);
+        println!("🦜 {} is connected!", ready.user.name);
         ctx.set_activity(Activity::listening("!play")).await;
     }
 
