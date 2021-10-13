@@ -7,6 +7,8 @@ pub mod queue;
 pub mod repeat;
 pub mod resume;
 pub mod seek;
+pub mod shuffle;
 pub mod skip;
 pub mod stop;
 pub mod summon;
+pub mod remove;
