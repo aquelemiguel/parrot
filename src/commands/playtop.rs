@@ -10,8 +10,9 @@ use serenity::{
     model::channel::Message,
 };
 
-use songbird::input::Restartable;
+use songbird::{input::Restartable, Call};
 
+use tokio::sync::MutexGuard;
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
 #[command]
@@ -97,22 +98,8 @@ async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
 
         // If it's not going to be played immediately, notify it has been enqueued
         if handler.queue().len() > 1 {
-            //Check if we need to move new item to top
-            if handler.queue().len() > 2 {
-                handler.queue().modify_queue(|queue| {
-                    let mut non_playing = queue.split_off(1);
-                    if !is_playlist {
-                        //rotate the vec to place last added song to the front and maintain order of songs
-                        non_playing.rotate_right(1);
-                    } else {
-                        //We subtract num of songs from temp length so that the first song of playlist is first
-                        let rotate_num = non_playing.len() - num_of_songs;
-                        non_playing.rotate_left(rotate_num);
-                    }
-                    //Append the new order to current queue which is just the current playing song
-                    queue.append(&mut non_playing);
-                });
-            }
+            //Reorders the queue if needed
+            reorder_queue(&handler, is_playlist, num_of_songs);
 
             //We refetch queue to get latest changes
             let queue = handler.queue().current_queue();
@@ -186,4 +173,23 @@ async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult 
     }
 
     Ok(())
+}
+
+fn reorder_queue(handler: &MutexGuard<Call>, is_playlist: bool, num_of_songs: usize) {
+    //Check if we need to move new item to top
+    if handler.queue().len() > 2 {
+        handler.queue().modify_queue(|queue| {
+            let mut non_playing = queue.split_off(1);
+            if !is_playlist {
+                //rotate the vec to place last added song to the front and maintain order of songs
+                non_playing.rotate_right(1);
+            } else {
+                //We subtract num of songs from temp length so that the first song of playlist is first
+                let rotate_num = non_playing.len() - num_of_songs;
+                non_playing.rotate_left(rotate_num);
+            }
+            //Append the new order to current queue which is just the current playing song
+            queue.append(&mut non_playing);
+        });
+    }
 }
