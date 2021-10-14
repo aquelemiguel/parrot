@@ -10,15 +10,14 @@ use serenity::{
     model::channel::Message,
 };
 
-use songbird::{
-    input::Restartable,
-};
+use songbird::{input::Restartable, Call};
 
+use tokio::sync::MutexGuard;
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
 #[command]
-#[aliases("p")]
-async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
+#[aliases("pt")]
+async fn playtop(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     // Handle empty requests
     let url = match args.single::<String>() {
         Ok(url) => url,
@@ -50,6 +49,10 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     }
 
+    //These are needed to place playlist songs at the top of queue if url is playlist
+    let mut is_playlist = false;
+    let mut num_of_songs = 0;
+
     if let Some(handler_lock) = manager.get(guild.id) {
         let mut handler = handler_lock.lock().await;
 
@@ -61,6 +64,8 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
                     Ok(result) => {
                         if let YoutubeDlOutput::Playlist(playlist) = result {
                             let entries = playlist.entries.unwrap();
+                            is_playlist = true;
+                            num_of_songs = entries.len();
 
                             for entry in entries {
                                 let uri = format!(
@@ -93,14 +98,20 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
         // If it's not going to be played immediately, notify it has been enqueued
         if handler.queue().len() > 1 {
-            let last_track = queue.last().unwrap();
-            let metadata = last_track.metadata().clone();
-            let position = last_track.get_info().await?.position;
+            //Reorders the queue if needed
+            reorder_queue(&handler, is_playlist, num_of_songs);
+
+            //We refetch queue to get latest changes
+            let queue = handler.queue().current_queue();
+
+            let top_track = &queue[1];
+            let metadata = top_track.metadata().clone();
+            let position = top_track.get_info().await?.position;
 
             msg.channel_id
                 .send_message(&ctx.http, |m| {
                     m.embed(|e| {
-                        e.title("Added to queue");
+                        e.title("Added to top of queue");
                         e.thumbnail(metadata.thumbnail.unwrap());
 
                         e.description(format!(
@@ -162,4 +173,23 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     }
 
     Ok(())
+}
+
+fn reorder_queue(handler: &MutexGuard<Call>, is_playlist: bool, num_of_songs: usize) {
+    //Check if we need to move new item to top
+    if handler.queue().len() > 2 {
+        handler.queue().modify_queue(|queue| {
+            let mut non_playing = queue.split_off(1);
+            if !is_playlist {
+                //rotate the vec to place last added song to the front and maintain order of songs
+                non_playing.rotate_right(1);
+            } else {
+                //We subtract num of songs from temp length so that the first song of playlist is first
+                let rotate_num = non_playing.len() - num_of_songs;
+                non_playing.rotate_left(rotate_num);
+            }
+            //Append the new order to current queue which is just the current playing song
+            queue.append(&mut non_playing);
+        });
+    }
 }
