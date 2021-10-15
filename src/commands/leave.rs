@@ -19,6 +19,8 @@ async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
             .leave()
             .await
             .expect("Failed to leave voice channel");
+        drop(handler);
+
         send_simple_message(&ctx.http, msg, "See you soon!").await;
     } else {
         send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;

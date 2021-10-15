@@ -21,6 +21,8 @@ async fn now_playing(ctx: &Context, msg: &Message) -> CommandResult {
         let handler = call.lock().await;
 
         if let Some(track) = handler.queue().current() {
+            drop(handler);
+
             let position = track.get_info().await?.position;
             let duration = track.metadata().duration.unwrap();
             let thumbnail = track.metadata().thumbnail.as_ref().unwrap();

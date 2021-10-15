@@ -21,9 +21,11 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
         let queue = handler.queue();
 
         if queue.is_empty() {
+            drop(handler);
             send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
         } else {
             queue.stop();
+            drop(handler);
             send_simple_message(&ctx.http, msg, "Stopped!").await;
         }
     } else {

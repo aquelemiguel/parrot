@@ -19,8 +19,6 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         .expect("Could not retrieve Songbird voice client");
 
     if let Some(call) = manager.get(guild_id) {
-        let handler = call.lock().await;
-
         let seek_time = match args.single::<String>() {
             Ok(t) => t,
             Err(_) => {
@@ -39,10 +37,13 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
         let timestamp = minutes.unwrap() * 60 + seconds.unwrap();
 
+        let handler = call.lock().await;
         let track = handler
             .queue()
             .current()
             .expect("Failed to fetch handle for current track");
+        drop(handler);
+
         track
             .seek_time(Duration::from_secs(timestamp))
             .expect("Failed to seek on track");

@@ -20,6 +20,7 @@ async fn repeat(ctx: &Context, msg: &Message) -> CommandResult {
             .queue()
             .current()
             .expect("Failed to fetch handle for current track");
+        drop(handler);
 
         if track.get_info().await?.loops == LoopState::Infinite {
             if track.disable_loop().is_ok() {

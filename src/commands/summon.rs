@@ -29,8 +29,7 @@ async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
         let manager = songbird::get(ctx)
             .await
             .expect("Could not retrieve Songbird voice client");
-        let call = manager.join(guild.id, channel_id).await.0;
-        call.lock().await;
+        manager.join(guild.id, channel_id).await.0;
     } else {
         send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await;
     }
