@@ -32,6 +32,7 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     if let Some(call) = manager.get(guild_id) {
         let handler = call.lock().await;
         let tracks = handler.queue().current_queue();
+        drop(handler); // Release the handler for other commands to use it.
 
         // If the queue is empty, end the command.
         if tracks.is_empty() {
@@ -47,7 +48,6 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
             .await?;
 
         reset_reactions(ctx, &message).await;
-        drop(handler); // Release the handler for other commands to use it.
 
         let mut current_page: usize = 0;
         let mut stream = message
@@ -57,11 +57,13 @@ async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
             .await;
 
         while let Some(reaction) = stream.next().await {
-            let handler = call.lock().await;
             let emoji = &reaction.as_inner_ref().emoji;
 
             // Refetch the queue in case it changed.
+            let handler = call.lock().await;
             let tracks = handler.queue().current_queue();
+            drop(handler);
+
             let num_pages = calculate_num_pages(&tracks);
 
             current_page = match emoji.as_data().as_str() {

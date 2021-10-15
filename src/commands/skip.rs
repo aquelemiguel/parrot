@@ -4,21 +4,28 @@ use serenity::{
     model::channel::Message,
 };
 
-use crate::{strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY}, utils::send_simple_message};
+use crate::{
+    strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    utils::send_simple_message,
+};
 
 #[command]
 #[aliases("s")]
 async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-    let manager = songbird::get(ctx).await.expect("Could not retrieve Songbird voice client");
+    let manager = songbird::get(ctx)
+        .await
+        .expect("Could not retrieve Songbird voice client");
 
     if let Some(call) = manager.get(guild_id) {
         let handler = call.lock().await;
+        let queue = handler.queue();
 
-        if handler.queue().is_empty() {
+        if queue.is_empty() {
+            drop(handler);
             send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
-        }
-        else if handler.queue().skip().is_ok() {
+        } else if queue.skip().is_ok() {
+            drop(handler);
             send_simple_message(&ctx.http, msg, "⏭️ Skipped!").await;
         }
     } else {
