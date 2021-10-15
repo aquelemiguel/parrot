@@ -1,11 +1,9 @@
 use serenity::{
     async_trait,
-    builder::EditMember,
     client::{Context, EventHandler},
     framework::{standard::macros::group, StandardFramework},
     model::{
         gateway::Ready,
-        guild::{GuildStatus, Member},
         id::GuildId,
         prelude::{Activity, VoiceState},
     },
