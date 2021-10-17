@@ -1,9 +1,6 @@
 use std::env;
 
-use crate::{
-    strings::MISSING_PLAY_QUERY,
-    utils::{get_full_username, send_simple_message},
-};
+use crate::{strings::MISSING_PLAY_QUERY, utils::send_simple_message};
 use reqwest::header::AUTHORIZATION;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -33,6 +30,7 @@ enum GeniusChild {
 struct GeniusExplanation {
     text: String,
     thumbnail: String,
+    page_url: String,
     song: String,
 }
 
@@ -53,15 +51,13 @@ async fn explain(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
                 e.title(format!("Explaining {}", explanation.song));
+                e.url(explanation.page_url);
                 e.thumbnail(explanation.thumbnail);
                 e.description(explanation.text);
 
-                let author_username = get_full_username(&msg.author);
                 e.footer(|f| {
-                    f.text(format!(
-                        "Requested by {} • Powered by Genius",
-                        author_username
-                    ))
+                    f.text("Powered by Genius");
+                    f.icon_url("https://bit.ly/3BOic6A")
                 })
             })
         })
@@ -106,6 +102,8 @@ async fn get_genius_song_explanation(id: i64) -> GeniusExplanation {
         .unwrap()
         .to_string();
 
+    let page_url = res["response"]["song"]["url"].as_str().unwrap().to_string();
+
     let dom = res["response"]["song"]["description"]["dom"].clone();
     let dom: GeniusTag = serde_json::from_value(dom).unwrap();
 
@@ -115,6 +113,7 @@ async fn get_genius_song_explanation(id: i64) -> GeniusExplanation {
     GeniusExplanation {
         text,
         thumbnail,
+        page_url,
         song: format!("\"{}\" by {}", song_title, artist),
     }
 }
