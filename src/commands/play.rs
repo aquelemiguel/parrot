@@ -80,7 +80,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
         // Play via search
         else {
-            let query = args.rewind().remains().unwrap(); // Rewind and fetch the entire query
+            let query = args.rewind().rest(); // Rewind and fetch the entire query
             let source = Restartable::ytdl_search(query, false).await?;
             let mut handler = call.lock().await;
             handler.enqueue_source(source.into());

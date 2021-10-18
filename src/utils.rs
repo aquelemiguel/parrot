@@ -5,13 +5,13 @@ use serenity::{
 };
 use std::{sync::Arc, time::Duration};
 
-pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> Message {
+pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) {
     msg.channel_id
         .send_message(http, |m| {
             m.embed(|e| e.description(format!("**{}**", content)).color(Color::RED))
         })
         .await
-        .expect("Unable to send message")
+        .expect("Unable to send message");
 }
 
 pub fn get_human_readable_timestamp(duration: Duration) -> String {

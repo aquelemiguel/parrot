@@ -25,7 +25,7 @@ async fn shuffle(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
             )
         });
         drop(handler);
-        send_simple_message(&ctx.http, msg, &format!("Shuffled successfully")).await;
+        send_simple_message(&ctx.http, msg, "Shuffled successfully").await;
     } else {
         send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
     }
