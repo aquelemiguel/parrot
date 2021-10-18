@@ -10,7 +10,7 @@ use serenity::{
     model::channel::Message,
 };
 
-const GENIUS_ENDPOINT_BASE: &str = "https://api.genius.com/";
+const GENIUS_BASE_ENDPOINT: &str = "https://api.genius.com/";
 
 #[derive(Serialize, Deserialize)]
 struct GeniusTag {
@@ -108,7 +108,7 @@ async fn get_genius_song_explanation(id: i64) -> GeniusExplanation {
     let dom: GeniusTag = serde_json::from_value(dom).unwrap();
 
     let mut text = String::new();
-    depth_first_search(&dom, &mut text);
+    traverse_dom_tree(&dom, &mut text);
 
     GeniusExplanation {
         text,
@@ -118,7 +118,8 @@ async fn get_genius_song_explanation(id: i64) -> GeniusExplanation {
     }
 }
 
-fn depth_first_search(tree: &GeniusTag, desc: &mut String) {
+/// A DFS (depth first search) implementation for traversing a song description's DOM tree.
+fn traverse_dom_tree(tree: &GeniusTag, desc: &mut String) {
     for child in tree.children.iter() {
         match child {
             GeniusChild::PlainText(text) => {
@@ -128,14 +129,14 @@ fn depth_first_search(tree: &GeniusTag, desc: &mut String) {
                     desc.push_str(text);
                 }
             }
-            GeniusChild::Child(child) => depth_first_search(child, desc),
+            GeniusChild::Child(child) => traverse_dom_tree(child, desc),
         }
     }
 }
 
 async fn send_genius_request(resource: String) -> Result<Value, reqwest::Error> {
     let client = reqwest::Client::new();
-    let endpoint = format!("{}{}", GENIUS_ENDPOINT_BASE, resource);
+    let endpoint = format!("{}{}", GENIUS_BASE_ENDPOINT, resource);
     let auth_header = format!("Bearer {}", env::var("GENIUS_TOKEN").unwrap());
 
     client
