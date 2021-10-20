@@ -14,7 +14,6 @@ COPY Cargo.toml ./
 RUN cargo build --release
 
 COPY . .
-RUN rm ./target/release/deps/parrot*
 RUN cargo build --release
 
 # Our final base
