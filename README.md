@@ -12,8 +12,6 @@ docker build . -t parrot
 docker run -d parrot
 ```
 
-We may, in the future, publish the image on a Container registry, like GitHub's one.
-
 ## Development
 
 ### Linux / MacOS
