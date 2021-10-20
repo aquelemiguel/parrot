@@ -1,4 +1,4 @@
-FROM rust:slim-buster as build
+FROM rust:slim-bullseye as build
 
 RUN apt-get update && apt-get install -y \
     build-essential autoconf automake libtool m4 \
@@ -16,7 +16,7 @@ COPY . .
 RUN cargo build --release
 
 # Our final base
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 
 RUN apt-get update && apt-get install -y ffmpeg youtube-dl
 

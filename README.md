@@ -38,6 +38,6 @@ pip install youtube_dl
 Within the project folder, simply run the following:
 
 ```shell
-docker build . -t parrot
+docker build -t parrot .
 docker run -d --env-file .env parrot
 ```
