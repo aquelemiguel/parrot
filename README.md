@@ -4,7 +4,7 @@ A hassle-free, highly performant and fast evolving Discord music bot built with 
 ## Deployment
 
 ### Usage
-Just [create a bot account](https://discordpy.readthedocs.io/en/stable/discord.html), copy its token into the `DISCORD_TOKEN` environment variable within `.env`.
+Just [create a bot account](https://github.com/aquelemiguel/parrot/wiki/Create-Your-Discord-Bot), copy its token into the `DISCORD_TOKEN` environment variable within `.env`.
 
 ### Docker
 
