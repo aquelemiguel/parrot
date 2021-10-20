@@ -1,7 +1,18 @@
 # 🦜
 A hassle-free, highly performant and fast evolving Discord music bot built with Serenity in Rust.
 
-## Dependencies
+## Deployment
+
+### Docker
+
+For the hassle free deployment, we suggest using the following:
+
+```shell
+docker build . -t parrot
+docker run -d parrot
+```
+
+## Development
 
 ### Linux / MacOS
 The command below installs a C compiler, GNU autotools, Opus (Discord's audio codec), youtube-dl and FFmpeg.
