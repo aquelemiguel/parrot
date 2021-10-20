@@ -1,4 +1,4 @@
-FROM rust:slim as build
+FROM rust:slim-buster as build
 
 RUN apt-get update && apt-get install -y \
     build-essential autoconf automake libtool m4 \
