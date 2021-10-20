@@ -2,8 +2,7 @@ FROM rust:slim-buster as build
 
 RUN apt-get update && apt-get install -y \
     build-essential autoconf automake libtool m4 \
-    libssl-dev pkg-config \
-    && rm -rf /var/lib/apt/lists/*
+    libssl-dev pkg-config
 
 WORKDIR "/parrot"
 
