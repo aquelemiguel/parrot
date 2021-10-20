@@ -23,7 +23,6 @@ RUN apt-get update && apt-get install -y ffmpeg youtube-dl
 
 # Copy the build artifact from the build stage
 COPY --from=build /parrot/target/release/parrot .
-COPY --from=build /parrot/.env .
 
 # Run parrot's binary
 CMD ["./parrot"]
