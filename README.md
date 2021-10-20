@@ -11,7 +11,7 @@ Just [create a bot account](https://discordpy.readthedocs.io/en/stable/discord.h
 For the hassle free deployment:
 
 ```shell
-docker run -d -v $(pwd)/.env:/.env ghcr.io/aquelemiguel/parrot:latest
+docker run -d --env-file .env ghcr.io/aquelemiguel/parrot:latest
 ```
 
 ## Development
@@ -39,5 +39,5 @@ Within the project folder, simply run the following:
 
 ```shell
 docker build . -t parrot
-docker run -d -v $(pwd)/.env:/.env parrot
+docker run -d --env-file .env parrot
 ```
