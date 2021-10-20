@@ -5,10 +5,10 @@ RUN apt-get update && apt-get install -y \
     libssl-dev pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-RUN USER=root cargo new --bin parrot
 WORKDIR "/parrot"
 
 # Cache cargo build dependencies by creating a dummy source
+RUN mkdir src
 RUN echo "fn main() {}" > src/main.rs
 COPY Cargo.toml ./
 RUN cargo build --release
