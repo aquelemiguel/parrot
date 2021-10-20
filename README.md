@@ -3,16 +3,20 @@ A hassle-free, highly performant and fast evolving Discord music bot built with 
 
 ## Deployment
 
+### Usage
+Just [create a bot account](https://discordpy.readthedocs.io/en/stable/discord.html), copy its token into the `DISCORD_TOKEN` environment variable within `.env`.
+
 ### Docker
 
-For the hassle free deployment, we suggest using the following:
+For the hassle free deployment:
 
 ```shell
-docker build . -t parrot
-docker run -d parrot
+docker run -d -v $(pwd)/.env:/.env ghcr.io/aquelemiguel/parrot:latest
 ```
 
 ## Development
+
+After installing the requirements below, simply run `cargo run`.
 
 ### Linux / MacOS
 The command below installs a C compiler, GNU autotools, Opus (Discord's audio codec), youtube-dl and FFmpeg.
@@ -29,5 +33,11 @@ You will only need to download [FFmpeg](https://ffmpeg.org/download.html), and i
 pip install youtube_dl
 ```
 
-## Usage
-Just [create a bot account](https://discordpy.readthedocs.io/en/stable/discord.html), copy its token into a `DISCORD_TOKEN` environment variable and `cargo run`.
+### Docker
+
+Within the project folder, simply run the following:
+
+```shell
+docker build . -t parrot
+docker run -d -v $(pwd)/.env:/.env parrot
+```
