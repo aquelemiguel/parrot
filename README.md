@@ -20,11 +20,6 @@ docker run -d --env-file .env ghcr.io/aquelemiguel/parrot:latest
 
 After installing the requirements below, simply run `cargo run`.
 
-## Testing
-
-Tests are available inside the `src/tests` folder. They can be ran by running `cargo test`. It's recommended that you run the tests before submitting you Pull Request.
-Increasing the test coverage is also welcome.
-
 ### Linux / MacOS
 The command below installs a C compiler, GNU autotools, Opus (Discord's audio codec), youtube-dl, FFmpeg and the SSL library for development.
 
@@ -49,6 +44,10 @@ If you are using WSL, you should follow the [Linux/MacOS](#linux--macos) guide. 
 apt install pkg-config
 ```
 
+## Testing
+
+Tests are available inside the `src/tests` folder. They can be ran by running `cargo test`. It's recommended that you run the tests before submitting you Pull Request.
+Increasing the test coverage is also welcome.
 
 ### Docker
 
