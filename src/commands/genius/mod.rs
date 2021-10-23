@@ -1,4 +1,5 @@
 use html2md::parse_html;
+use regex::{Regex, RegexBuilder};
 use reqwest::header::{AUTHORIZATION, COOKIE};
 use reqwest::Error;
 use scraper::{Html, Selector};
@@ -33,7 +34,20 @@ pub async fn genius_description(id: i64) -> Result<GeniusExplanation, Error> {
     let artist = song["primary_artist"]["name"].as_str().unwrap().to_string();
     let thumbnail = song["song_art_image_url"].as_str().unwrap().to_string();
     let page_url = song["url"].as_str().unwrap().to_string();
-    let text = parse_html(song["description"]["html"].as_str().unwrap());
+
+    let mut text = parse_html(song["description"]["html"].as_str().unwrap());
+
+    // Fix weird triple greater-than signs
+    let re = Regex::new(r">\n>\n?").unwrap();
+    text = re.replace_all(&text, "").to_string();
+
+    // Remove occasional <img> tags since they're not rendered
+    let re = Regex::new(r"<img.* />").unwrap();
+    text = re.replace_all(&text, "").to_string();
+
+    // Remove dividers because they do not work on embeds
+    let re = Regex::new(r"\n?---\n?").unwrap();
+    text = re.replace_all(&text, "").to_string();
 
     Ok(GeniusExplanation {
         text,
@@ -55,11 +69,26 @@ pub async fn genius_lyrics(url: &str) -> Result<String, Error> {
     let fragment = Html::parse_document(&document);
     let selector = Selector::parse(".Lyrics__Container-sc-1ynbvzw-10").unwrap();
 
-    let lyrics = fragment
+    let mut lyrics = fragment
         .select(&selector)
         .map(|elem| parse_html(&elem.html()))
         .collect::<Vec<String>>()
-        .join("");
+        .join("\n\n");
+
+    // Bolden sections between brackets (e.g. [Verse 1])
+    let re = Regex::new(r"(?P<section>\[.+\][^\(])").unwrap();
+
+    let mut sections = re
+        .captures_iter(&lyrics)
+        .map(|caps| caps["section"].to_string())
+        .collect::<Vec<String>>();
+
+    sections.sort();
+    sections.dedup();
+
+    for section in sections.iter() {
+        lyrics = lyrics.replace(section, &format!("**{}**", section));
+    }
 
     Ok(lyrics)
 }
