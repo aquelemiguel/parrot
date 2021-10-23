@@ -28,7 +28,7 @@ The command below installs a C compiler, GNU autotools, Opus (Discord's audio co
 apt install build-essential autoconf automake libtool m4 libopus-dev youtube-dl ffmpeg libssl-dev
 ```
 
-Furthermore, you must install rust and cargo. Follow the instructions on https://rustup.rs/
+Furthermore, you must install Rust and its package manager, `cargo`. Follow the instructions on https://rustup.rs/.
 Don't forget to close and re-open your terminal after installing so the `PATH` is updated.
 ### Windows
 If you are using the MSVC toolchain, a prebuilt DLL for Opus is already provided for you.  
