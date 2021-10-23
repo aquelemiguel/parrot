@@ -46,7 +46,7 @@ apt install pkg-config
 
 ## Testing
 
-Tests are available inside the `src/tests` folder. They can be ran by running `cargo test`. It's recommended that you run the tests before submitting you Pull Request.
+Tests are available inside the `src/tests` folder. They can be ran via `cargo test`. It's recommended that you run the tests before submitting your Pull Request.
 Increasing the test coverage is also welcome.
 
 ### Docker
