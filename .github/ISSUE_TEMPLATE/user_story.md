@@ -11,10 +11,6 @@ Why are we implementing this feature and what are the key concepts someone must 
 
 What the feature actually is, describes in detail the new functionality.
 
-## Implementation
-
-Implementation ideas and suggestions to kickstart discussion.
-
 ## Reference
 
 Links that might be required to complement some of the information above, which might include documentation or other user stories.
