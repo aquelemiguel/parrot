@@ -6,8 +6,6 @@ A hassle-free, highly performant and fast evolving Discord music bot built with 
 ### Usage
 Just [create a bot account](https://github.com/aquelemiguel/parrot/wiki/Create-Your-Discord-Bot), copy its token into the `DISCORD_TOKEN` environment variable within `.env`.
 
-Make sure you copy the bot's token, not the application's public key or its client secret!
-
 ### Docker
 
 For the hassle free deployment:
@@ -31,14 +29,14 @@ apt install build-essential autoconf automake libtool m4 libopus-dev youtube-dl 
 Furthermore, you must install Rust and its package manager, `cargo`. Follow the instructions on https://rustup.rs/.
 Don't forget to close and re-open your terminal after installing so the `PATH` is updated.
 ### Windows
+
 If you are using the MSVC toolchain, a prebuilt DLL for Opus is already provided for you.  
 You will only need to download [FFmpeg](https://ffmpeg.org/download.html), and install youtube-dl which can be done through Python's package manager, pip.
 ```shell
 pip install youtube_dl
 ```
 
-### Windows Subsytem for Linux (WSL)
-If you are using WSL, you should follow the [Linux/MacOS](#linux--macos) guide. `cargo` may, however, invite you to install `pkg-config`, which you may do by running:
+If you are using Windows Subsystem for Linux (WSL), you should follow the [Linux/MacOS](#linux--macos) guide, and, in addition to the other required packages, install pkg-config, which you may do by running:
 
 ```shell
 apt install pkg-config
