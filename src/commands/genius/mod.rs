@@ -10,6 +10,7 @@ pub mod explain;
 pub mod lyrics;
 
 const GENIUS_BASE_ENDPOINT: &str = "https://api.genius.com/";
+const LYRICS_SELECTOR: &str = ".Lyrics__Container-sc-1ynbvzw-10";
 
 pub async fn genius_search(query: &str) -> Option<Vec<Value>> {
     let res = send_genius_request(format!("search?q={}", query))
@@ -24,19 +25,19 @@ pub async fn genius_song(id: i64) -> Result<Value, Error> {
     Ok(res["response"]["song"].clone())
 }
 
-pub async fn genius_description(song: &Value) -> Result<String, Error> {
+pub async fn genius_description(song: &Value) -> Result<String, regex::Error> {
     let mut text = parse_html(song["description"]["html"].as_str().unwrap());
 
     // Fix weird triple greater-than signs
-    let re = Regex::new(r">\n>\n?").unwrap();
+    let re = Regex::new(r">\n>\n?")?;
     text = re.replace_all(&text, "").to_string();
 
     // Remove occasional <img> tags since they're not rendered
-    let re = Regex::new(r"<img.* />").unwrap();
+    let re = Regex::new(r"<img.* />")?;
     text = re.replace_all(&text, "").to_string();
 
     // Remove dividers because they do not work on embeds
-    let re = Regex::new(r"\n?---\n?").unwrap();
+    let re = Regex::new(r"\n?---\n?")?;
     text = re.replace_all(&text, "").to_string();
 
     Ok(text)
@@ -52,7 +53,7 @@ pub async fn genius_lyrics(url: &str) -> Result<Vec<String>, Error> {
 
     let document = res.text().await?;
     let fragment = Html::parse_document(&document);
-    let selector = Selector::parse(".Lyrics__Container-sc-1ynbvzw-10").unwrap();
+    let selector = Selector::parse(LYRICS_SELECTOR).unwrap();
 
     let lyrics: Vec<String> = fragment
         .select(&selector)

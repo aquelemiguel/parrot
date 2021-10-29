@@ -1,5 +1,6 @@
 use crate::{
-    commands::genius::genius_search, strings::MISSING_PLAY_QUERY, utils::send_simple_message,
+    commands::genius::genius_description, commands::genius::genius_search,
+    commands::genius::genius_song, strings::MISSING_QUERY, utils::send_simple_message,
 };
 
 use serde_json::Value;
@@ -8,8 +9,6 @@ use serenity::{
     framework::standard::{macros::command, Args, CommandResult},
     model::channel::Message,
 };
-
-use super::{genius_description, genius_song};
 
 #[command]
 async fn explain(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
@@ -42,7 +41,7 @@ async fn explain(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
             }
         }
         None => {
-            send_simple_message(&ctx.http, msg, MISSING_PLAY_QUERY).await;
+            send_simple_message(&ctx.http, msg, MISSING_QUERY).await;
         }
     };
 

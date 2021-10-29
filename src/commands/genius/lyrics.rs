@@ -1,14 +1,14 @@
+use crate::{
+    commands::genius::{genius_lyrics, genius_search, genius_song},
+    strings::MISSING_QUERY,
+    utils::send_simple_message,
+};
+
 use serde_json::Value;
 use serenity::{
     client::Context,
     framework::standard::{macros::command, Args, CommandResult},
     model::channel::Message,
-};
-
-use crate::{
-    commands::genius::{genius_lyrics, genius_search, genius_song},
-    strings::MISSING_PLAY_QUERY,
-    utils::send_simple_message,
 };
 
 #[command]
@@ -21,7 +21,6 @@ async fn lyrics(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
                     return Ok(());
                 }
 
-                // For metadata purposes
                 let id = hits[0]["result"]["id"].as_i64().unwrap();
                 let song = genius_song(id).await.unwrap();
 
@@ -29,7 +28,7 @@ async fn lyrics(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 
                 match genius_lyrics(url).await {
                     Ok(lyrics) => {
-                        let message = flatten_lyrics(&lyrics).await;
+                        let message = flatten_lyrics(&lyrics);
                         send_lyrics_message(ctx, msg, &message, &song).await
                     }
                     Err(_) => send_simple_message(&ctx.http, msg, "Could not fetch lyrics!").await,
@@ -44,14 +43,14 @@ async fn lyrics(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
             }
         }
         None => {
-            send_simple_message(&ctx.http, msg, MISSING_PLAY_QUERY).await;
+            send_simple_message(&ctx.http, msg, MISSING_QUERY).await;
         }
     };
 
     Ok(())
 }
 
-async fn flatten_lyrics(lyrics: &[String]) -> String {
+fn flatten_lyrics(lyrics: &[String]) -> String {
     lyrics
         .iter()
         .map(|line| {
@@ -69,8 +68,6 @@ async fn flatten_lyrics(lyrics: &[String]) -> String {
 async fn send_lyrics_message(ctx: &Context, msg: &Message, lyrics: &String, song: &Value) {
     let mut final_lyrics = lyrics.clone();
 
-    // TODO: Currently, we're trimming the lyrics but eventually we should have pagination
-    // for lyric sheets that are too big.
     if lyrics.len() > 2048 {
         final_lyrics = format!("{} [...]", &lyrics[..2048]);
     }
