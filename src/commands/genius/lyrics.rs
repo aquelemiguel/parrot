@@ -1,3 +1,4 @@
+use serde_json::Value;
 use serenity::{
     client::Context,
     framework::standard::{macros::command, Args, CommandResult},
@@ -5,7 +6,7 @@ use serenity::{
 };
 
 use crate::{
-    commands::genius::{genius_lyrics, genius_search},
+    commands::genius::{genius_lyrics, genius_search, genius_song},
     strings::MISSING_PLAY_QUERY,
     utils::send_simple_message,
 };
@@ -16,42 +17,82 @@ async fn lyrics(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
         Some(query) => {
             if let Some(hits) = genius_search(query).await {
                 if hits.is_empty() {
-                    send_simple_message(&ctx.http, &msg, "Could not fetch lyrics!").await;
+                    send_simple_message(&ctx.http, msg, "Could not fetch lyrics!").await;
                     return Ok(());
                 }
+
+                // For metadata purposes
+                let id = hits[0]["result"]["id"].as_i64().unwrap();
+                let song = genius_song(id).await.unwrap();
 
                 let url = hits[0]["result"]["url"].as_str().unwrap();
 
                 match genius_lyrics(url).await {
-                    Ok(lyrics) => send_lyrics_message(ctx, msg, &lyrics).await,
-                    Err(_) => send_simple_message(&ctx.http, &msg, "Could not fetch lyrics!").await,
+                    Ok(lyrics) => {
+                        let message = flatten_lyrics(&lyrics).await;
+                        send_lyrics_message(ctx, msg, &message, &song).await
+                    }
+                    Err(_) => send_simple_message(&ctx.http, msg, "Could not fetch lyrics!").await,
                 }
             } else {
                 send_simple_message(
                     &ctx.http,
-                    &msg,
+                    msg,
                     &format!("Could not find any songs that match `{}`", query),
                 )
                 .await;
             }
         }
         None => {
-            send_simple_message(&ctx.http, &msg, MISSING_PLAY_QUERY).await;
+            send_simple_message(&ctx.http, msg, MISSING_PLAY_QUERY).await;
         }
     };
 
     Ok(())
 }
 
-async fn send_lyrics_message(ctx: &Context, msg: &Message, lyrics: &String) {
+async fn flatten_lyrics(lyrics: &[String]) -> String {
+    lyrics
+        .iter()
+        .map(|line| {
+            // Bolden sections between brackets (e.g. [Verse 1]).
+            if line.starts_with('[') && line.ends_with(']') {
+                format!("\n**{}**", line)
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<String>>()
+        .join("\n")
+}
+
+async fn send_lyrics_message(ctx: &Context, msg: &Message, lyrics: &String, song: &Value) {
+    let mut final_lyrics = lyrics.clone();
+
+    // TODO: Currently, we're trimming the lyrics but eventually we should have pagination
+    // for lyric sheets that are too big.
+    if lyrics.len() > 2048 {
+        final_lyrics = format!("{} [...]", &lyrics[..2048]);
+    }
+
     msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
-                // e.title(format!("Lyrics for {}", "TODO!!!"));
-                // e.url();
-                // e.thumbnail();
-                println!("{}", lyrics);
-                e.description(lyrics);
+                let song_title = song["title"].as_str().unwrap().to_string();
+                let artist = song["primary_artist"]["name"].as_str().unwrap().to_string();
+
+                e.title(format!(
+                    "Lyrics for {}",
+                    format!("\"{}\" by {}", song_title, artist)
+                ));
+
+                let url = song["url"].as_str().unwrap().to_string();
+                e.url(url);
+
+                let thumbnail = song["song_art_image_url"].as_str().unwrap().to_string();
+                e.thumbnail(thumbnail);
+
+                e.description(final_lyrics);
 
                 e.footer(|f| {
                     f.text("Powered by Genius");
