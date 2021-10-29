@@ -13,15 +13,18 @@ use songbird::SerenityInit;
 use std::env;
 
 use parrot::commands::{
-    clear::*, explain::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*,
-    remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
+    clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*, remove::*,
+    repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
 };
+
+use parrot::commands::genius::{explain::*, lyrics::*};
 
 #[group]
 #[commands(
     clear,
     explain,
     leave,
+    lyrics,
     now_playing,
     pause,
     play,

@@ -1,5 +1,5 @@
 pub mod clear;
-pub mod explain;
+pub mod genius;
 pub mod leave;
 pub mod now_playing;
 pub mod pause;
