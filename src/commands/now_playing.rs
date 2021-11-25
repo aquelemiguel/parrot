@@ -11,7 +11,7 @@ use serenity::{
 
 #[command]
 #[aliases("np")]
-async fn now_playing(ctx: &Context, msg: &Message) -> CommandResult {
+pub async fn now_playing(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
     let manager = songbird::get(ctx)
         .await
