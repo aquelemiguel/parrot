@@ -19,3 +19,9 @@ pub enum PlayFlag {
     DEFAULT,
     PLAYTOP,
 }
+
+pub enum EnqueueType {
+    URI,
+    SEARCH,
+    PLAYLIST,
+}

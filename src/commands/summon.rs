@@ -19,17 +19,20 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
         .and_then(|voice_state| voice_state.channel_id);
 
     if let Some(channel_id) = channel_opt {
-        send_simple_message(
-            &ctx.http,
-            msg,
-            &format!("Joining **{}**!", channel_id.mention()),
-        )
-        .await;
-
         let manager = songbird::get(ctx)
             .await
             .expect("Could not retrieve Songbird voice client");
-        manager.join(guild.id, channel_id).await.0;
+
+        if manager.get(guild.id).is_none() {
+            manager.join(guild.id, channel_id).await.0;
+
+            send_simple_message(
+                &ctx.http,
+                msg,
+                &format!("Joining **{}**!", channel_id.mention()),
+            )
+            .await;
+        }
     } else {
         send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await;
     }

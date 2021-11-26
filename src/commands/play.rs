@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use crate::{
-    commands::{now_playing::now_playing, queue::queue, summon::summon, PlayFlag},
+    commands::{now_playing::now_playing, summon::summon, EnqueueType, PlayFlag},
     strings::{MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
-    utils::send_simple_message,
+    utils::{get_human_readable_timestamp, send_simple_message},
 };
 
 use serenity::{
@@ -103,6 +103,48 @@ async fn enqueue_playlist(
     queue_snapshot
 }
 
+async fn send_added_to_queue_message(
+    ctx: &Context,
+    msg: &Message,
+    title: &str,
+    queue: &Vec<TrackHandle>,
+    track: &TrackHandle,
+) {
+    let metadata = track.metadata().clone();
+    let position = track.get_info().await.unwrap().position;
+
+    msg.channel_id
+        .send_message(&ctx.http, |m| {
+            m.embed(|e| {
+                e.title(title);
+                e.thumbnail(metadata.thumbnail.unwrap());
+
+                e.description(format!(
+                    "[**{}**]({})",
+                    metadata.title.unwrap(),
+                    metadata.source_url.unwrap()
+                ));
+
+                let mut estimated_time = queue
+                    .into_iter()
+                    .map(|track| track.metadata().duration.unwrap())
+                    .sum();
+
+                estimated_time -= position;
+
+                let footer_text = format!(
+                    "Track duration: {}\nEstimated time until play: {}",
+                    get_human_readable_timestamp(metadata.duration.unwrap()),
+                    get_human_readable_timestamp(estimated_time)
+                );
+
+                e.footer(|f| f.text(footer_text))
+            })
+        })
+        .await
+        .expect("Unable to send message");
+}
+
 pub async fn execute_play(
     ctx: &Context,
     msg: &Message,
@@ -133,19 +175,44 @@ pub async fn execute_play(
     }
 
     let call = manager.get(guild.id).unwrap();
-    let queue;
+    let enqueue_type: EnqueueType;
 
     if url.clone().contains("youtube.com/playlist?list=") {
-        queue = enqueue_playlist(&call, &url, &flag).await;
+        enqueue_type = EnqueueType::PLAYLIST;
     } else if url.clone().starts_with("http") {
-        queue = enqueue_song(&call, url, true, &flag).await;
+        enqueue_type = EnqueueType::URI;
     } else {
-        let query = String::from(args.rewind().rest()); // Rewind and fetch the entire query
-        queue = enqueue_song(&call, query, false, &flag).await;
+        enqueue_type = EnqueueType::SEARCH;
     }
 
-    // If there's only one song in the queue now, it must be playing
-    if queue.len() == 1 {
+    let queue = match enqueue_type {
+        EnqueueType::URI => enqueue_song(&call, url, true, &flag).await,
+        EnqueueType::SEARCH => {
+            let query = String::from(args.rewind().rest()); // Rewind and fetch the entire query
+            enqueue_song(&call, query, false, &flag).await
+        }
+        EnqueueType::PLAYLIST => enqueue_playlist(&call, &url, &flag).await,
+    };
+
+    // Send response message
+    if queue.len() > 1 {
+        match enqueue_type {
+            EnqueueType::URI | EnqueueType::SEARCH => match flag {
+                PlayFlag::PLAYTOP => {
+                    let track = queue.get(1).unwrap();
+                    send_added_to_queue_message(ctx, msg, "Added to top", &queue, track).await;
+                }
+                PlayFlag::DEFAULT => {
+                    let track = queue.last().unwrap();
+                    send_added_to_queue_message(ctx, msg, "Added to queue", &queue, track).await;
+                }
+            },
+            EnqueueType::PLAYLIST => {
+                // TODO: Make this a little more informative in the future.
+                send_simple_message(&ctx.http, msg, "Added playlist to queue!").await;
+            }
+        }
+    } else {
         now_playing(&ctx, &msg, args.clone()).await?;
     }
 
@@ -156,46 +223,5 @@ pub async fn execute_play(
 #[aliases("p")]
 async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     execute_play(ctx, msg, args, &PlayFlag::DEFAULT).await?;
-
-    //     // If it's not going to be played immediately, notify it has been enqueued
-    //     if queue.len() > 1 {
-    //         let last_track = queue.last().unwrap();
-    //         let metadata = last_track.metadata().clone();
-    //         let position = last_track.get_info().await?.position;
-
-    //         msg.channel_id
-    //             .send_message(&ctx.http, |m| {
-    //                 m.embed(|e| {
-    //                     e.title("Added to queue");
-    //                     e.thumbnail(metadata.thumbnail.unwrap());
-
-    //                     e.description(format!(
-    //                         "[**{}**]({})",
-    //                         metadata.title.unwrap(),
-    //                         metadata.source_url.unwrap()
-    //                     ));
-
-    //                     let mut estimated_time = queue
-    //                         .into_iter()
-    //                         .map(|track| track.metadata().duration.unwrap())
-    //                         .sum();
-
-    //                     estimated_time -= position;
-
-    //                     let footer_text = format!(
-    //                         "Track duration: {}\nEstimated time until play: {}",
-    //                         get_human_readable_timestamp(metadata.duration.unwrap()),
-    //                         get_human_readable_timestamp(estimated_time)
-    //                     );
-
-    //                     let mut footer = CreateEmbedFooter::default();
-    //                     footer.text(footer_text);
-
-    //                     e.set_footer(footer)
-    //                 })
-    //             })
-    //             .await?;
-    //     }
-
     Ok(())
 }
