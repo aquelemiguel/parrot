@@ -14,6 +14,8 @@ pub const MISSING_TIMESTAMP: &str = "Include a timestamp!";
 
 pub const TIMESTAMP_PARSING_FAILED: &str = "Invalid parsing formatting!";
 
+pub const MISSING_QUERY: &str = "Missing query for this command!";
+
 pub const MISSING_PLAY_QUERY: &str =
     "Missing query for this command! Either add a URL or keywords.";
 

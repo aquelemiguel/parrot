@@ -2,7 +2,11 @@ use serenity::{
     async_trait,
     client::{Context, EventHandler},
     framework::{standard::macros::group, StandardFramework},
-    model::{gateway::Ready, prelude::Activity},
+    model::{
+        gateway::Ready,
+        id::GuildId,
+        prelude::{Activity, VoiceState},
+    },
     Client,
 };
 use songbird::SerenityInit;
@@ -13,23 +17,27 @@ use parrot::commands::{
     repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
 };
 
+use parrot::commands::genius::{explain::*, lyrics::*};
+
 #[group]
 #[commands(
     clear,
+    explain,
     leave,
+    lyrics,
     now_playing,
     pause,
     play,
     playtop,
     queue,
+    remove,
     repeat,
     resume,
     seek,
     shuffle,
     skip,
     stop,
-    summon,
-    remove
+    summon
 )]
 struct General;
 
@@ -41,11 +49,27 @@ impl EventHandler for Handler {
         println!("🦜 {} is connected!", ready.user.name);
         ctx.set_activity(Activity::listening("!play")).await;
     }
+
+    async fn voice_state_update(
+        &self,
+        ctx: Context,
+        guild: Option<GuildId>,
+        _old: Option<VoiceState>,
+        new: VoiceState,
+    ) {
+        if new.user_id == ctx.http.get_current_user().await.unwrap().id && !new.deaf {
+            guild
+                .unwrap()
+                .edit_member(&ctx.http, new.user_id, |n| n.deafen(true))
+                .await
+                .unwrap();
+        }
+    }
 }
 
 #[tokio::main]
 async fn main() {
-    dotenv::dotenv().expect("Failed to load .env file");
+    dotenv::dotenv().ok();
 
     let framework = StandardFramework::new()
         .configure(|c| c.prefix("!"))

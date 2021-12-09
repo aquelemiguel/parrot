@@ -4,7 +4,10 @@ use serenity::{
     model::channel::Message,
 };
 
-use crate::{strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY}, utils::send_simple_message};
+use crate::{
+    strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    utils::send_simple_message,
+};
 
 #[command]
 async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
@@ -13,11 +16,13 @@ async fn pause(ctx: &Context, msg: &Message) -> CommandResult {
 
     if let Some(call) = manager.get(guild_id) {
         let handler = call.lock().await;
+        let queue = handler.queue();
 
-        if handler.queue().is_empty() {
+        if queue.is_empty() {
+            drop(handler);
             send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
-        }
-        else if handler.queue().pause().is_ok() {
+        } else if queue.pause().is_ok() {
+            drop(handler);
             send_simple_message(&ctx.http, msg, "Paused!").await;
         }
     } else {
