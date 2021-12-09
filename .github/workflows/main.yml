@@ -1,5 +1,9 @@
 name: Main Workflow
-on: [push]
+
+on:
+  push:
+  pull_request:
+
 jobs:
   build:
     name: Build
@@ -10,5 +14,7 @@ jobs:
     container: rust:${{ matrix.rust-version }}
     steps:
       - uses: actions/checkout@v1
+      - run: rustup component add rustfmt
+      - run: cargo fmt --all -- --check
       - run: cargo build --release
       - run: cargo test
