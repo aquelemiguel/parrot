@@ -19,5 +19,8 @@ pub const MISSING_QUERY: &str = "Missing query for this command!";
 pub const MISSING_PLAY_QUERY: &str =
     "Missing query for this command! Either add a URL or keywords.";
 
+pub const AUTHOR_NOT_DJ: &str =
+    "To use this command you must be a DJ.\nRequest to be assigned this role by a moderator!";
+
 pub const MISSING_INDEX_QUEUE: &str = "Missing an index!";
 pub const NO_SONG_ON_INDEX: &str = "There is no queued song on that index!";

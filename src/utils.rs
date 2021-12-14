@@ -31,7 +31,7 @@ pub fn get_full_username(user: &User) -> String {
     format!("{}#{:04}", user.name, user.discriminator)
 }
 
-pub async fn user_is_dj(ctx: &Context, msg: &Message) -> bool {
+pub async fn author_is_dj(ctx: &Context, msg: &Message) -> bool {
     let guild = msg.guild(&ctx.cache).await.unwrap();
     let mut roleid = RoleId::default();
 
