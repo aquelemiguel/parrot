@@ -7,7 +7,7 @@ use serenity::{
     builder::CreateEmbedFooter,
     client::Context,
     framework::standard::{macros::command, Args, CommandResult},
-    model::{channel::Message, id::RoleId},
+    model::channel::Message,
 };
 
 use songbird::input::Restartable;
@@ -17,18 +17,6 @@ use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 #[command]
 #[aliases("p")]
 async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
-    let guild = msg.guild(&ctx.cache).await.unwrap();
-    let mut roleid = RoleId::default();
-
-    for (_, role) in guild.roles {
-        if role.name == "DJ" {
-            roleid = role.id;
-        }
-    }
-
-    let user = &msg.author;
-    let is_dj = user.has_role(&ctx.http, guild.id, roleid).await.unwrap();
-    println!("Is dj: {}", is_dj);
     // Handle empty requests
     let url = match args.single::<String>() {
         Ok(url) => url,
@@ -38,6 +26,7 @@ async fn play(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         }
     };
 
+    let guild = msg.guild(&ctx.cache).await.unwrap();
     let manager = songbird::get(ctx)
         .await
         .expect("Could not retrieve Songbird voice client");

@@ -1,6 +1,7 @@
 use serenity::{
+    client::Context,
     http::Http,
-    model::{channel::Message, prelude::User},
+    model::{channel::Message, id::RoleId, prelude::User},
     utils::Color,
 };
 use std::{sync::Arc, time::Duration};
@@ -28,4 +29,18 @@ pub fn get_human_readable_timestamp(duration: Duration) -> String {
 
 pub fn get_full_username(user: &User) -> String {
     format!("{}#{:04}", user.name, user.discriminator)
+}
+
+pub async fn user_is_dj(ctx: &Context, msg: &Message) -> bool {
+    let guild = msg.guild(&ctx.cache).await.unwrap();
+    let mut roleid = RoleId::default();
+
+    for (_, role) in guild.roles {
+        if role.name == "DJ" {
+            roleid = role.id;
+        }
+    }
+
+    let user = &msg.author;
+    user.has_role(&ctx.http, guild.id, roleid).await.unwrap()
 }
