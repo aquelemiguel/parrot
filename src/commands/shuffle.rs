@@ -6,30 +6,37 @@ use serenity::{
     model::channel::Message,
 };
 
-use crate::{strings::NO_VOICE_CONNECTION, utils::send_simple_message};
+use crate::{
+    strings::{AUTHOR_NOT_DJ, NO_VOICE_CONNECTION},
+    utils::{author_is_dj, send_simple_message},
+};
 
 #[command]
 async fn shuffle(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
-    let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-    let manager = songbird::get(ctx)
-        .await
-        .expect("Could not retrieve Songbird voice client");
-
-    if let Some(call) = manager.get(guild_id) {
-        let handler = call.lock().await;
-        handler.queue().modify_queue(|queue| {
-            // Skip the first track on queue, it's currently being played
-            fisher_yates(
-                queue.make_contiguous()[1..].as_mut(),
-                &mut rand::thread_rng(),
-            )
-        });
-        drop(handler);
-        send_simple_message(&ctx.http, msg, "Shuffled successfully").await;
+    if !author_is_dj(ctx, msg).await {
+        send_simple_message(&ctx.http, msg, AUTHOR_NOT_DJ).await;
+        return Ok(());
     } else {
-        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
-    }
+        let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
+        let manager = songbird::get(ctx)
+            .await
+            .expect("Could not retrieve Songbird voice client");
 
+        if let Some(call) = manager.get(guild_id) {
+            let handler = call.lock().await;
+            handler.queue().modify_queue(|queue| {
+                // Skip the first track on queue, it's currently being played
+                fisher_yates(
+                    queue.make_contiguous()[1..].as_mut(),
+                    &mut rand::thread_rng(),
+                )
+            });
+            drop(handler);
+            send_simple_message(&ctx.http, msg, "Shuffled successfully").await;
+        } else {
+            send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
+        }
+    }
     Ok(())
 }
 
