@@ -23,50 +23,6 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     Ok(())
 }
 
-async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag: &PlayFlag) {
-    let source = if is_url {
-        Restartable::ytdl(query, true).await.unwrap()
-    } else {
-        Restartable::ytdl_search(query, false).await.unwrap()
-    };
-
-    let mut handler = call.lock().await;
-    handler.enqueue_source(source.into());
-    let queue_snapshot = handler.queue().current_queue();
-    drop(handler);
-
-    if let PlayFlag::PLAYTOP = flag {
-        if queue_snapshot.len() > 2 {
-            let handler = call.lock().await;
-
-            handler.queue().modify_queue(|queue| {
-                let mut not_playing = queue.split_off(1);
-                not_playing.rotate_right(1);
-                queue.append(&mut not_playing);
-            });
-        }
-    }
-}
-
-async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str) {
-    match YoutubeDl::new(uri).flat_playlist(true).run() {
-        Ok(result) => {
-            if let YoutubeDlOutput::Playlist(playlist) = result {
-                let entries = playlist.entries.unwrap();
-
-                for entry in entries.iter() {
-                    let url = format!(
-                        "https://www.youtube.com/watch?v={}",
-                        entry.url.as_ref().unwrap()
-                    );
-                    enqueue_song(call, url, true, &PlayFlag::DEFAULT).await;
-                }
-            }
-        }
-        Err(_) => todo!("Show failed to fetch playlist message!"),
-    }
-}
-
 pub async fn execute_play(
     ctx: &Context,
     msg: &Message,
@@ -144,4 +100,45 @@ pub async fn execute_play(
     }
 
     Ok(())
+}
+
+async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str) {
+    let res = YoutubeDl::new(uri).flat_playlist(true).run().unwrap();
+
+    if let YoutubeDlOutput::Playlist(playlist) = res {
+        let entries = playlist.entries.unwrap();
+
+        for entry in entries.iter() {
+            let url = format!(
+                "https://www.youtube.com/watch?v={}",
+                entry.url.as_ref().unwrap()
+            );
+            enqueue_song(call, url, true, &PlayFlag::DEFAULT).await;
+        }
+    }
+}
+
+async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag: &PlayFlag) {
+    let source = if is_url {
+        Restartable::ytdl(query, true).await.unwrap()
+    } else {
+        Restartable::ytdl_search(query, false).await.unwrap()
+    };
+
+    let mut handler = call.lock().await;
+    handler.enqueue_source(source.into());
+    let queue_snapshot = handler.queue().current_queue();
+    drop(handler);
+
+    if let PlayFlag::PLAYTOP = flag {
+        if queue_snapshot.len() > 2 {
+            let handler = call.lock().await;
+
+            handler.queue().modify_queue(|queue| {
+                let mut not_playing = queue.split_off(1);
+                not_playing.rotate_right(1);
+                queue.append(&mut not_playing);
+            });
+        }
+    }
 }
