@@ -3,12 +3,55 @@ use serenity::{
     model::{channel::Message, prelude::User},
     utils::Color,
 };
+use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
 
 pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) {
     msg.channel_id
         .send_message(http, |m| {
             m.embed(|e| e.description(format!("**{}**", content)).color(Color::RED))
+        })
+        .await
+        .expect("Unable to send message");
+}
+
+pub async fn send_added_to_queue_message(
+    http: &Arc<Http>,
+    msg: &Message,
+    title: &str,
+    queue: &[TrackHandle],
+    track: &TrackHandle,
+) {
+    let metadata = track.metadata().clone();
+    let position = track.get_info().await.unwrap().position;
+
+    msg.channel_id
+        .send_message(http, |m| {
+            m.embed(|e| {
+                e.title(title);
+                e.thumbnail(metadata.thumbnail.unwrap());
+
+                e.description(format!(
+                    "[**{}**]({})",
+                    metadata.title.unwrap(),
+                    metadata.source_url.unwrap()
+                ));
+
+                let mut estimated_time = queue
+                    .iter()
+                    .map(|track| track.metadata().duration.unwrap())
+                    .sum();
+
+                estimated_time -= position;
+
+                let footer_text = format!(
+                    "Track duration: {}\nEstimated time until play: {}",
+                    get_human_readable_timestamp(metadata.duration.unwrap()),
+                    get_human_readable_timestamp(estimated_time)
+                );
+
+                e.footer(|f| f.text(footer_text))
+            })
         })
         .await
         .expect("Unable to send message");
