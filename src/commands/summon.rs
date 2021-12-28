@@ -23,16 +23,32 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
             .await
             .expect("Could not retrieve Songbird voice client");
 
-        if manager.get(guild.id).is_none() {
-            manager.join(guild.id, channel_id).await.0;
+        if let Some(call) = manager.get(guild.id) {
+            let handler = call.lock().await;
+            let current_connection = handler.current_connection();
 
-            send_simple_message(
-                &ctx.http,
-                msg,
-                &format!("Joining **{}**!", channel_id.mention()),
-            )
-            .await;
+            // Bot might have been disconnected manually
+            if current_connection.is_none() {
+                drop(handler);
+                manager
+                    .remove(guild.id)
+                    .await
+                    .expect("Could not drop handler");
+            } else {
+                drop(handler);
+                return Ok(()); // Bot is already in the channel
+            }
         }
+
+        // Now that we've ensured the bot isn't connected, join the channel
+        manager.join(guild.id, channel_id).await.1?;
+
+        send_simple_message(
+            &ctx.http,
+            msg,
+            &format!("Joining **{}**!", channel_id.mention()),
+        )
+        .await;
     } else {
         send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await;
     }
