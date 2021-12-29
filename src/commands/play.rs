@@ -122,7 +122,7 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
     if !queue.is_empty() {
         let top_track = queue.first().expect("Could not fetch playing song");
 
-        let top_track_position = top_track
+        let top_track_elapsed = top_track
             .get_info()
             .await
             .expect("Could not get playing track info")
@@ -146,7 +146,7 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
         };
 
         // Add the remaining top track
-        estimated_time += top_track_duration - top_track_position;
+        estimated_time += top_track_duration - top_track_elapsed;
 
         Some(estimated_time)
     } else {
