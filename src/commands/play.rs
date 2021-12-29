@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use crate::{
     commands::{now_playing::now_playing, summon::summon, EnqueueType, PlayFlag},
@@ -13,7 +13,7 @@ use serenity::{
     prelude::Mutex,
 };
 
-use songbird::{input::Restartable, Call};
+use songbird::{input::Restartable, tracks::TrackHandle, Call};
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
 #[command]
@@ -77,17 +77,33 @@ pub async fn execute_play(
 
     // Send response message
     if queue.len() > 1 {
+        let estimated_time = calculate_time_until_play(&queue, flag)
+            .await
+            .expect("Could not estimate time because queue is empty");
+
         match enqueue_type {
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
                 PlayFlag::PLAYTOP => {
                     let track = queue.get(1).unwrap();
-                    send_added_to_queue_message(&ctx.http, msg, "Added to top", &queue, track)
-                        .await;
+                    send_added_to_queue_message(
+                        &ctx.http,
+                        msg,
+                        "Added to top",
+                        track,
+                        estimated_time,
+                    )
+                    .await;
                 }
                 PlayFlag::DEFAULT => {
                     let track = queue.last().unwrap();
-                    send_added_to_queue_message(&ctx.http, msg, "Added to queue", &queue, track)
-                        .await;
+                    send_added_to_queue_message(
+                        &ctx.http,
+                        msg,
+                        "Added to queue",
+                        track,
+                        estimated_time,
+                    )
+                    .await;
                 }
             },
             EnqueueType::PLAYLIST => {
@@ -100,6 +116,42 @@ pub async fn execute_play(
     }
 
     Ok(())
+}
+
+async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Option<Duration> {
+    if !queue.is_empty() {
+        let top_track = queue.first().expect("Could not fetch playing song");
+
+        let top_track_position = top_track
+            .get_info()
+            .await
+            .expect("Could not get playing track info")
+            .position;
+
+        let top_track_duration = top_track
+            .metadata()
+            .duration
+            .expect("Could not fetch duration of top track");
+
+        let mut estimated_time = match flag {
+            PlayFlag::DEFAULT => queue[1..queue.len() - 1]
+                .iter()
+                .fold(Duration::ZERO, |acc, x| {
+                    acc + x
+                        .metadata()
+                        .duration
+                        .expect("Could not fetch duration of track")
+                }),
+            PlayFlag::PLAYTOP => Duration::ZERO,
+        };
+
+        // Add the remaining top track
+        estimated_time += top_track_duration - top_track_position;
+
+        Some(estimated_time)
+    } else {
+        None
+    }
 }
 
 async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str) {
