@@ -19,11 +19,10 @@ pub async fn send_added_to_queue_message(
     http: &Arc<Http>,
     msg: &Message,
     title: &str,
-    queue: &[TrackHandle],
     track: &TrackHandle,
+    estimated_time: Duration,
 ) {
     let metadata = track.metadata().clone();
-    let position = track.get_info().await.unwrap().position;
 
     msg.channel_id
         .send_message(http, |m| {
@@ -36,13 +35,6 @@ pub async fn send_added_to_queue_message(
                     metadata.title.unwrap(),
                     metadata.source_url.unwrap()
                 ));
-
-                let mut estimated_time = queue
-                    .iter()
-                    .map(|track| track.metadata().duration.unwrap())
-                    .sum();
-
-                estimated_time -= position;
 
                 let footer_text = format!(
                     "Track duration: {}\nEstimated time until play: {}",
