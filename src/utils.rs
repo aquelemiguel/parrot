@@ -6,13 +6,19 @@ use serenity::{
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
 
-pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) {
+use crate::errors::ParrotError;
+
+pub async fn send_simple_message(
+    http: &Arc<Http>,
+    msg: &Message,
+    content: &str,
+) -> Result<(), ParrotError> {
     msg.channel_id
         .send_message(http, |m| {
             m.embed(|e| e.description(format!("**{}**", content)).color(Color::RED))
         })
-        .await
-        .expect("Unable to send message");
+        .await?;
+    Ok(())
 }
 
 pub async fn send_added_to_queue_message(

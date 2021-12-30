@@ -1,5 +1,6 @@
 use crate::{
     commands::genius::{genius_lyrics, genius_search, genius_song},
+    errors::ParrotError,
     strings::MISSING_QUERY,
     utils::send_simple_message,
 };
@@ -39,12 +40,10 @@ async fn lyrics(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
                     msg,
                     &format!("Could not find any songs that match `{}`", query),
                 )
-                .await;
+                .await
             }
         }
-        None => {
-            send_simple_message(&ctx.http, msg, MISSING_QUERY).await;
-        }
+        None => send_simple_message(&ctx.http, msg, MISSING_QUERY).await,
     };
 
     Ok(())
@@ -65,7 +64,12 @@ fn flatten_lyrics(lyrics: &[String]) -> String {
         .join("\n")
 }
 
-async fn send_lyrics_message(ctx: &Context, msg: &Message, lyrics: &String, song: &Value) {
+async fn send_lyrics_message(
+    ctx: &Context,
+    msg: &Message,
+    lyrics: &String,
+    song: &Value,
+) -> Result<(), ParrotError> {
     let mut final_lyrics = lyrics.clone();
 
     if lyrics.len() > 2048 {
@@ -97,6 +101,6 @@ async fn send_lyrics_message(ctx: &Context, msg: &Message, lyrics: &String, song
                 })
             })
         })
-        .await
-        .unwrap();
+        .await?;
+    Ok(())
 }
