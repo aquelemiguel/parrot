@@ -1,15 +1,11 @@
 name: Main Workflow
-
-on:
-  push:
-  pull_request:
-
+on: [push]
 jobs:
   build:
     name: Build
     strategy:
       matrix:
-        rust-version: ["1.53", "1.54", latest]
+        rust-version: ["1.54", "1.55", "1.56", latest]
     runs-on: ubuntu-latest
     container: rust:${{ matrix.rust-version }}
     steps:
