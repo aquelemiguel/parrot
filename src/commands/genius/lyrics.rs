@@ -34,39 +34,21 @@ async fn lyrics(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     let song = genius_song(id).await.unwrap();
     let url = hits[0]["result"]["url"].as_str().unwrap();
     match genius_lyrics(url).await {
-        Ok(lyrics) => {
-            let message = flatten_lyrics(&lyrics);
-            send_lyrics_message(ctx, msg, &message, &song).await
-        }
+        Ok(lyrics) => send_lyrics_message(ctx, msg, &lyrics, &song).await,
         Err(_) => send_simple_message(&ctx.http, msg, "Could not fetch lyrics!").await,
     }
-}
-
-fn flatten_lyrics(lyrics: &[String]) -> String {
-    lyrics
-        .iter()
-        .map(|line| {
-            // Bolden sections between brackets (e.g. [Verse 1]).
-            if line.starts_with('[') && line.ends_with(']') {
-                format!("\n**{}**", line)
-            } else {
-                line.to_string()
-            }
-        })
-        .collect::<Vec<String>>()
-        .join("\n")
 }
 
 async fn send_lyrics_message(
     ctx: &Context,
     msg: &Message,
-    lyrics: &String,
+    lyrics: &[String],
     song: &Value,
 ) -> CommandResult {
-    let mut final_lyrics = lyrics.clone();
+    let mut lyrics = flatten_lyrics(lyrics);
 
     if lyrics.len() > 2048 {
-        final_lyrics = format!("{} [...]", &lyrics[..2048]);
+        lyrics = format!("{} [...]", &lyrics[..2048]);
     }
 
     msg.channel_id
@@ -86,7 +68,7 @@ async fn send_lyrics_message(
                 let thumbnail = song["song_art_image_url"].as_str().unwrap().to_string();
                 e.thumbnail(thumbnail);
 
-                e.description(final_lyrics);
+                e.description(lyrics);
 
                 e.footer(|f| {
                     f.text("Powered by Genius");
@@ -96,4 +78,19 @@ async fn send_lyrics_message(
         })
         .await?;
     Ok(())
+}
+
+fn flatten_lyrics(lyrics: &[String]) -> String {
+    lyrics
+        .iter()
+        .map(|line| {
+            // Bolden sections between brackets (e.g. [Verse 1]).
+            if line.starts_with('[') && line.ends_with(']') {
+                format!("\n**{}**", line)
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<String>>()
+        .join("\n")
 }
