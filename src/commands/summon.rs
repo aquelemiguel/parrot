@@ -25,19 +25,19 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
 
         if let Some(call) = manager.get(guild.id) {
             let handler = call.lock().await;
-            let current_connection = handler.current_connection();
+            let has_current_connection = handler.current_connection().is_some();
+            drop(handler);
+
+            // Bot is already in the channel
+            if has_current_connection {
+                return Ok(());
+            }
 
             // Bot might have been disconnected manually
-            if current_connection.is_none() {
-                drop(handler);
-                manager
-                    .remove(guild.id)
-                    .await
-                    .expect("Could not drop handler");
-            } else {
-                drop(handler);
-                return Ok(()); // Bot is already in the channel
-            }
+            manager
+                .remove(guild.id)
+                .await
+                .expect("Could not drop handler");
         }
 
         // Now that we've ensured the bot isn't connected, join the channel
