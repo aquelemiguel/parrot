@@ -21,7 +21,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
     if let Some(channel_id) = channel_opt {
         let manager = songbird::get(ctx)
             .await
-            .expect("Could not retrieve Songbird voice client");
+            .unwrap();
 
         if let Some(call) = manager.get(guild.id) {
             let handler = call.lock().await;
@@ -37,7 +37,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
             manager
                 .remove(guild.id)
                 .await
-                .expect("Could not drop handler");
+                .unwrap();
         }
 
         // Now that we've ensured the bot isn't connected, join the channel

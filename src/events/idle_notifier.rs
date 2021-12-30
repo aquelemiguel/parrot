@@ -30,7 +30,7 @@ impl VoiceEventHandler for IdleNotifier {
                     handler
                         .leave()
                         .await
-                        .expect("Failed to leave voice channel");
+                        .unwrap();
                 }
             }
         }

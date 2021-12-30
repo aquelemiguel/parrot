@@ -24,7 +24,7 @@ pub async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
     let manager = songbird::get(ctx)
         .await
-        .expect("Could not retrieve Songbird voice client");
+        .unwrap();
 
     let author_id = msg.author.id;
     let author_username = get_full_username(&msg.author);

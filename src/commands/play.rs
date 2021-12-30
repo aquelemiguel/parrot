@@ -41,7 +41,7 @@ pub async fn execute_play(
     let guild = msg.guild(&ctx.cache).await.unwrap();
     let manager = songbird::get(ctx)
         .await
-        .expect("Could not retrieve Songbird voice client");
+        .unwrap();
 
     // Try to join a voice channel if not in one just yet
     summon(ctx, msg, args.clone()).await?;
@@ -79,7 +79,7 @@ pub async fn execute_play(
     if queue.len() > 1 {
         let estimated_time = calculate_time_until_play(&queue, flag)
             .await
-            .expect("Could not estimate time because queue is empty");
+            .unwrap();
 
         match enqueue_type {
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
@@ -120,18 +120,18 @@ pub async fn execute_play(
 
 async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Option<Duration> {
     if !queue.is_empty() {
-        let top_track = queue.first().expect("Could not fetch playing song");
+        let top_track = queue.first().unwrap();
 
         let top_track_elapsed = top_track
             .get_info()
             .await
-            .expect("Could not get playing track info")
+            .unwrap()
             .position;
 
         let top_track_duration = top_track
             .metadata()
             .duration
-            .expect("Could not fetch duration of top track");
+            .unwrap();
 
         let mut estimated_time = match flag {
             PlayFlag::DEFAULT => queue[1..queue.len() - 1]
@@ -140,7 +140,7 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
                     acc + x
                         .metadata()
                         .duration
-                        .expect("Could not fetch duration of track")
+                        .unwrap()
                 }),
             PlayFlag::PLAYTOP => Duration::ZERO,
         };

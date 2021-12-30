@@ -12,14 +12,14 @@ async fn repeat(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
     let manager = songbird::get(ctx)
         .await
-        .expect("Could not retrieve Songbird voice client");
+        .unwrap();
 
     if let Some(call) = manager.get(guild_id) {
         let handler = call.lock().await;
         let track = handler
             .queue()
             .current()
-            .expect("Failed to fetch handle for current track");
+            .unwrap();
         drop(handler);
 
         if track.get_info().await?.loops == LoopState::Infinite {

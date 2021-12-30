@@ -22,7 +22,7 @@ pub async fn send_added_to_queue_message(
     title: &str,
     track: &TrackHandle,
     estimated_time: Duration,
-) {
+) -> CommandResult {
     let metadata = track.metadata().clone();
     msg.channel_id
         .send_message(http, |m| {
@@ -45,8 +45,8 @@ pub async fn send_added_to_queue_message(
                 e.footer(|f| f.text(footer_text))
             })
         })
-        .await
-        .expect("Unable to send message");
+        .await?;
+    Ok(())
 }
 
 pub fn get_human_readable_timestamp(duration: Duration) -> String {
