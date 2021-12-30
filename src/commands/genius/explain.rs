@@ -1,7 +1,6 @@
 use crate::{
     commands::genius::genius_description, commands::genius::genius_search,
-    commands::genius::genius_song, errors::ParrotError, strings::MISSING_QUERY,
-    utils::send_simple_message,
+    commands::genius::genius_song, strings::MISSING_QUERY, utils::send_simple_message,
 };
 
 use serde_json::Value;
@@ -13,41 +12,28 @@ use serenity::{
 
 #[command]
 async fn explain(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    match args.remains() {
-        Some(query) => {
-            if let Some(hits) = genius_search(query).await {
-                if hits.is_empty() {
-                    return Ok(
-                        send_simple_message(&ctx.http, msg, "Could not fetch explanation!").await?,
-                    );
-                }
+    let query = match args.remains() {
+        Some(query) => query,
+        None => return send_simple_message(&ctx.http, msg, MISSING_QUERY).await,
+    };
 
-                let id = hits[0]["result"]["id"].as_i64().unwrap();
-                let song = genius_song(id).await.unwrap();
-
-                match genius_description(&song).await {
-                    Ok(explanation) => {
-                        return Ok(send_explanation_message(ctx, msg, &explanation, &song).await?)
-                    }
-                    Err(_) => {
-                        return Ok(send_simple_message(
-                            &ctx.http,
-                            msg,
-                            "Could not fetch explanation!",
-                        )
-                        .await?)
-                    }
-                }
-            } else {
-                return Ok(send_simple_message(
-                    &ctx.http,
-                    msg,
-                    &format!("Could not find any songs that match `{}`", query),
-                )
-                .await?);
-            }
+    let hits = match genius_search(query).await {
+        Some(hits) if !hits.is_empty() => hits,
+        _ => {
+            return send_simple_message(
+                &ctx.http,
+                msg,
+                &format!("Could not find any songs that match `{}`", query),
+            )
+            .await
         }
-        None => return Ok(send_simple_message(&ctx.http, msg, MISSING_QUERY).await?),
+    };
+
+    let id = hits[0]["result"]["id"].as_i64().unwrap();
+    let song = genius_song(id).await.unwrap();
+    match genius_description(&song).await {
+        Ok(explanation) => send_explanation_message(ctx, msg, &explanation, &song).await,
+        Err(_) => send_simple_message(&ctx.http, msg, "Could not fetch explanation!").await,
     }
 }
 
@@ -56,7 +42,7 @@ async fn send_explanation_message(
     msg: &Message,
     explanation: &String,
     song: &Value,
-) -> Result<(), ParrotError> {
+) -> CommandResult {
     msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {

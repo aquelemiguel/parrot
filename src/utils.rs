@@ -1,4 +1,5 @@
 use serenity::{
+    framework::standard::CommandResult,
     http::Http,
     model::{channel::Message, prelude::User},
     utils::Color,
@@ -6,13 +7,7 @@ use serenity::{
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
 
-use crate::errors::ParrotError;
-
-pub async fn send_simple_message(
-    http: &Arc<Http>,
-    msg: &Message,
-    content: &str,
-) -> Result<(), ParrotError> {
+pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> CommandResult {
     msg.channel_id
         .send_message(http, |m| {
             m.embed(|e| e.description(format!("**{}**", content)).color(Color::RED))
@@ -29,7 +24,6 @@ pub async fn send_added_to_queue_message(
     estimated_time: Duration,
 ) {
     let metadata = track.metadata().clone();
-
     msg.channel_id
         .send_message(http, |m| {
             m.embed(|e| {
