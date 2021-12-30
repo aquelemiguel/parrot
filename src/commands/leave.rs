@@ -12,15 +12,12 @@ async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
 
     let manager = songbird::get(ctx)
         .await
-        .expect("Could not retrieve Songbird voice client");
+        .unwrap();
 
     if manager.get(guild_id).is_some() {
-        if manager.remove(guild_id).await.is_ok() {
-            send_simple_message(&ctx.http, msg, "See you soon!").await;
-        }
+        manager.remove(guild_id).await?;
+        send_simple_message(&ctx.http, msg, "See you soon!").await
     } else {
-        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
+        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await
     }
-
-    Ok(())
 }
