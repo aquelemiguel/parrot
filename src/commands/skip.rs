@@ -15,19 +15,18 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
     let manager = songbird::get(ctx).await.unwrap();
 
-    if let Some(call) = manager.get(guild_id) {
-        let handler = call.lock().await;
-        let queue = handler.queue();
+    let call = match manager.get(guild_id) {
+        Some(call) => call,
+        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await 
+    };
 
-        if queue.is_empty() {
-            drop(handler);
-            send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
-        } else if queue.skip().is_ok() {
-            drop(handler);
-            send_simple_message(&ctx.http, msg, "⏭️ Skipped!").await;
-        }
-    } else {
-        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
+    let handler = call.lock().await;
+    let queue = handler.queue();
+
+    if queue.is_empty() {
+        return send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
+    } else if queue.skip().is_ok() {
+        return send_simple_message(&ctx.http, msg, "⏭️ Skipped!").await;
     }
 
     Ok(())
