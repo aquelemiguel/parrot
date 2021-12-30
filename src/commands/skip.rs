@@ -17,7 +17,7 @@ async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await 
+        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;

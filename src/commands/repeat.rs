@@ -13,7 +13,7 @@ async fn repeat(ctx: &Context, msg: &Message) -> CommandResult {
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await 
+        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;
@@ -21,10 +21,9 @@ async fn repeat(ctx: &Context, msg: &Message) -> CommandResult {
 
     if track.disable_loop().is_ok() {
         return send_simple_message(&ctx.http, msg, "Disabled loop!").await;
-    }
-    else if track.enable_loop().is_ok() {
+    } else if track.enable_loop().is_ok() {
         return send_simple_message(&ctx.http, msg, "Enabled loop!").await;
     }
-    
+
     Ok(())
 }

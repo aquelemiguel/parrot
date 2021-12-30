@@ -16,13 +16,12 @@ async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await 
+        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
     };
 
     let remove_index: usize = match args.single::<usize>() {
         Ok(t) => t,
-        Err(_) => return send_simple_message(&ctx.http, msg, MISSING_INDEX_QUEUE).await
-        
+        Err(_) => return send_simple_message(&ctx.http, msg, MISSING_INDEX_QUEUE).await,
     };
 
     let handler = call.lock().await;
@@ -38,6 +37,7 @@ async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         handler.queue().modify_queue(|v| {
             v.remove(remove_index);
         });
-        return send_simple_message(&ctx.http, msg, &format!("Removed track #{}!", remove_index)).await;
+        return send_simple_message(&ctx.http, msg, &format!("Removed track #{}!", remove_index))
+            .await;
     }
 }

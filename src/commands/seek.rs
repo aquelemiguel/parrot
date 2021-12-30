@@ -18,12 +18,12 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await 
+        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
     };
 
     let seek_time = match args.single::<String>() {
         Ok(t) => t,
-        Err(_) => return send_simple_message(&ctx.http, msg, MISSING_TIMESTAMP).await
+        Err(_) => return send_simple_message(&ctx.http, msg, MISSING_TIMESTAMP).await,
     };
 
     let mut timestamp = Args::new(&seek_time, &[Delimiter::Single(':')]);

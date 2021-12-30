@@ -15,7 +15,7 @@ async fn shuffle(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await 
+        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;

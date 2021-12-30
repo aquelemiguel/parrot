@@ -20,7 +20,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
 
     let channel_id = match channel_opt {
         Some(channel_id) => channel_id,
-        None => return send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await 
+        None => return send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await,
     };
 
     if let Some(call) = manager.get(guild.id) {

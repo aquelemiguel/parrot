@@ -16,7 +16,7 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await 
+        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;
@@ -24,7 +24,7 @@ async fn stop(ctx: &Context, msg: &Message) -> CommandResult {
 
     if queue.is_empty() {
         return send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
-    } 
+    }
 
     queue.stop();
     return send_simple_message(&ctx.http, msg, "Stopped!").await;
