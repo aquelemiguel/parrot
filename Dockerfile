@@ -18,7 +18,8 @@ RUN cargo build --release
 # Our final base
 FROM debian:bullseye-slim
 
-RUN apt-get update && apt-get install -y ffmpeg youtube-dl
+RUN apt-get update && apt-get install -y python3-pip ffmpeg youtube-dl
+RUN pip install -U yt-dlp
 
 # Copy the build artifact from the build stage
 COPY --from=build /parrot/target/release/parrot .
