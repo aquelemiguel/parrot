@@ -13,9 +13,7 @@ use crate::{
 #[aliases("s")]
 async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-    let manager = songbird::get(ctx)
-        .await
-        .unwrap();
+    let manager = songbird::get(ctx).await.unwrap();
 
     if let Some(call) = manager.get(guild_id) {
         let handler = call.lock().await;

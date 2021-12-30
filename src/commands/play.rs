@@ -23,21 +23,14 @@ async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
     Ok(())
 }
 
-pub async fn _play(
-    ctx: &Context,
-    msg: &Message,
-    mut args: Args,
-    flag: &PlayFlag,
-) -> CommandResult {
+pub async fn _play(ctx: &Context, msg: &Message, mut args: Args, flag: &PlayFlag) -> CommandResult {
     let url = match args.single::<String>() {
         Ok(url) => url,
-        Err(_) => return send_simple_message(&ctx.http, msg, MISSING_PLAY_QUERY).await
+        Err(_) => return send_simple_message(&ctx.http, msg, MISSING_PLAY_QUERY).await,
     };
 
     let guild = msg.guild(&ctx.cache).await.unwrap();
-    let manager = songbird::get(ctx)
-        .await
-        .unwrap();
+    let manager = songbird::get(ctx).await.unwrap();
 
     // try to join a voice channel if not in one just yet
     summon(ctx, msg, args.clone()).await?;
@@ -71,9 +64,7 @@ pub async fn _play(
     drop(handler);
 
     if queue.len() > 1 {
-        let estimated_time = calculate_time_until_play(&queue, flag)
-            .await
-            .unwrap();
+        let estimated_time = calculate_time_until_play(&queue, flag).await.unwrap();
 
         match enqueue_type {
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
@@ -115,25 +106,15 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
     if !queue.is_empty() {
         let top_track = queue.first().unwrap();
 
-        let top_track_elapsed = top_track
-            .get_info()
-            .await
-            .unwrap()
-            .position;
+        let top_track_elapsed = top_track.get_info().await.unwrap().position;
 
-        let top_track_duration = top_track
-            .metadata()
-            .duration
-            .unwrap();
+        let top_track_duration = top_track.metadata().duration.unwrap();
 
         let mut estimated_time = match flag {
             PlayFlag::DEFAULT => queue[1..queue.len() - 1]
                 .iter()
                 .fold(Duration::ZERO, |acc, x| {
-                    acc + x
-                        .metadata()
-                        .duration
-                        .unwrap()
+                    acc + x.metadata().duration.unwrap()
                 }),
             PlayFlag::PLAYTOP => Duration::ZERO,
         };

@@ -12,9 +12,7 @@ use crate::{
 #[command]
 async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-    let manager = songbird::get(ctx)
-        .await
-        .unwrap();
+    let manager = songbird::get(ctx).await.unwrap();
 
     if let Some(call) = manager.get(guild_id) {
         let remove_index: usize = match args.single::<usize>() {

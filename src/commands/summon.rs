@@ -19,9 +19,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
         .and_then(|voice_state| voice_state.channel_id);
 
     if let Some(channel_id) = channel_opt {
-        let manager = songbird::get(ctx)
-            .await
-            .unwrap();
+        let manager = songbird::get(ctx).await.unwrap();
 
         if let Some(call) = manager.get(guild.id) {
             let handler = call.lock().await;
@@ -34,10 +32,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
             }
 
             // Bot might have been disconnected manually
-            manager
-                .remove(guild.id)
-                .await
-                .unwrap();
+            manager.remove(guild.id).await.unwrap();
         }
 
         // Now that we've ensured the bot isn't connected, join the channel

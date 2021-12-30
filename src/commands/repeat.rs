@@ -10,16 +10,11 @@ use crate::{strings::NO_VOICE_CONNECTION, utils::send_simple_message};
 #[command("loop")]
 async fn repeat(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-    let manager = songbird::get(ctx)
-        .await
-        .unwrap();
+    let manager = songbird::get(ctx).await.unwrap();
 
     if let Some(call) = manager.get(guild_id) {
         let handler = call.lock().await;
-        let track = handler
-            .queue()
-            .current()
-            .unwrap();
+        let track = handler.queue().current().unwrap();
         drop(handler);
 
         if track.get_info().await?.loops == LoopState::Infinite {

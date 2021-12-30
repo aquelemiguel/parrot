@@ -27,10 +27,7 @@ impl VoiceEventHandler for IdleNotifier {
             } else {
                 if self.count.fetch_add(1, Ordering::Relaxed) >= 10 {
                     send_simple_message(&self.http, &self.message, IDLE_ALERT).await;
-                    handler
-                        .leave()
-                        .await
-                        .unwrap();
+                    handler.leave().await.unwrap();
                 }
             }
         }

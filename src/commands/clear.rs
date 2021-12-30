@@ -12,9 +12,7 @@ use crate::{
 #[command]
 async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-    let manager = songbird::get(ctx)
-        .await
-        .unwrap();
+    let manager = songbird::get(ctx).await.unwrap();
 
     let call = match manager.get(guild_id) {
         Some(call) => call,

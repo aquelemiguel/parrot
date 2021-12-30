@@ -14,9 +14,7 @@ use crate::{
 #[command]
 async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-    let manager = songbird::get(ctx)
-        .await
-        .unwrap();
+    let manager = songbird::get(ctx).await.unwrap();
 
     if let Some(call) = manager.get(guild_id) {
         let seek_time = match args.single::<String>() {
@@ -38,15 +36,10 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         let timestamp = minutes.unwrap() * 60 + seconds.unwrap();
 
         let handler = call.lock().await;
-        let track = handler
-            .queue()
-            .current()
-            .unwrap();
+        let track = handler.queue().current().unwrap();
         drop(handler);
 
-        track
-            .seek_time(Duration::from_secs(timestamp))
-            .unwrap();
+        track.seek_time(Duration::from_secs(timestamp)).unwrap();
 
         send_simple_message(
             &ctx.http,
