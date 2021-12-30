@@ -3,10 +3,8 @@
 </p>
 
 <p align="center">
-  Parrot is a hassle-free, highly performant, host-it-yourself Discord music bot.
+  A hassle-free, highly performant, host-it-yourself Discord music bot
 </p>
-
----
 
 ## Deployment
 
