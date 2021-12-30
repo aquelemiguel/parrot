@@ -1,5 +1,12 @@
-# 🦜
-A hassle-free, highly performant and fast evolving Discord music bot built with Serenity in Rust.
+<p align="center">
+  <img alt="Light" src="./docs/logo.png" width="50%">
+</p>
+
+<p align="center">
+  Parrot is a hassle-free, highly performant, host-it-yourself Discord music bot.
+</p>
+
+---
 
 ## Deployment
 
@@ -7,8 +14,6 @@ A hassle-free, highly performant and fast evolving Discord music bot built with 
 Just [create a bot account](https://github.com/aquelemiguel/parrot/wiki/Create-Your-Discord-Bot), copy its token into the `DISCORD_TOKEN` environment variable within `.env`.
 
 ### Docker
-
-For the hassle free deployment:
 
 ```shell
 docker run -d --env-file .env ghcr.io/aquelemiguel/parrot:latest
@@ -30,9 +35,9 @@ apt install build-essential autoconf automake libtool m4 libopus-dev youtube-dl 
 ### Windows
 
 If you are using the MSVC toolchain, a prebuilt DLL for Opus is already provided for you.  
-You will only need to download [FFmpeg](https://ffmpeg.org/download.html), and install youtube-dl which can be done through Python's package manager, pip.
+You will only need to download [FFmpeg](https://ffmpeg.org/download.html), and install [yt-dlp](https://github.com/yt-dlp/yt-dlp) which can be done through Python's package manager, pip.
 ```shell
-pip install youtube_dl
+pip install -U yt-dlp
 ```
 
 If you are using Windows Subsystem for Linux (WSL), you should follow the [Linux/MacOS](#linux--macos) guide, and, in addition to the other required packages, install pkg-config, which you may do by running:
