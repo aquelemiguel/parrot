@@ -21,7 +21,7 @@ async fn shuffle(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     let handler = call.lock().await;
     handler.queue().modify_queue(|queue| {
         // skip the first track on queue because it's being played
-        fisher_yates(
+        shuffle_values(
             queue.make_contiguous()[1..].as_mut(),
             &mut rand::thread_rng(),
         )
@@ -29,7 +29,7 @@ async fn shuffle(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     return send_simple_message(&ctx.http, msg, "Shuffled successfully").await;
 }
 
-fn fisher_yates<T, R>(values: &mut [T], mut rng: R)
+fn shuffle_values<T, R>(values: &mut [T], mut rng: R)
 where
     R: rand::RngCore + Sized,
 {
