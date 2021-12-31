@@ -2,7 +2,6 @@ name: Main Workflow
 on: [push]
 jobs:
   build:
-    name: Build
     strategy:
       matrix:
         rust-version: ["1.54", "1.55", "1.56", latest]
