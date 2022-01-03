@@ -19,37 +19,25 @@ use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 #[command]
 #[aliases("p")]
 async fn play(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    execute_play(ctx, msg, args, &PlayFlag::DEFAULT).await?;
+    _play(ctx, msg, args, &PlayFlag::DEFAULT).await?;
     Ok(())
 }
 
-pub async fn execute_play(
-    ctx: &Context,
-    msg: &Message,
-    mut args: Args,
-    flag: &PlayFlag,
-) -> CommandResult {
-    // Handle empty requests
+pub async fn _play(ctx: &Context, msg: &Message, mut args: Args, flag: &PlayFlag) -> CommandResult {
     let url = match args.single::<String>() {
         Ok(url) => url,
-        Err(_) => {
-            send_simple_message(&ctx.http, msg, MISSING_PLAY_QUERY).await;
-            return Ok(());
-        }
+        Err(_) => return send_simple_message(&ctx.http, msg, MISSING_PLAY_QUERY).await,
     };
 
     let guild = msg.guild(&ctx.cache).await.unwrap();
-    let manager = songbird::get(ctx)
-        .await
-        .expect("Could not retrieve Songbird voice client");
+    let manager = songbird::get(ctx).await.unwrap();
 
-    // Try to join a voice channel if not in one just yet
+    // try to join a voice channel if not in one just yet
     summon(ctx, msg, args.clone()).await?;
 
-    // Halt if isn't in a voice channel at this point
+    // halt if isn't in a voice channel at this point
     if manager.get(guild.id).is_none() {
-        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
-        return Ok(());
+        return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
     }
 
     let call = manager.get(guild.id).unwrap();
@@ -65,7 +53,7 @@ pub async fn execute_play(
     match enqueue_type {
         EnqueueType::URI => enqueue_song(&call, url, true, flag).await,
         EnqueueType::SEARCH => {
-            let query = String::from(args.rewind().rest()); // Rewind and fetch the entire query
+            let query = String::from(args.rewind().rest());
             enqueue_song(&call, query, false, flag).await
         }
         EnqueueType::PLAYLIST => enqueue_playlist(&call, &url).await,
@@ -75,17 +63,14 @@ pub async fn execute_play(
     let queue = handler.queue().current_queue();
     drop(handler);
 
-    // Send response message
     if queue.len() > 1 {
-        let estimated_time = calculate_time_until_play(&queue, flag)
-            .await
-            .expect("Could not estimate time because queue is empty");
+        let estimated_time = calculate_time_until_play(&queue, flag).await.unwrap();
 
         match enqueue_type {
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
                 PlayFlag::PLAYTOP => {
                     let track = queue.get(1).unwrap();
-                    send_added_to_queue_message(
+                    return send_added_to_queue_message(
                         &ctx.http,
                         msg,
                         "Added to top",
@@ -96,7 +81,7 @@ pub async fn execute_play(
                 }
                 PlayFlag::DEFAULT => {
                     let track = queue.last().unwrap();
-                    send_added_to_queue_message(
+                    return send_added_to_queue_message(
                         &ctx.http,
                         msg,
                         "Added to queue",
@@ -107,8 +92,7 @@ pub async fn execute_play(
                 }
             },
             EnqueueType::PLAYLIST => {
-                // TODO: Make this a little more informative in the future.
-                send_simple_message(&ctx.http, msg, "Added playlist to queue!").await;
+                return send_simple_message(&ctx.http, msg, "Added playlist to queue!").await;
             }
         }
     } else {
@@ -120,27 +104,17 @@ pub async fn execute_play(
 
 async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Option<Duration> {
     if !queue.is_empty() {
-        let top_track = queue.first().expect("Could not fetch playing song");
+        let top_track = queue.first().unwrap();
 
-        let top_track_elapsed = top_track
-            .get_info()
-            .await
-            .expect("Could not get playing track info")
-            .position;
+        let top_track_elapsed = top_track.get_info().await.unwrap().position;
 
-        let top_track_duration = top_track
-            .metadata()
-            .duration
-            .expect("Could not fetch duration of top track");
+        let top_track_duration = top_track.metadata().duration.unwrap();
 
         let mut estimated_time = match flag {
             PlayFlag::DEFAULT => queue[1..queue.len() - 1]
                 .iter()
                 .fold(Duration::ZERO, |acc, x| {
-                    acc + x
-                        .metadata()
-                        .duration
-                        .expect("Could not fetch duration of track")
+                    acc + x.metadata().duration.unwrap()
                 }),
             PlayFlag::PLAYTOP => Duration::ZERO,
         };

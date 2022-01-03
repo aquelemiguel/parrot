@@ -11,26 +11,22 @@ use crate::{strings::NO_VOICE_CONNECTION, utils::send_simple_message};
 #[command]
 async fn shuffle(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-    let manager = songbird::get(ctx)
-        .await
-        .expect("Could not retrieve Songbird voice client");
+    let manager = songbird::get(ctx).await.unwrap();
 
-    if let Some(call) = manager.get(guild_id) {
-        let handler = call.lock().await;
-        handler.queue().modify_queue(|queue| {
-            // Skip the first track on queue, it's currently being played
-            fisher_yates(
-                queue.make_contiguous()[1..].as_mut(),
-                &mut rand::thread_rng(),
-            )
-        });
-        drop(handler);
-        send_simple_message(&ctx.http, msg, "Shuffled successfully").await;
-    } else {
-        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
-    }
+    let call = match manager.get(guild_id) {
+        Some(call) => call,
+        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
+    };
 
-    Ok(())
+    let handler = call.lock().await;
+    handler.queue().modify_queue(|queue| {
+        // skip the first track on queue because it's being played
+        fisher_yates(
+            queue.make_contiguous()[1..].as_mut(),
+            &mut rand::thread_rng(),
+        )
+    });
+    return send_simple_message(&ctx.http, msg, "Shuffled successfully").await;
 }
 
 fn fisher_yates<T, R>(values: &mut [T], mut rng: R)

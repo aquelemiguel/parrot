@@ -1,4 +1,5 @@
 use serenity::{
+    framework::standard::CommandResult,
     http::Http,
     model::{channel::Message, prelude::User},
     utils::Color,
@@ -6,13 +7,13 @@ use serenity::{
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
 
-pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) {
+pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> CommandResult {
     msg.channel_id
         .send_message(http, |m| {
             m.embed(|e| e.description(format!("**{}**", content)).color(Color::RED))
         })
-        .await
-        .expect("Unable to send message");
+        .await?;
+    Ok(())
 }
 
 pub async fn send_added_to_queue_message(
@@ -21,9 +22,8 @@ pub async fn send_added_to_queue_message(
     title: &str,
     track: &TrackHandle,
     estimated_time: Duration,
-) {
+) -> CommandResult {
     let metadata = track.metadata().clone();
-
     msg.channel_id
         .send_message(http, |m| {
             m.embed(|e| {
@@ -45,8 +45,8 @@ pub async fn send_added_to_queue_message(
                 e.footer(|f| f.text(footer_text))
             })
         })
-        .await
-        .expect("Unable to send message");
+        .await?;
+    Ok(())
 }
 
 pub fn get_human_readable_timestamp(duration: Duration) -> String {

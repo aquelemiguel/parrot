@@ -12,29 +12,23 @@ use crate::{
 #[command]
 async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-    let manager = songbird::get(ctx)
-        .await
-        .expect("Could not retrieve Songbird voice client");
+    let manager = songbird::get(ctx).await.unwrap();
 
-    if let Some(call) = manager.get(guild_id) {
-        let handler = call.lock().await;
-        let queue = handler.queue().current_queue();
-        drop(handler);
+    let call = match manager.get(guild_id) {
+        Some(call) => call,
+        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
+    };
 
-        if queue.is_empty() {
-            send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
-        } else {
-            let handler = call.lock().await;
-            handler.queue().modify_queue(|v| {
-                v.drain(1..);
-            });
-            drop(handler);
+    let handler = call.lock().await;
+    let queue = handler.queue().current_queue();
 
-            send_simple_message(&ctx.http, msg, "Cleared!").await;
-        }
-    } else {
-        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
+    if queue.is_empty() {
+        return send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
     }
 
-    Ok(())
+    handler.queue().modify_queue(|v| {
+        v.drain(1..);
+    });
+
+    send_simple_message(&ctx.http, msg, "Cleared!").await
 }

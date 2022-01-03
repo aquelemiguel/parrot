@@ -1,4 +1,4 @@
-use crate::commands::{play::execute_play, PlayFlag};
+use crate::commands::{play::_play, PlayFlag};
 
 use serenity::{
     client::Context,
@@ -9,6 +9,5 @@ use serenity::{
 #[command]
 #[aliases("pt")]
 async fn playtop(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    execute_play(ctx, msg, args, &PlayFlag::PLAYTOP).await?;
-    Ok(())
+    _play(ctx, msg, args, &PlayFlag::PLAYTOP).await
 }

@@ -12,40 +12,29 @@ use serenity::{
 
 #[command]
 async fn explain(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
-    match args.remains() {
-        Some(query) => {
-            if let Some(hits) = genius_search(query).await {
-                if hits.is_empty() {
-                    send_simple_message(&ctx.http, msg, "Could not fetch explanation!").await;
-                    return Ok(());
-                }
+    let query = match args.remains() {
+        Some(query) => query,
+        None => return send_simple_message(&ctx.http, msg, MISSING_QUERY).await,
+    };
 
-                let id = hits[0]["result"]["id"].as_i64().unwrap();
-                let song = genius_song(id).await.unwrap();
-
-                match genius_description(&song).await {
-                    Ok(explanation) => {
-                        send_explanation_message(ctx, msg, &explanation, &song).await
-                    }
-                    Err(_) => {
-                        send_simple_message(&ctx.http, msg, "Could not fetch explanation!").await
-                    }
-                }
-            } else {
-                send_simple_message(
-                    &ctx.http,
-                    msg,
-                    &format!("Could not find any songs that match `{}`", query),
-                )
-                .await;
-            }
-        }
-        None => {
-            send_simple_message(&ctx.http, msg, MISSING_QUERY).await;
+    let hits = match genius_search(query).await {
+        Some(hits) if !hits.is_empty() => hits,
+        _ => {
+            return send_simple_message(
+                &ctx.http,
+                msg,
+                &format!("Could not find any songs that match `{}`", query),
+            )
+            .await
         }
     };
 
-    Ok(())
+    let id = hits[0]["result"]["id"].as_i64().unwrap();
+    let song = genius_song(id).await.unwrap();
+    match genius_description(&song).await {
+        Ok(explanation) => send_explanation_message(ctx, msg, &explanation, &song).await,
+        Err(_) => send_simple_message(&ctx.http, msg, "Could not fetch explanation!").await,
+    }
 }
 
 async fn send_explanation_message(
@@ -53,7 +42,7 @@ async fn send_explanation_message(
     msg: &Message,
     explanation: &String,
     song: &Value,
-) {
+) -> CommandResult {
     msg.channel_id
         .send_message(&ctx.http, |m| {
             m.embed(|e| {
@@ -79,6 +68,6 @@ async fn send_explanation_message(
                 })
             })
         })
-        .await
-        .unwrap();
+        .await?;
+    Ok(())
 }

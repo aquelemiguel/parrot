@@ -9,18 +9,12 @@ use crate::{strings::NO_VOICE_CONNECTION, utils::send_simple_message};
 #[command]
 async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-
-    let manager = songbird::get(ctx)
-        .await
-        .expect("Could not retrieve Songbird voice client");
+    let manager = songbird::get(ctx).await.unwrap();
 
     if manager.get(guild_id).is_some() {
-        if manager.remove(guild_id).await.is_ok() {
-            send_simple_message(&ctx.http, msg, "See you soon!").await;
-        }
+        manager.remove(guild_id).await?;
+        send_simple_message(&ctx.http, msg, "See you soon!").await
     } else {
-        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await;
+        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await
     }
-
-    Ok(())
 }
