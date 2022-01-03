@@ -25,13 +25,11 @@ impl VoiceEventHandler for IdleNotifier {
             if !handler.queue().is_empty() {
                 // if the bot is playing, reset the counter
                 self.count.store(0, Ordering::Relaxed);
-            } else {
-                if self.count.fetch_add(1, Ordering::Relaxed) >= 10 {
-                    send_simple_message(&self.http, &self.message, IDLE_ALERT)
-                        .await
-                        .unwrap();
-                    handler.leave().await.unwrap();
-                }
+            } else if self.count.fetch_add(1, Ordering::Relaxed) >= 10 {
+                send_simple_message(&self.http, &self.message, IDLE_ALERT)
+                    .await
+                    .unwrap();
+                handler.leave().await.unwrap();
             }
         }
         None

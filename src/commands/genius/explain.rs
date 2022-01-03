@@ -40,7 +40,7 @@ async fn explain(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
 async fn send_explanation_message(
     ctx: &Context,
     msg: &Message,
-    explanation: &String,
+    explanation: &str,
     song: &Value,
 ) -> CommandResult {
     msg.channel_id
