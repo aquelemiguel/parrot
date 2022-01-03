@@ -1,21 +1,19 @@
 [package]
 name = "parrot"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["aquelemiguel"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 dotenv = "0.15"
-youtube_dl = "0.6.3"
-rand = "0.8.4"
-reqwest = "0.11.5"
-serde = "1.0.130"
-serde_json = "1.0.68"
-html2md = "0.2.13"
-scraper = "0.12.0"
-regex = "1.5.4"
+html2md = "0.2"
+rand = "0.8"
+regex = "1.5"
+reqwest = "0.11"
+serde = "1.0"
+serde_json = "1.0"
+scraper = "0.12"
+youtube_dl = "0.6"
 
 [dependencies.songbird]
 git = "https://github.com/serenity-rs/songbird"
