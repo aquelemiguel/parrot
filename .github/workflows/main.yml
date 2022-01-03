@@ -23,7 +23,7 @@ jobs:
       - name: Lint Rust Code
         run: |
           rustup component add clippy
-          cargo clippy --verbose -- -D clippy::all
+          cargo clippy -- -D clippy::all
 
       - name: Build Release Binary
         run: cargo build --release
