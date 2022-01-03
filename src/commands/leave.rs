@@ -9,7 +9,6 @@ use crate::{strings::NO_VOICE_CONNECTION, utils::send_simple_message};
 #[command]
 async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-
     let manager = songbird::get(ctx).await.unwrap();
 
     if manager.get(guild_id).is_some() {

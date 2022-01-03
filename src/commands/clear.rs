@@ -26,7 +26,6 @@ async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
         return send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
     }
 
-    let handler = call.lock().await;
     handler.queue().modify_queue(|v| {
         v.drain(1..);
     });

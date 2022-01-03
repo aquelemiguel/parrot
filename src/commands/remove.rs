@@ -28,16 +28,15 @@ async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let queue = handler.queue().current_queue();
 
     if queue.is_empty() {
-        return send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
+        send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await
     } else if queue.len() < remove_index + 1 {
-        return send_simple_message(&ctx.http, msg, NO_SONG_ON_INDEX).await;
+        send_simple_message(&ctx.http, msg, NO_SONG_ON_INDEX).await
     } else if remove_index == 0 {
-        return send_simple_message(&ctx.http, msg, "Can't remove currently playing song!").await;
+        send_simple_message(&ctx.http, msg, "Can't remove currently playing song!").await
     } else {
         handler.queue().modify_queue(|v| {
             v.remove(remove_index);
         });
-        return send_simple_message(&ctx.http, msg, &format!("Removed track #{}!", remove_index))
-            .await;
+        send_simple_message(&ctx.http, msg, &format!("Removed track #{}!", remove_index)).await
     }
 }

@@ -7,7 +7,7 @@ use serenity::{
 };
 
 use crate::{
-    strings::{MISSING_TIMESTAMP, NO_VOICE_CONNECTION, TIMESTAMP_PARSING_FAILED},
+    strings::{MISSING_TIMESTAMP, NO_VOICE_CONNECTION, QUEUE_IS_EMPTY, TIMESTAMP_PARSING_FAILED},
     utils::send_simple_message,
 };
 
@@ -36,7 +36,10 @@ async fn seek(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let timestamp = minutes.unwrap() * 60 + seconds.unwrap();
 
     let handler = call.lock().await;
-    let track = handler.queue().current().unwrap();
+    let track = match handler.queue().current() {
+        Some(track) => track,
+        None => return send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await,
+    };
     drop(handler);
 
     track.seek_time(Duration::from_secs(timestamp)).unwrap();
