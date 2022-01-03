@@ -3,7 +3,7 @@ use serenity::{
     framework::standard::{macros::command, CommandResult},
     model::channel::Message,
 };
-use songbird::tracks::LoopState;
+use songbird::tracks::{LoopState, TrackHandle};
 
 use crate::{strings::NO_VOICE_CONNECTION, utils::send_simple_message};
 
@@ -20,15 +20,16 @@ async fn repeat(ctx: &Context, msg: &Message) -> CommandResult {
     let handler = call.lock().await;
     let track = handler.queue().current().unwrap();
 
-    if track.get_info().await?.loops == LoopState::Infinite {
-        if track.disable_loop().is_ok() {
-            return send_simple_message(&ctx.http, msg, "Disabled loop!").await;
-        }
+    let was_looping = track.get_info().await?.loops == LoopState::Infinite;
+    let toggler = if was_looping {
+        TrackHandle::disable_loop
     } else {
-        if track.enable_loop().is_ok() {
-            return send_simple_message(&ctx.http, msg, "Enabled loop!").await;
-        }
+        TrackHandle::enable_loop
     };
 
-    Ok(())
+    match toggler(&track) {
+        Ok(_) if was_looping => send_simple_message(&ctx.http, msg, "Disabled loop!").await,
+        Ok(_) if !was_looping => send_simple_message(&ctx.http, msg, "Enabled loop!").await,
+        _ => send_simple_message(&ctx.http, msg, "Failed to toggle loop!").await,
+    }
 }

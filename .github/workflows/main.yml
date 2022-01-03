@@ -15,11 +15,15 @@ jobs:
       - name: Repository Checkout
         uses: actions/checkout@v2
 
-      - name: Install Rust Code Formatter
-        run: rustup component add rustfmt
-
       - name: Format Rust Code
-        run: cargo fmt --all -- --check
+        run: |
+          rustup component add rustfmt
+          cargo fmt --all -- --check
+
+      - name: Lint Rust Code
+        run: |
+          rustup component add clippy
+          cargo clippy -- -D clippy::all
 
       - name: Build Release Binary
         run: cargo build --release
