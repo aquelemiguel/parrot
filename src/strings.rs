@@ -1,5 +1,5 @@
 pub const IDLE_ALERT: &str =
-    "I've been idle for over 5 minutes, so I'll leave for now. Feel free to summon me back any time!";
+    "I've been idle for a while, so I'll leave for now to save resources.\nFeel free to summon me back any time!";
 
 pub const AUTHOR_NOT_FOUND: &str = "Could not find you in any voice channel!";
 
