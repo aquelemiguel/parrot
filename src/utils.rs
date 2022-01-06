@@ -76,7 +76,8 @@ pub fn get_prefixes() -> serde_json::Value {
             let mut f = File::create("prefixes.json").unwrap_or_else(|error| {
                 panic!("Problem creating the file: {:?}", error);
             });
-            f.write("{}".as_bytes()).expect("Unable to write file");
+            f.write_all("{}".as_bytes())
+                .expect("Unable to write to file");
             "{}".to_string()
         } else {
             panic!("Problem opening the file: {:?}", error);

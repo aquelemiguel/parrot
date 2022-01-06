@@ -19,7 +19,7 @@ async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let prefixes = get_prefixes();
     let new_prefix = String::from(args.rewind().rest());
 
-    if new_prefix != "" && new_prefix.len() == 1 {
+    if !new_prefix.is_empty() && new_prefix.len() == 1 {
         let guild_new_prefix: HashMap<String, String> =
             HashMap::from([(guild_id.0.to_string(), new_prefix)]);
         let new_prefixes = merge(&prefixes, &guild_new_prefix).await;
