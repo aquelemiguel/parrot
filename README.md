@@ -23,11 +23,11 @@ Make sure you've installed Rust. You can install Rust and its package manager, `
 After installing the requirements below, simply run `cargo run`.
 
 ### Linux / MacOS
-The command below installs a C compiler, GNU autotools, Opus (Discord's audio codec), youtube-dl, FFmpeg and the SSL library for development.
-
+The command below installs a C compiler, GNU autotools, Opus (Discord's audio codec), FFmpeg and the SSL library for development, as well as [yt-dlp](https://github.com/yt-dlp/yt-dlp) through Python's package manager, pip.
 
 ```shell
-apt install build-essential autoconf automake libtool m4 libopus-dev youtube-dl ffmpeg libssl-dev
+apt install build-essential autoconf automake libtool m4 libopus-dev ffmpeg libssl-dev
+pip install -U yt-dlp
 ```
 
 ### Windows
