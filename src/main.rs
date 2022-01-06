@@ -12,9 +12,12 @@ use serenity::{
 use songbird::SerenityInit;
 use std::env;
 
-use parrot::commands::{
-    clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*, remove::*,
-    repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
+use parrot::{
+    commands::{
+        clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, prefix::*, queue::*,
+        remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
+    },
+    utils::get_prefixes,
 };
 
 use parrot::commands::genius::{explain::*, lyrics::*};
@@ -29,6 +32,7 @@ use parrot::commands::genius::{explain::*, lyrics::*};
     pause,
     play,
     playtop,
+    prefix,
     queue,
     remove,
     repeat,
@@ -72,7 +76,26 @@ async fn main() {
     dotenv::dotenv().ok();
 
     let framework = StandardFramework::new()
-        .configure(|c| c.prefix("!"))
+        .configure(|c| {
+            c.dynamic_prefix(|ctx, msg| {
+                Box::pin(async move {
+                    let prefixes = get_prefixes();
+
+                    let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
+
+                    if let Some(serde_json::Value::String(prefix)) =
+                        prefixes.get(guild_id.0.to_string())
+                    {
+                        // Command from guild_id.0 with prefix
+                        Some(prefix.clone())
+                    } else {
+                        // Command from guild_id.0 with default prefix
+                        Some("!".to_string())
+                    }
+                })
+            })
+            .prefix("")
+        })
         .group(&GENERAL_GROUP);
 
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
