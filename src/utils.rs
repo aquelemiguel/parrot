@@ -1,3 +1,4 @@
+use serde_json::Value;
 use serenity::{
     framework::standard::CommandResult,
     http::Http,
@@ -76,5 +77,15 @@ pub fn get_prefixes() -> serde_json::Value {
     serde_json::from_reader(BufReader::new(file)).unwrap()
 }
 
-    serde_json::from_str(&data).expect("JSON was not well-formatted")
+pub fn merge_json(a: &mut Value, b: &Value) {
+    match (a, b) {
+        (&mut Value::Object(ref mut a), &Value::Object(ref b)) => {
+            for (k, v) in b {
+                merge_json(a.entry(k.clone()).or_insert(Value::Null), v);
+            }
+        }
+        (a, b) => {
+            *a = b.clone();
+        }
+    }
 }
