@@ -13,6 +13,7 @@ use crate::{
 };
 
 #[command]
+#[required_permissions(MANAGE_GUILD)]
 async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
 
