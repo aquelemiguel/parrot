@@ -77,6 +77,7 @@ pub fn get_prefixes() -> serde_json::Value {
         if error.kind() == ErrorKind::NotFound {
             let mut f = File::create("prefixes.json").expect(FAILED_CREATE_PREFIXES);
             f.write_all("{}".as_bytes()).expect(FAILED_SAVE_PREFIXES);
+            "{}".to_string()
         } else {
             panic!("Problem opening the file: {:?}", error);
         }
