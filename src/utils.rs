@@ -5,7 +5,12 @@ use serenity::{
     utils::Color,
 };
 use songbird::tracks::TrackHandle;
-use std::{sync::Arc, time::Duration};
+use std::{
+    fs::{self, File},
+    io::{ErrorKind, Write},
+    sync::Arc,
+    time::Duration,
+};
 
 pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> CommandResult {
     msg.channel_id
@@ -63,4 +68,20 @@ pub fn get_human_readable_timestamp(duration: Duration) -> String {
 
 pub fn get_full_username(user: &User) -> String {
     format!("{}#{:04}", user.name, user.discriminator)
+}
+
+pub fn get_prefixes() -> serde_json::Value {
+    let data = fs::read_to_string("prefixes.json").unwrap_or_else(|error| {
+        if error.kind() == ErrorKind::NotFound {
+            let mut f = File::create("prefixes.json").unwrap_or_else(|error| {
+                panic!("Problem creating the file: {:?}", error);
+            });
+            f.write("{}".as_bytes()).expect("Unable to write file");
+            "{}".to_string()
+        } else {
+            panic!("Problem opening the file: {:?}", error);
+        }
+    });
+
+    serde_json::from_str(&data).expect("JSON was not well-formatted")
 }
