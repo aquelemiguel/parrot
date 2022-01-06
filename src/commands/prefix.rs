@@ -7,7 +7,10 @@ use serenity::{
     model::channel::Message,
 };
 
-use crate::utils::{get_prefixes, send_simple_message};
+use crate::{
+    strings::{MISSING_PREFIX, PREFIX_UPDATED},
+    utils::{get_prefixes, send_simple_message},
+};
 
 #[command]
 async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
@@ -22,14 +25,9 @@ async fn prefix(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
         let new_prefixes = merge(&prefixes, &guild_new_prefix).await;
         fs::write("prefixes.json", new_prefixes.to_string()).unwrap();
 
-        return send_simple_message(&ctx.http, msg, "✨ Updated prefix!").await;
+        return send_simple_message(&ctx.http, msg, PREFIX_UPDATED).await;
     } else if true {
-        return send_simple_message(
-            &ctx.http,
-            msg,
-            "⚠️ Please send a character as an argument.\nExample: !prefix ~",
-        )
-        .await;
+        return send_simple_message(&ctx.http, msg, MISSING_PREFIX).await;
     }
 
     Ok(())
