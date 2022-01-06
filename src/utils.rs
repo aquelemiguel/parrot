@@ -8,7 +8,7 @@ use serenity::{
 use songbird::tracks::TrackHandle;
 use std::{
     fs::{self, OpenOptions},
-    io::{BufReader, Write},
+    io::BufReader,
     sync::Arc,
     time::Duration,
 };
@@ -73,7 +73,7 @@ pub fn get_full_username(user: &User) -> String {
 
 pub fn get_prefixes() -> serde_json::Value {
     let file_exists = fs::metadata("prefixes.json").is_ok();
-    let mut file = OpenOptions::new()
+    let file = OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
@@ -81,7 +81,7 @@ pub fn get_prefixes() -> serde_json::Value {
         .unwrap();
 
     if !file_exists {
-        file.write_all("{}".as_bytes()).unwrap();
+        fs::write("prefixes.json", "{}").unwrap();
     };
 
     serde_json::from_reader(BufReader::new(file)).unwrap()
