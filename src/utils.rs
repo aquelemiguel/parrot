@@ -7,8 +7,8 @@ use serenity::{
 };
 use songbird::tracks::TrackHandle;
 use std::{
-    fs,
-    io::{BufReader, Read, Write},
+    fs::{self, File},
+    io::{ErrorKind, Write},
     sync::Arc,
     time::Duration,
 };
@@ -72,21 +72,17 @@ pub fn get_full_username(user: &User) -> String {
 }
 
 pub fn get_prefixes() -> serde_json::Value {
-    let mut file = fs::OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .open("prefixes.json")
-        .unwrap();
+    let data = fs::read_to_string("prefixes.json").unwrap_or_else(|error| {
+        if error.kind() == ErrorKind::NotFound {
+            let mut f = File::create("prefixes.json").unwrap();
+            f.write_all("{}".as_bytes()).unwrap();
+            "{}".to_string()
+        } else {
+            panic!("Problem opening the file: {:?}", error);
+        }
+    });
 
-    let mut contents = String::new();
-    file.read_to_string(&mut contents).unwrap();
-
-    if contents == "" {
-        file.write_all("{}".as_bytes()).unwrap();
-    }
-
-    serde_json::from_reader(BufReader::new(file)).unwrap()
+    serde_json::from_str(&data).expect("JSON was not well-formatted")
 }
 
 pub fn merge_json(a: &mut Value, b: &Value) {
