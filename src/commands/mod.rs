@@ -5,6 +5,7 @@ pub mod now_playing;
 pub mod pause;
 pub mod play;
 pub mod playtop;
+pub mod prefix;
 pub mod queue;
 pub mod remove;
 pub mod repeat;
