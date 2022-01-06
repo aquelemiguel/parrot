@@ -14,7 +14,7 @@ use std::env;
 
 use parrot::commands::{
     clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*, remove::*,
-    repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
+    repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
 };
 
 use parrot::commands::genius::{explain::*, lyrics::*};
@@ -37,7 +37,8 @@ use parrot::commands::genius::{explain::*, lyrics::*};
     shuffle,
     skip,
     stop,
-    summon
+    summon,
+    version
 )]
 struct General;
 

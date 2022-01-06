@@ -14,6 +14,7 @@ pub mod shuffle;
 pub mod skip;
 pub mod stop;
 pub mod summon;
+pub mod version;
 
 pub enum PlayFlag {
     DEFAULT,
