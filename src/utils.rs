@@ -12,6 +12,8 @@ use std::{
     time::Duration,
 };
 
+use crate::strings::{FAILED_CREATE_PREFIXES, FAILED_SAVE_PREFIXES};
+
 pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> CommandResult {
     msg.channel_id
         .send_message(http, |m| {
@@ -73,11 +75,8 @@ pub fn get_full_username(user: &User) -> String {
 pub fn get_prefixes() -> serde_json::Value {
     let data = fs::read_to_string("prefixes.json").unwrap_or_else(|error| {
         if error.kind() == ErrorKind::NotFound {
-            let mut f = File::create("prefixes.json").unwrap_or_else(|error| {
-                panic!("Problem creating the file: {:?}", error);
-            });
-            f.write_all("{}".as_bytes())
-                .expect("Unable to write to file");
+            let mut f = File::create("prefixes.json").expect(FAILED_CREATE_PREFIXES);
+            f.write_all("{}".as_bytes()).expect(FAILED_SAVE_PREFIXES);
             "{}".to_string()
         } else {
             panic!("Problem opening the file: {:?}", error);

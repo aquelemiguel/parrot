@@ -26,3 +26,9 @@ pub const NO_SONG_ON_INDEX: &str = "There is no queued song on that index!";
 pub const PREFIX_UPDATED: &str = "Updated prefix!";
 
 pub const MISSING_PREFIX: &str = "⚠️ Please send a character as an argument.\nExample: `!prefix ~`";
+
+pub const FAILED_CREATE_PREFIXES: &str = "Failed to create prefixes file.";
+
+pub const FAILED_SAVE_PREFIXES: &str = "Failed to save prefixes file.";
+
+pub const SKIPPED: &str = "⏭️ Skipped!";

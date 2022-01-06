@@ -86,10 +86,8 @@ async fn main() {
                     if let Some(serde_json::Value::String(prefix)) =
                         prefixes.get(guild_id.0.to_string())
                     {
-                        // Command from guild_id.0 with prefix
                         Some(prefix.clone())
                     } else {
-                        // Command from guild_id.0 with default prefix
                         Some("!".to_string())
                     }
                 })
