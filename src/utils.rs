@@ -5,14 +5,7 @@ use serenity::{
     utils::Color,
 };
 use songbird::tracks::TrackHandle;
-use std::{
-    fs::{self, File},
-    io::{ErrorKind, Write},
-    sync::Arc,
-    time::Duration,
-};
-
-use crate::strings::{FAILED_CREATE_PREFIXES, FAILED_SAVE_PREFIXES};
+use std::{fs, io::BufReader, sync::Arc, time::Duration};
 
 pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> CommandResult {
     msg.channel_id
@@ -73,15 +66,15 @@ pub fn get_full_username(user: &User) -> String {
 }
 
 pub fn get_prefixes() -> serde_json::Value {
-    let data = fs::read_to_string("prefixes.json").unwrap_or_else(|error| {
-        if error.kind() == ErrorKind::NotFound {
-            let mut f = File::create("prefixes.json").expect(FAILED_CREATE_PREFIXES);
-            f.write_all("{}".as_bytes()).expect(FAILED_SAVE_PREFIXES);
-            "{}".to_string()
-        } else {
-            panic!("Problem opening the file: {:?}", error);
-        }
-    });
+    let file = fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open("prefixes.json")
+        .unwrap();
+
+    serde_json::from_reader(BufReader::new(file)).unwrap()
+}
 
     serde_json::from_str(&data).expect("JSON was not well-formatted")
 }
