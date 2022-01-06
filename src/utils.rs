@@ -6,7 +6,12 @@ use serenity::{
     utils::Color,
 };
 use songbird::tracks::TrackHandle;
-use std::{fs, io::BufReader, sync::Arc, time::Duration};
+use std::{
+    fs,
+    io::{BufReader, Read, Write},
+    sync::Arc,
+    time::Duration,
+};
 
 pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> CommandResult {
     msg.channel_id
@@ -67,12 +72,19 @@ pub fn get_full_username(user: &User) -> String {
 }
 
 pub fn get_prefixes() -> serde_json::Value {
-    let file = fs::OpenOptions::new()
+    let mut file = fs::OpenOptions::new()
         .read(true)
         .write(true)
         .create(true)
         .open("prefixes.json")
         .unwrap();
+
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).unwrap();
+
+    if contents == "" {
+        file.write_all("{}".as_bytes()).unwrap();
+    }
 
     serde_json::from_reader(BufReader::new(file)).unwrap()
 }
