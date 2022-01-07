@@ -20,4 +20,11 @@ pub const MISSING_PLAY_QUERY: &str =
     "Missing query for this command! Either add a URL or keywords.";
 
 pub const MISSING_INDEX_QUEUE: &str = "Missing an index!";
+
 pub const NO_SONG_ON_INDEX: &str = "There is no queued song on that index!";
+
+pub const PREFIX_UPDATED: &str = "Updated prefix!";
+
+pub const MISSING_PREFIX: &str = "⚠️ Please send a character as an argument.\nExample: `!prefix ~`";
+
+pub const SKIPPED: &str = "⏭️ Skipped!";

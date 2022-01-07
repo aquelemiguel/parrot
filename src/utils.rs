@@ -1,3 +1,4 @@
+use serde_json::Value;
 use serenity::{
     framework::standard::CommandResult,
     http::Http,
@@ -5,7 +6,12 @@ use serenity::{
     utils::Color,
 };
 use songbird::tracks::TrackHandle;
-use std::{sync::Arc, time::Duration};
+use std::{
+    fs::{self, OpenOptions},
+    io::BufReader,
+    sync::Arc,
+    time::Duration,
+};
 
 pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> CommandResult {
     msg.channel_id
@@ -63,4 +69,33 @@ pub fn get_human_readable_timestamp(duration: Duration) -> String {
 
 pub fn get_full_username(user: &User) -> String {
     format!("{}#{:04}", user.name, user.discriminator)
+}
+
+pub fn get_prefixes() -> serde_json::Value {
+    let file_exists = fs::metadata("prefixes.json").is_ok();
+    let file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open("prefixes.json")
+        .unwrap();
+
+    if !file_exists {
+        fs::write("prefixes.json", "{}").unwrap();
+    };
+
+    serde_json::from_reader(BufReader::new(file)).unwrap()
+}
+
+pub fn merge_json(a: &mut Value, b: &Value) {
+    match (a, b) {
+        (&mut Value::Object(ref mut a), &Value::Object(ref b)) => {
+            for (k, v) in b {
+                merge_json(a.entry(k.clone()).or_insert(Value::Null), v);
+            }
+        }
+        (a, b) => {
+            *a = b.clone();
+        }
+    }
 }
