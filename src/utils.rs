@@ -16,7 +16,7 @@ use std::{
 pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> CommandResult {
     msg.channel_id
         .send_message(http, |m| {
-            m.embed(|e| e.description(format!("**{}**", content)).color(Color::RED))
+            m.embed(|e| e.description(content.to_string()).color(Color::RED))
         })
         .await?;
     Ok(())

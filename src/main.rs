@@ -16,6 +16,7 @@ use parrot::{
     commands::{
         clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, prefix::*, queue::*,
         remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
+        version::*,
     },
     utils::get_prefixes,
 };
@@ -41,7 +42,8 @@ use parrot::commands::genius::{explain::*, lyrics::*};
     shuffle,
     skip,
     stop,
-    summon
+    summon,
+    version
 )]
 struct General;
 
