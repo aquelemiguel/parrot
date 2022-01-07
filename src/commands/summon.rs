@@ -8,7 +8,7 @@ use serenity::{
 };
 use songbird::Event;
 
-use crate::events::idle_notifier::IdleNotifier;
+use crate::events::idle_handler::IdleHandler;
 use crate::strings::AUTHOR_NOT_FOUND;
 use crate::utils::send_simple_message;
 
@@ -52,7 +52,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
 
         handler.add_global_event(
             Event::Periodic(Duration::from_secs(1), None),
-            IdleNotifier {
+            IdleHandler {
                 http: ctx.http.clone(),
                 manager,
                 msg: msg.clone(),

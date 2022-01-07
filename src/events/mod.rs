@@ -1,1 +1,2 @@
-pub mod idle_notifier;
+pub mod idle_handler;
+pub mod serenity_handler;
