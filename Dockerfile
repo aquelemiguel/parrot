@@ -9,6 +9,7 @@ WORKDIR "/parrot"
 # Cache cargo build dependencies by creating a dummy source
 RUN mkdir src
 RUN echo "fn main() {}" > src/main.rs
+RUN echo "" > src/lib.rs
 COPY Cargo.toml ./
 RUN cargo build --release
 
