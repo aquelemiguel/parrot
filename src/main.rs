@@ -27,6 +27,7 @@ use parrot::{
         version::*,
     },
     events::serenity_handler::SerenityHandler,
+    strings::DEFAULT_PREFIX,
     utils::get_prefixes,
 };
 
@@ -63,7 +64,8 @@ async fn main() {
             c.dynamic_prefix(|ctx, msg| {
                 Box::pin(async move {
                     let prefixes = get_prefixes();
-                    let default_prefix = env::var("PREFIX").unwrap_or_else(|_| "!".to_string());
+                    let default_prefix =
+                        env::var("PREFIX").unwrap_or_else(|_| DEFAULT_PREFIX.to_string());
                     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
 
                     if let Some(serde_json::Value::String(guild_prefix)) =

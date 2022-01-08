@@ -1,3 +1,5 @@
+pub const DEFAULT_PREFIX: &str = "-";
+
 pub const IDLE_ALERT: &str =
     "I've been idle for a while, so I'll leave for now to save resources.\nFeel free to summon me back any time!";
 

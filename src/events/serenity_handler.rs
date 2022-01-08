@@ -7,6 +7,9 @@ use serenity::{
         prelude::{Activity, VoiceState},
     },
 };
+use std::env;
+
+use crate::strings::DEFAULT_PREFIX;
 
 pub struct SerenityHandler;
 
@@ -14,7 +17,10 @@ pub struct SerenityHandler;
 impl EventHandler for SerenityHandler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("🦜 {} is connected!", ready.user.name);
-        ctx.set_activity(Activity::listening("!play")).await;
+
+        let prefix = env::var("PREFIX").unwrap_or_else(|_| DEFAULT_PREFIX.to_string());
+        let activity = Activity::listening(format!("{}play", prefix));
+        ctx.set_activity(activity).await;
     }
 
     async fn voice_state_update(
