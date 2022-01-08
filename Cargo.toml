@@ -10,7 +10,6 @@ keywords = ["discord", "music-bot", "rust"]
 
 [lib]
 name = "parrot"
-path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
