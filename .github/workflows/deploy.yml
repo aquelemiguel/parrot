@@ -1,0 +1,15 @@
+name: Docker Personal Deployment
+on: push
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: List Docker Containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.DEPLOYMENTKEY }}
+          script_stop: true
+          script: sudo docker ps
