@@ -9,6 +9,8 @@ use serenity::{
 };
 use std::env;
 
+use crate::strings::DEFAULT_PREFIX;
+
 pub struct SerenityHandler;
 
 #[async_trait]
@@ -16,7 +18,7 @@ impl EventHandler for SerenityHandler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("🦜 {} is connected!", ready.user.name);
 
-        let prefix = env::var("PREFIX").unwrap_or_else(|_| "!".to_string());
+        let prefix = env::var("PREFIX").unwrap_or_else(|_| DEFAULT_PREFIX.to_string());
         let activity = Activity::listening(format!("{}play", prefix));
         ctx.set_activity(activity).await;
     }
