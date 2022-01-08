@@ -61,4 +61,4 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.DEPLOYMENTKEY }}
           script_stop: true
-          script: docker run -d --pull "always" --env-file .env ghcr.io/aquelemiguel/parrot:latest
+          script: docker run -d --pull "always" --env-file .env ghcr.io/aquelemiguel/parrot:v${{ steps.vars.outputs.tag }}
