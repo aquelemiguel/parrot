@@ -10,7 +10,7 @@ keywords = ["discord", "music-bot", "rust"]
 
 [lib]
 name = "parrot"
-crate-type = ["cdylib", "rlib"]
+crate-type = ["rlib"]
 
 [dependencies]
 dotenv = "0.15"
