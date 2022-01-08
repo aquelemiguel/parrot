@@ -1,5 +1,5 @@
 use serenity::{async_trait, http::Http, model::channel::Message};
-use songbird::{Event, EventContext, EventHandler as VoiceEventHandler, Songbird};
+use songbird::{Event, EventContext, EventHandler, Songbird};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
@@ -7,7 +7,7 @@ use std::sync::{
 
 use crate::{strings::IDLE_ALERT, utils::send_simple_message};
 
-pub struct IdleNotifier {
+pub struct IdleHandler {
     pub http: Arc<Http>,
     pub manager: Arc<Songbird>,
     pub msg: Message,
@@ -16,7 +16,7 @@ pub struct IdleNotifier {
 }
 
 #[async_trait]
-impl VoiceEventHandler for IdleNotifier {
+impl EventHandler for IdleHandler {
     async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
         if let EventContext::Track(track_list) = ctx {
             if !track_list.is_empty() {

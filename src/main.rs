@@ -1,12 +1,5 @@
 use serenity::{
-    async_trait,
-    client::{Context, EventHandler},
     framework::{standard::macros::group, StandardFramework},
-    model::{
-        gateway::Ready,
-        id::GuildId,
-        prelude::{Activity, VoiceState},
-    },
     Client,
 };
 use songbird::SerenityInit;
@@ -14,14 +7,28 @@ use std::env;
 
 use parrot::{
     commands::{
-        clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, prefix::*, queue::*,
-        remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
+        clear::*,
+        genius::{explain::*, lyrics::*},
+        leave::*,
+        now_playing::*,
+        pause::*,
+        play::*,
+        playtop::*,
+        prefix::*,
+        queue::*,
+        remove::*,
+        repeat::*,
+        resume::*,
+        seek::*,
+        shuffle::*,
+        skip::*,
+        stop::*,
+        summon::*,
         version::*,
     },
+    events::serenity_handler::SerenityHandler,
     utils::get_prefixes,
 };
-
-use parrot::commands::genius::{explain::*, lyrics::*};
 
 #[group]
 #[commands(
@@ -45,33 +52,7 @@ use parrot::commands::genius::{explain::*, lyrics::*};
     summon,
     version
 )]
-struct General;
-
-struct Handler;
-
-#[async_trait]
-impl EventHandler for Handler {
-    async fn ready(&self, ctx: Context, ready: Ready) {
-        println!("🦜 {} is connected!", ready.user.name);
-        ctx.set_activity(Activity::listening("!play")).await;
-    }
-
-    async fn voice_state_update(
-        &self,
-        ctx: Context,
-        guild: Option<GuildId>,
-        _old: Option<VoiceState>,
-        new: VoiceState,
-    ) {
-        if new.user_id == ctx.http.get_current_user().await.unwrap().id && !new.deaf {
-            guild
-                .unwrap()
-                .edit_member(&ctx.http, new.user_id, |n| n.deafen(true))
-                .await
-                .unwrap();
-        }
-    }
-}
+struct Commands;
 
 #[tokio::main]
 async fn main() {
@@ -96,12 +77,12 @@ async fn main() {
             })
             .prefix("")
         })
-        .group(&GENERAL_GROUP);
+        .group(&COMMANDS_GROUP);
 
     let token = env::var("DISCORD_TOKEN").expect("Expected a token in the environment");
 
     let mut client = Client::builder(token)
-        .event_handler(Handler)
+        .event_handler(SerenityHandler)
         .framework(framework)
         .register_songbird()
         .await
