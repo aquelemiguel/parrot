@@ -1,4 +1,4 @@
-name: Docker Personal Deployment
+name: Docker Development Team Deployment
 on: push
 jobs:
   build:
