@@ -60,9 +60,12 @@ pub struct Client {
 }
 
 impl Client {
-    pub async fn new(token: Option<String>) -> Result<Client, Box<dyn Error>> {
-        let token = token.unwrap_or(env::var("DISCORD_TOKEN")?);
+    pub async fn default() -> Result<Client, Box<dyn Error>> {
+        let token = env::var("DISCORD_TOKEN")?;
+        Client::new(token).await
+    }
 
+    pub async fn new(token: String) -> Result<Client, Box<dyn Error>> {
         let framework = StandardFramework::new()
             .configure(|c| {
                 c.dynamic_prefix(|ctx, msg| Box::pin(Client::get_prefix(ctx, msg)))
