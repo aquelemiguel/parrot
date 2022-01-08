@@ -4,7 +4,7 @@ use serenity::{
     model::{
         gateway::Ready,
         id::GuildId,
-        prelude::{Activity, VoiceState},
+        prelude::{OnlineStatus, VoiceState},
     },
 };
 
@@ -14,7 +14,7 @@ pub struct SerenityHandler;
 impl EventHandler for SerenityHandler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("🦜 {} is connected!", ready.user.name);
-        ctx.set_activity(Activity::listening("!play")).await;
+        ctx.set_presence(None, OnlineStatus::Online).await;
     }
 
     async fn voice_state_update(
