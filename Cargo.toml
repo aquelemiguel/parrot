@@ -3,9 +3,14 @@ name = "parrot"
 version = "0.3.0"
 authors = ["aquelemiguel"]
 edition = "2018"
+description = "A Discord music bot built in Rust"
+repository = "https://github.com/aquelemiguel/parrot"
+license = "MIT"
+keywords = ["discord", "music-bot", "rust"]
 
 [lib]
 name = "parrot"
+path = "src/lib.rs"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
