@@ -12,10 +12,9 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.DEPLOYMENTKEY }}
           script_stop: true
-          script: containers=$(docker ps -q) \
-            if [ ! -z $containers ]; then \
-            docker kill $containers; \
-            fi
+          script: |
+            containers=$(docker ps -q)
+            if [ ! -z $containers ]; then docker kill $containers; fi
       - name: Deploy with New Image
         uses: appleboy/ssh-action@master
         with:
