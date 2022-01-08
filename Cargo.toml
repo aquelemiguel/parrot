@@ -4,6 +4,10 @@ version = "0.3.0"
 authors = ["aquelemiguel"]
 edition = "2018"
 
+[lib]
+name = "parrot"
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
 dotenv = "0.15"
 html2md = "0.2"
