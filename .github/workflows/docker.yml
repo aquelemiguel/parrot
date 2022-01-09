@@ -48,9 +48,9 @@ jobs:
       - name: Kill All Docker Containers
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.DEPLOYMENTKEY }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
           script_stop: true
           script: |
             containers=$(docker ps -q)
@@ -58,8 +58,8 @@ jobs:
       - name: Deploy with New Image
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.HOST }}
-          username: ${{ secrets.USERNAME }}
-          key: ${{ secrets.DEPLOYMENTKEY }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
           script_stop: true
           script: docker run -d --pull "always" --env-file .env ghcr.io/${{ github.repository }}:${{ github.ref_name }}
