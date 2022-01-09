@@ -45,9 +45,15 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - name: Get previous tag
-        id: previoustag
-        uses: "WyriHaximus/github-action-get-previous-tag@v1"
+      - name: Get Previous Successfuly Run Tag
+        uses: appleboy/ssh-action@master
+        id: version
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: echo "::set-output name=LAST_RUNNING_TAG::docker ps | grep 'v[[:digit:]]*.[[:digit:]]*.[[:digit:]]*' -ow"
       - name: Remove Exited Containers
         uses: appleboy/ssh-action@master
         with:
@@ -81,4 +87,4 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
-          script: if [ ! "$(docker ps | grep ghcr.io/${{ github.repository }}:${{ github.ref_name }})" ]; then docker run -d --env-file .env ghcr.io/${{ github.repository }}:${{ steps.previoustag.outputs.tag }};  fi
+          script: if [ ! "$(docker ps | grep ghcr.io/${{ github.repository }}:${{ github.ref_name }})" ]; then docker run -d --env-file .env ghcr.io/${{ github.repository }}:${{ steps.version.outputs.LAST_RUNNING_TAG }};  fi
