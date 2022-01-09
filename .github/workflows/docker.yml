@@ -53,7 +53,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
-          script: echo "::set-output name=LAST_RUNNING_TAG::docker ps | grep 'v[[:digit:]]*.[[:digit:]]*.[[:digit:]]*' -ow"
+          script: echo ::set-output name=LAST_RUNNING_TAG::docker ps | grep 'v[[:digit:]]*.[[:digit:]]*.[[:digit:]]*' -ow
       - name: Remove Exited Containers
         uses: appleboy/ssh-action@master
         with:
