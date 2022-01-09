@@ -10,6 +10,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 jobs:
   build:
+    name: Build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,3 +39,27 @@ jobs:
           push: ${{ github.event_name == 'push' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+  deploy:
+    name: Development Team Deployment
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kill All Docker Containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: |
+            containers=$(docker ps -q)
+            if [ ! -z $containers ]; then docker kill $containers; fi
+      - name: Deploy with New Image
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: docker run -d --pull "always" --env-file .env ghcr.io/${{ github.repository }}:${{ github.ref_name }}
