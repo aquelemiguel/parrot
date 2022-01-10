@@ -20,6 +20,7 @@ const EMBED_TIMEOUT: u64 = 60 * 60;
 const EMBED_PAGE_SIZE: usize = 6;
 
 #[command]
+#[aliases("q")]
 pub async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
     let manager = songbird::get(ctx).await.unwrap();
