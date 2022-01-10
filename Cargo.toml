@@ -8,10 +8,6 @@ repository = "https://github.com/aquelemiguel/parrot"
 license = "MIT"
 keywords = ["discord", "music-bot", "rust"]
 
-[lib]
-name = "parrot"
-crate-type = ["rlib"]
-
 [dependencies]
 dotenv = "0.15"
 html2md = "0.2"
