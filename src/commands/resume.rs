@@ -10,6 +10,7 @@ use crate::{
 };
 
 #[command]
+#[aliases("re", "res", "continue")]
 async fn resume(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
     let manager = songbird::get(ctx).await.unwrap();

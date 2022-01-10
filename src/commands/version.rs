@@ -9,6 +9,7 @@ use crate::utils::send_simple_message;
 const RELEASES_LINK: &str = "https://github.com/aquelemiguel/parrot/releases";
 
 #[command]
+#[aliases("v")]
 async fn version(ctx: &Context, msg: &Message) -> CommandResult {
     let current = option_env!("CARGO_PKG_VERSION").unwrap_or_else(|| "Unknown");
     let current = format!("Version [{}]({}/tag/v{})", current, RELEASES_LINK, current);

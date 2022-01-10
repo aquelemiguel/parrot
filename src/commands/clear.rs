@@ -10,6 +10,7 @@ use crate::{
 };
 
 #[command]
+#[aliases("cl")]
 async fn clear(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
     let manager = songbird::get(ctx).await.unwrap();

@@ -9,6 +9,7 @@ use serenity::{
 use crate::{strings::NO_VOICE_CONNECTION, utils::send_simple_message};
 
 #[command]
+#[aliases("random")]
 async fn shuffle(ctx: &Context, msg: &Message, _args: Args) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
     let manager = songbird::get(ctx).await.unwrap();

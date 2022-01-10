@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[command]
-#[aliases("s")]
+#[aliases("s", "next")]
 async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
     let manager = songbird::get(ctx).await.unwrap();
