@@ -45,33 +45,6 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
-      - name: Get Previous Successfuly Run Tag
-        uses: appleboy/ssh-action@master
-        id: version
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script_stop: true
-          script: echo "::set-output name=LAST_RUNNING_TAG::$(docker ps | grep 'v[[:digit:]]*.[[:digit:]]*.[[:digit:]]*' -ow)"
-      - name: Remove Exited Containers
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script_stop: true
-          script: docker rm $(docker ps --filter status=exited -q)
-      - name: Kill All Docker Containers
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script_stop: true
-          script: |
-            containers=$(docker ps -q)
-            if [ ! -z $containers ]; then docker kill $containers; fi
       - name: Deploy with New Image
         uses: appleboy/ssh-action@master
         with:
@@ -80,11 +53,19 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
           script: docker run -d --pull "always" --env-file .env ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-      - name: Check Status of New Image With Fallback Deployment
+      - name: Check New Image Status With Removal of Old Images
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           script_stop: true
-          script: if [ ! "$(docker ps | grep ghcr.io/${{ github.repository }}:${{ github.ref_name }})" ]; then docker run -d --env-file .env ghcr.io/${{ github.repository }}:${{ steps.version.outputs.LAST_RUNNING_TAG }};  fi
+          script: if [ "$(docker ps | grep ghcr.io/${{ github.repository }}:${{ github.ref_name }})" ]; then docker kill $(docker ps -aq | grep -v -E $(docker ps -aq --filter ancestor=ghcr.io/${{ github.repository }}:${{ github.ref_name }} | paste -sd "|" -));  fi
+      - name: Remove Exited Containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script_stop: true
+          script: docker rm $(docker ps --filter status=exited -q)
