@@ -10,6 +10,7 @@ use crate::{
 };
 
 #[command]
+#[aliases("rm")]
 async fn remove(ctx: &Context, msg: &Message, mut args: Args) -> CommandResult {
     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
     let manager = songbird::get(ctx).await.unwrap();

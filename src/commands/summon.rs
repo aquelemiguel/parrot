@@ -13,6 +13,7 @@ use crate::strings::AUTHOR_NOT_FOUND;
 use crate::utils::send_simple_message;
 
 #[command]
+#[aliases("join")]
 pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
     let guild = msg.guild(&ctx.cache).await.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
