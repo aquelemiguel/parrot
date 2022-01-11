@@ -36,10 +36,9 @@ jobs:
 
       - name: Commit `Cargo.toml` update
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: EndBug/add-and-commit@v7
         with:
-          commit_message: "bump: Updated to version ${{ github.ref_name }}"
-          push_options: "origin main"
+          message: "bump: Updated to version ${{ github.ref_name }}"
 
       - name: Extract Git Metadata
         id: meta
