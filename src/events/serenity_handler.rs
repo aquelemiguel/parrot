@@ -4,12 +4,14 @@ use serenity::{
     model::{
         gateway::Ready,
         id::GuildId,
+        interactions::{
+            application_command::ApplicationCommand, Interaction, InteractionResponseType,
+        },
         prelude::{Activity, VoiceState},
     },
 };
-use std::env;
 
-use crate::strings::DEFAULT_PREFIX;
+use crate::commands::version::*;
 
 pub struct SerenityHandler;
 
@@ -18,9 +20,54 @@ impl EventHandler for SerenityHandler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("🦜 {} is connected!", ready.user.name);
 
-        let prefix = env::var("PREFIX").unwrap_or_else(|_| DEFAULT_PREFIX.to_string());
-        let activity = Activity::listening(format!("{}play", prefix));
+        let activity = Activity::listening("/play");
         ctx.set_activity(activity).await;
+
+        let yellow_flannel = GuildId(79541187794444288);
+
+        // let commands = yellow_flannel
+        //     .get_application_commands(&ctx.http)
+        //     .await
+        //     .unwrap();
+
+        // for command in commands.iter() {
+        //     yellow_flannel
+        //         .delete_application_command(&ctx.http, command.id)
+        //         .await
+        //         .unwrap();
+        // }
+
+        GuildId::set_application_commands(&yellow_flannel, &ctx.http, |commands| {
+            commands.create_application_command(|command| {
+                command.name("version").description("Get the version!")
+            })
+        })
+        .await
+        .unwrap();
+
+        let commands = yellow_flannel
+            .get_application_commands(&ctx.http)
+            .await
+            .unwrap();
+
+        println!(
+            "I now have the following guild slash commands: {:#?}",
+            commands
+        );
+
+        // ApplicationCommand::create_global_application_command(&ctx.http, |command| {
+        //     command.name("ping").description("pinging ur ass")
+        // })
+        // .await;
+    }
+
+    async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
+        if let Interaction::ApplicationCommand(mut command) = interaction {
+            match command.data.name.as_str() {
+                "version" => version(&ctx, &mut command).await,
+                _ => unimplemented!(),
+            };
+        }
     }
 
     async fn voice_state_update(
