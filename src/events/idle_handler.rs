@@ -1,9 +1,6 @@
 use serenity::{
-    async_trait,
-    http::Http,
-    model::interactions::{
-        application_command::ApplicationCommandInteraction, InteractionResponseType,
-    },
+    async_trait, http::Http,
+    model::interactions::application_command::ApplicationCommandInteraction,
 };
 use songbird::{Event, EventContext, EventHandler, Songbird};
 use std::sync::{

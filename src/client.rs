@@ -1,28 +1,6 @@
-use serde_json::Value;
-use serenity::{client::Context, model::channel::Message};
+use crate::events::serenity_handler::SerenityHandler;
 use songbird::SerenityInit;
 use std::{env, error::Error};
-
-use crate::commands::{
-    clear::*,
-    genius::{explain::*, lyrics::*},
-    leave::*,
-    now_playing::*,
-    pause::*,
-    play::*,
-    playtop::*,
-    queue::*,
-    remove::*,
-    repeat::*,
-    resume::*,
-    seek::*,
-    shuffle::*,
-    skip::*,
-    stop::*,
-    summon::*,
-    version::*,
-};
-use crate::{events::serenity_handler::SerenityHandler, strings::DEFAULT_PREFIX};
 
 pub struct Client {
     client: serenity::Client,

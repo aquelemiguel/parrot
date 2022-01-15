@@ -10,8 +10,8 @@ use serenity::{
 };
 
 use crate::commands::{
-    play::*, playtop::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*,
-    summon::*, version::*,
+    clear::*, leave::*, now_playing::now_playing, pause::*, play::*, playtop::*, remove::*,
+    repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
 };
 
 pub struct SerenityHandler;
@@ -40,6 +40,24 @@ impl EventHandler for SerenityHandler {
 
         GuildId::set_application_commands(&yellow_flannel, &ctx.http, |commands| {
             commands
+                .create_application_command(|command| {
+                    command.name("clear").description("Clears the queue")
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("leave")
+                        .description("Leave the voice channel the bot is connected to")
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("np")
+                        .description("Displays information about the current track")
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("pause")
+                        .description("Pauses the current track")
+                })
                 .create_application_command(|command| {
                     command
                         .name("play")
@@ -123,16 +141,6 @@ impl EventHandler for SerenityHandler {
         .await
         .unwrap();
 
-        let commands = yellow_flannel
-            .get_application_commands(&ctx.http)
-            .await
-            .unwrap();
-
-        println!(
-            "I now have the following guild slash commands: {:#?}",
-            commands
-        );
-
         // ApplicationCommand::create_global_application_command(&ctx.http, |command| {
         //     command.name("ping").description("pinging ur ass")
         // })
@@ -142,6 +150,10 @@ impl EventHandler for SerenityHandler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(mut command) = interaction {
             match command.data.name.as_str() {
+                "clear" => clear(&ctx, &mut command).await,
+                "leave" => leave(&ctx, &mut command).await,
+                "np" => now_playing(&ctx, &mut command).await,
+                "pause" => pause(&ctx, &mut command).await,
                 "play" => play(&ctx, &mut command).await,
                 "playtop" => playtop(&ctx, &mut command).await,
                 "remove" => remove(&ctx, &mut command).await,

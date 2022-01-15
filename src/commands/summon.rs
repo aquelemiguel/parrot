@@ -2,7 +2,6 @@ use std::time::Duration;
 
 use serenity::client::Context;
 use serenity::model::interactions::application_command::ApplicationCommandInteraction;
-use serenity::model::interactions::InteractionResponseType;
 use serenity::prelude::Mentionable;
 use serenity::prelude::SerenityError;
 use songbird::Event;

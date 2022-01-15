@@ -1,9 +1,9 @@
 use std::{sync::Arc, time::Duration};
 
 use crate::{
-    commands::{summon::summon, EnqueueType, PlayFlag},
+    commands::{now_playing::now_playing, summon::summon, EnqueueType, PlayFlag},
     strings::{MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
-    utils::create_response,
+    utils::{create_queued_response, create_response},
 };
 
 use serenity::{
@@ -52,7 +52,7 @@ pub async fn _play(
 
     let enqueue_type = if url.contains("youtube.com/playlist?list=") {
         EnqueueType::PLAYLIST
-    } else if url.clone().starts_with("http") {
+    } else if url.starts_with("http") {
         EnqueueType::URI
     } else {
         EnqueueType::SEARCH
@@ -61,7 +61,7 @@ pub async fn _play(
     match enqueue_type {
         EnqueueType::URI => enqueue_song(&call, url.to_string(), true, flag).await,
         EnqueueType::SEARCH => enqueue_song(&call, url.to_string(), false, flag).await,
-        EnqueueType::PLAYLIST => enqueue_playlist(&call, &url).await,
+        EnqueueType::PLAYLIST => enqueue_playlist(&call, url).await,
     };
 
     let handler = call.lock().await;
@@ -75,20 +75,26 @@ pub async fn _play(
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
                 PlayFlag::PLAYTOP => {
                     let track = queue.get(1).unwrap();
-                    return create_response(&ctx.http, interaction, "Added to top!").await;
 
-                    // return send_added_to_queue_message(
-                    //     &ctx.http,
-                    //     msg,
-                    //     "Added to top",
-                    //     track,
-                    //     estimated_time,
-                    // )
-                    // .await;
+                    return create_queued_response(
+                        &ctx.http,
+                        interaction,
+                        "Added to top",
+                        track,
+                        estimated_time,
+                    )
+                    .await;
                 }
                 PlayFlag::DEFAULT => {
                     let track = queue.last().unwrap();
-                    return create_response(&ctx.http, interaction, "Added to queue!").await;
+                    return create_queued_response(
+                        &ctx.http,
+                        interaction,
+                        "Added to top",
+                        track,
+                        estimated_time,
+                    )
+                    .await;
                 }
             },
             EnqueueType::PLAYLIST => {
@@ -96,8 +102,7 @@ pub async fn _play(
             }
         }
     } else {
-        return create_response(&ctx.http, interaction, "Now playing!").await;
-        // now_playing(ctx, interaction).await?;
+        return now_playing(ctx, interaction).await;
     }
 }
 

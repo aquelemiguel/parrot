@@ -1,8 +1,5 @@
 use serenity::{
-    client::Context,
-    model::interactions::{
-        application_command::ApplicationCommandInteraction, InteractionResponseType,
-    },
+    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,
 };
 

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use serenity::{
     http::Http,
@@ -8,6 +8,7 @@ use serenity::{
 };
 
 use serenity::prelude::SerenityError;
+use songbird::tracks::TrackHandle;
 
 // use serde_json::Value;
 // use serenity::{
@@ -38,54 +39,58 @@ pub async fn create_response(
         .await
 }
 
-// pub async fn send_added_to_queue_message(
-//     http: &Arc<Http>,
-//     msg: &Message,
-//     title: &str,
-//     track: &TrackHandle,
-//     estimated_time: Duration,
-// ) -> Result<(), SerenityError> {
-//     let metadata = track.metadata().clone();
-//     msg.channel_id
-//         .send_message(http, |m| {
-//             m.embed(|e| {
-//                 e.title(title);
-//                 e.thumbnail(metadata.thumbnail.unwrap());
+pub async fn create_queued_response(
+    http: &Arc<Http>,
+    interaction: &mut ApplicationCommandInteraction,
+    title: &str,
+    track: &TrackHandle,
+    estimated_time: Duration,
+) -> Result<(), SerenityError> {
+    let metadata = track.metadata().clone();
 
-//                 e.description(format!(
-//                     "[**{}**]({})",
-//                     metadata.title.unwrap(),
-//                     metadata.source_url.unwrap()
-//                 ));
+    interaction
+        .create_interaction_response(http, |response| {
+            response
+                .kind(InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(|message| {
+                    message.create_embed(|e| {
+                        e.title(title);
+                        e.thumbnail(metadata.thumbnail.unwrap());
 
-//                 let footer_text = format!(
-//                     "Track duration: {}\nEstimated time until play: {}",
-//                     get_human_readable_timestamp(metadata.duration.unwrap()),
-//                     get_human_readable_timestamp(estimated_time)
-//                 );
+                        e.description(format!(
+                            "[**{}**]({})",
+                            metadata.title.unwrap(),
+                            metadata.source_url.unwrap()
+                        ));
 
-//                 e.footer(|f| f.text(footer_text))
-//             })
-//         })
-//         .await?;
-//     Ok(())
-// }
+                        let footer_text = format!(
+                            "Track duration: {}\nEstimated time until play: {}",
+                            get_human_readable_timestamp(metadata.duration.unwrap()),
+                            get_human_readable_timestamp(estimated_time)
+                        );
+
+                        e.footer(|f| f.text(footer_text))
+                    })
+                })
+        })
+        .await
+}
 
 // pub fn get_full_username(user: &User) -> String {
 //     format!("{}#{:04}", user.name, user.discriminator)
 // }
 
-// pub fn get_human_readable_timestamp(duration: Duration) -> String {
-//     let seconds = duration.as_secs() % 60;
-//     let minutes = (duration.as_secs() / 60) % 60;
-//     let hours = duration.as_secs() / 3600;
+pub fn get_human_readable_timestamp(duration: Duration) -> String {
+    let seconds = duration.as_secs() % 60;
+    let minutes = (duration.as_secs() / 60) % 60;
+    let hours = duration.as_secs() / 3600;
 
-//     if hours < 1 {
-//         format!("{:02}:{:02}", minutes, seconds)
-//     } else {
-//         format!("{}:{:02}:{:02}", hours, minutes, seconds)
-//     }
-// }
+    if hours < 1 {
+        format!("{:02}:{:02}", minutes, seconds)
+    } else {
+        format!("{}:{:02}:{:02}", hours, minutes, seconds)
+    }
+}
 
 // pub fn get_prefixes() -> serde_json::Value {
 //     let file_exists = fs::metadata("prefixes.json").is_ok();
