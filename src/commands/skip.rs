@@ -1,33 +1,30 @@
-// use serenity::{
-//     client::Context,
-//     framework::standard::{macros::command, CommandResult},
-//     model::channel::Message,
-// };
+use crate::strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY};
+use crate::utils::create_response;
+use serenity::prelude::SerenityError;
+use serenity::{
+    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
+};
 
-// use crate::{
-//     strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
-//     utils::send_simple_message,
-// };
+pub async fn skip(
+    ctx: &Context,
+    interaction: &mut ApplicationCommandInteraction,
+) -> Result<(), SerenityError> {
+    let guild_id = interaction.guild_id.unwrap();
+    let manager = songbird::get(ctx).await.unwrap();
 
-// #[command]
-// #[aliases("s", "next")]
-// async fn skip(ctx: &Context, msg: &Message) -> CommandResult {
-//     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
-//     let manager = songbird::get(ctx).await.unwrap();
+    let call = match manager.get(guild_id) {
+        Some(call) => call,
+        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+    };
 
-//     let call = match manager.get(guild_id) {
-//         Some(call) => call,
-//         None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
-//     };
+    let handler = call.lock().await;
+    let queue = handler.queue();
 
-//     let handler = call.lock().await;
-//     let queue = handler.queue();
+    if queue.is_empty() {
+        return create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await;
+    } else if queue.skip().is_ok() {
+        return create_response(&ctx.http, interaction, "⏭️ Skipped!").await;
+    }
 
-//     if queue.is_empty() {
-//         return send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
-//     } else if queue.skip().is_ok() {
-//         return send_simple_message(&ctx.http, msg, "⏭️ Skipped!").await;
-//     }
-
-//     Ok(())
-// }
+    Ok(())
+}

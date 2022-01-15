@@ -4,14 +4,15 @@ use serenity::{
     model::{
         gateway::Ready,
         id::GuildId,
-        interactions::{
-            application_command::ApplicationCommand, Interaction, InteractionResponseType,
-        },
+        interactions::{application_command::ApplicationCommandOptionType, Interaction},
         prelude::{Activity, VoiceState},
     },
 };
 
-use crate::commands::{summon::*, version::*};
+use crate::commands::{
+    play::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
+    version::*,
+};
 
 pub struct SerenityHandler;
 
@@ -39,6 +40,63 @@ impl EventHandler for SerenityHandler {
 
         GuildId::set_application_commands(&yellow_flannel, &ctx.http, |commands| {
             commands
+                .create_application_command(|command| {
+                    command
+                        .name("play")
+                        .description("Plays a track")
+                        .create_option(|option| {
+                            option
+                                .name("query")
+                                .description("The media to play")
+                                .kind(ApplicationCommandOptionType::String)
+                                .required(true)
+                        })
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("remove")
+                        .description("Removes a track from the queue")
+                        .create_option(|option| {
+                            option
+                                .name("index")
+                                .description("Position of the track (0 is currently playing)")
+                                .kind(ApplicationCommandOptionType::Integer)
+                                .required(true)
+                        })
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("repeat")
+                        .description("Toggles looping for the current track")
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("resume")
+                        .description("Resumes the current track")
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("seek")
+                        .description("Seeks current track to the given position")
+                        .create_option(|option| {
+                            option
+                                .name("timestamp")
+                                .description("Timestamp in the format HH:MM:SS")
+                                .kind(ApplicationCommandOptionType::String)
+                                .required(true)
+                        })
+                })
+                .create_application_command(|command| {
+                    command.name("shuffle").description("Shuffles the queue")
+                })
+                .create_application_command(|command| {
+                    command.name("skip").description("Skips the current track")
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("stop")
+                        .description("Stops the bot and clears the queue")
+                })
                 .create_application_command(|command| {
                     command
                         .name("summon")
@@ -72,10 +130,19 @@ impl EventHandler for SerenityHandler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(mut command) = interaction {
             match command.data.name.as_str() {
+                "play" => play(&ctx, &mut command).await,
+                "remove" => remove(&ctx, &mut command).await,
+                "repeat" => repeat(&ctx, &mut command).await,
+                "resume" => resume(&ctx, &mut command).await,
+                "seek" => seek(&ctx, &mut command).await,
+                "shuffle" => shuffle(&ctx, &mut command).await,
+                "skip" => skip(&ctx, &mut command).await,
+                "stop" => stop(&ctx, &mut command).await,
                 "summon" => summon(&ctx, &mut command).await,
                 "version" => version(&ctx, &mut command).await,
                 _ => unimplemented!(),
-            };
+            }
+            .unwrap();
         }
     }
 

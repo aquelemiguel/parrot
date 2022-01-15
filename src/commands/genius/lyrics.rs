@@ -1,7 +1,7 @@
 // use crate::{
 //     commands::genius::{genius_lyrics, genius_search, genius_song},
 //     strings::MISSING_QUERY,
-//     utils::send_simple_message,
+//     utils::create_response,
 // };
 
 // use serde_json::Value;
@@ -12,16 +12,17 @@
 // };
 
 // #[command]
-// async fn lyrics(ctx: &Context, msg: &Message, args: Args) -> CommandResult {
+// async fn lyrics(ctx: &Context,
+// interaction: &mut ApplicationCommandInteraction, args: Args) -> Result<(), SerenityError> {
 //     let query = match args.remains() {
 //         Some(query) => query,
-//         None => return send_simple_message(&ctx.http, msg, MISSING_QUERY).await,
+//         None => return create_response(&ctx.http, msg, MISSING_QUERY).await,
 //     };
 
 //     let hits = match genius_search(query).await {
 //         Some(hits) if !hits.is_empty() => hits,
 //         _ => {
-//             return send_simple_message(
+//             return create_response(
 //                 &ctx.http,
 //                 msg,
 //                 &format!("Could not find any songs that match `{}`", query),
@@ -35,7 +36,7 @@
 //     let url = hits[0]["result"]["url"].as_str().unwrap();
 //     match genius_lyrics(url).await {
 //         Ok(lyrics) => send_lyrics_message(ctx, msg, &lyrics, &song).await,
-//         Err(_) => send_simple_message(&ctx.http, msg, "Could not fetch lyrics!").await,
+//         Err(_) => create_response(&ctx.http, msg, "Could not fetch lyrics!").await,
 //     }
 // }
 
@@ -44,7 +45,7 @@
 //     msg: &Message,
 //     lyrics: &[String],
 //     song: &Value,
-// ) -> CommandResult {
+// ) -> Result<(), SerenityError> {
 //     let mut lyrics = flatten_lyrics(lyrics);
 
 //     if lyrics.len() > 2048 {

@@ -1,3 +1,14 @@
+use std::sync::Arc;
+
+use serenity::{
+    http::Http,
+    model::interactions::{
+        application_command::ApplicationCommandInteraction, InteractionResponseType,
+    },
+};
+
+use serenity::prelude::SerenityError;
+
 // use serde_json::Value;
 // use serenity::{
 //     framework::standard::CommandResult,
@@ -13,14 +24,19 @@
 //     time::Duration,
 // };
 
-// pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> CommandResult {
-//     msg.channel_id
-//         .send_message(http, |m| {
-//             m.embed(|e| e.description(content.to_string()).color(Color::RED))
-//         })
-//         .await?;
-//     Ok(())
-// }
+pub async fn create_response(
+    http: &Arc<Http>,
+    interaction: &mut ApplicationCommandInteraction,
+    content: &str,
+) -> Result<(), SerenityError> {
+    interaction
+        .create_interaction_response(&http, |response| {
+            response
+                .kind(InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(|message| message.content(content))
+        })
+        .await
+}
 
 // pub async fn send_added_to_queue_message(
 //     http: &Arc<Http>,
@@ -28,7 +44,7 @@
 //     title: &str,
 //     track: &TrackHandle,
 //     estimated_time: Duration,
-// ) -> CommandResult {
+// ) -> Result<(), SerenityError> {
 //     let metadata = track.metadata().clone();
 //     msg.channel_id
 //         .send_message(http, |m| {

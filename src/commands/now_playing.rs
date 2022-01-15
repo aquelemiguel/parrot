@@ -2,7 +2,7 @@
 
 // use crate::{
 //     strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
-//     utils::{get_human_readable_timestamp, send_simple_message},
+//     utils::{get_human_readable_timestamp, create_response},
 // };
 // use serenity::{
 //     builder::CreateEmbedFooter,
@@ -15,20 +15,21 @@
 
 // #[command]
 // #[aliases("np")]
-// pub async fn now_playing(ctx: &Context, msg: &Message) -> CommandResult {
+// pub async fn now_playing(ctx: &Context,
+// interaction: &mut ApplicationCommandInteraction) -> Result<(), SerenityError> {
 //     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
 //     let manager = songbird::get(ctx).await.unwrap();
 
 //     let call = match manager.get(guild_id) {
 //         Some(call) => call,
-//         None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
+//         None => return create_response(&ctx.http, msg, NO_VOICE_CONNECTION).await,
 //     };
 
 //     let handler = call.lock().await;
 
 //     let track = match handler.queue().current() {
 //         Some(track) => track,
-//         None => return send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await,
+//         None => return create_response(&ctx.http, msg, QUEUE_IS_EMPTY).await,
 //     };
 
 //     send_now_playing_message(&ctx.http, msg, track).await
@@ -38,7 +39,7 @@
 //     http: &Arc<Http>,
 //     msg: &Message,
 //     track: TrackHandle,
-// ) -> CommandResult {
+// ) -> Result<(), SerenityError> {
 //     let position = track.get_info().await?.position;
 //     let duration = track.metadata().duration.unwrap();
 //     let thumbnail = track.metadata().thumbnail.as_ref().unwrap();

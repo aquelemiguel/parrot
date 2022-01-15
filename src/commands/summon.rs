@@ -1,12 +1,20 @@
+use std::time::Duration;
+
 use serenity::client::Context;
 use serenity::model::interactions::application_command::ApplicationCommandInteraction;
 use serenity::model::interactions::InteractionResponseType;
 use serenity::prelude::Mentionable;
+use serenity::prelude::SerenityError;
+use songbird::Event;
 
-// use crate::events::idle_handler::IdleHandler;
+use crate::events::idle_handler::IdleHandler;
 use crate::strings::AUTHOR_NOT_FOUND;
+use crate::utils::create_response;
 
-pub async fn summon(ctx: &Context, interaction: &mut ApplicationCommandInteraction) {
+pub async fn summon(
+    ctx: &Context,
+    interaction: &mut ApplicationCommandInteraction,
+) -> Result<(), SerenityError> {
     let guild_id = interaction.guild_id.unwrap();
     let guild = ctx.cache.guild(guild_id).await.unwrap();
 
@@ -19,16 +27,7 @@ pub async fn summon(ctx: &Context, interaction: &mut ApplicationCommandInteracti
 
     let channel_id = match channel_opt {
         Some(channel_id) => channel_id,
-        None => {
-            return interaction
-                .create_interaction_response(&ctx.http, |response| {
-                    response
-                        .kind(InteractionResponseType::ChannelMessageWithSource)
-                        .interaction_response_data(|message| message.content(AUTHOR_NOT_FOUND))
-                })
-                .await
-                .unwrap();
-        }
+        None => return create_response(&ctx.http, interaction, AUTHOR_NOT_FOUND).await,
     };
 
     if let Some(call) = manager.get(guild.id) {
@@ -38,7 +37,7 @@ pub async fn summon(ctx: &Context, interaction: &mut ApplicationCommandInteracti
 
         // bot is already in the channel
         if has_current_connection {
-            return;
+            return create_response(&ctx.http, interaction, "I'm already here!").await;
         }
 
         // bot might have been disconnected manually
@@ -54,26 +53,18 @@ pub async fn summon(ctx: &Context, interaction: &mut ApplicationCommandInteracti
 
         handler.remove_all_global_events();
 
-        // handler.add_global_event(
-        //     Event::Periodic(Duration::from_secs(1), None),
-        //     IdleHandler {
-        //         http: ctx.http.clone(),
-        //         manager,
-        //         msg: msg.clone(),
-        //         limit: 60 * 10,
-        //         count: Default::default(),
-        //     },
-        // );
+        handler.add_global_event(
+            Event::Periodic(Duration::from_secs(1), None),
+            IdleHandler {
+                http: ctx.http.clone(),
+                manager,
+                interaction: interaction.clone(),
+                limit: 60 * 10,
+                count: Default::default(),
+            },
+        );
     }
 
     let content = format!("Joining **{}**!", channel_id.mention());
-
-    interaction
-        .create_interaction_response(&ctx.http, |response| {
-            response
-                .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|message| message.content(content))
-        })
-        .await
-        .unwrap();
+    create_response(&ctx.http, interaction, &content).await
 }

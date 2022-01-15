@@ -5,12 +5,11 @@
 
 // use crate::{
 //     strings::{NO_VOICE_CONNECTION, QUEUE_EXPIRED, QUEUE_IS_EMPTY},
-//     utils::{get_full_username, get_human_readable_timestamp, send_simple_message},
+//     utils::{create_response, get_full_username, get_human_readable_timestamp},
 // };
 // use serenity::{
 //     builder::CreateEmbed,
 //     client::Context,
-//     framework::standard::{macros::command, CommandResult},
 //     futures::StreamExt,
 //     model::channel::{Message, ReactionType},
 // };
@@ -19,9 +18,10 @@
 // const EMBED_TIMEOUT: u64 = 60 * 60;
 // const EMBED_PAGE_SIZE: usize = 6;
 
-// #[command]
-// #[aliases("q")]
-// pub async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
+// pub async fn queue(
+//     ctx: &Context,
+//     interaction: &mut ApplicationCommandInteraction,
+// ) -> Result<(), SerenityError> {
 //     let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
 //     let manager = songbird::get(ctx).await.unwrap();
 
@@ -30,7 +30,7 @@
 
 //     let call = match manager.get(guild_id) {
 //         Some(call) => call,
-//         None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
+//         None => return create_response(&ctx.http, msg, NO_VOICE_CONNECTION).await,
 //     };
 
 //     let handler = call.lock().await;
@@ -39,7 +39,7 @@
 //     drop(handler);
 
 //     if tracks.is_empty() {
-//         return send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
+//         return create_response(&ctx.http, msg, QUEUE_IS_EMPTY).await;
 //     }
 
 //     let mut message = msg
