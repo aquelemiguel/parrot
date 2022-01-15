@@ -10,8 +10,8 @@ use serenity::{
 };
 
 use crate::commands::{
-    play::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
-    version::*,
+    play::*, playtop::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*,
+    summon::*, version::*,
 };
 
 pub struct SerenityHandler;
@@ -43,7 +43,19 @@ impl EventHandler for SerenityHandler {
                 .create_application_command(|command| {
                     command
                         .name("play")
-                        .description("Plays a track")
+                        .description("Adds a track to the queue")
+                        .create_option(|option| {
+                            option
+                                .name("query")
+                                .description("The media to play")
+                                .kind(ApplicationCommandOptionType::String)
+                                .required(true)
+                        })
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("playtop")
+                        .description("Places a track on the top of the queue")
                         .create_option(|option| {
                             option
                                 .name("query")
@@ -131,6 +143,7 @@ impl EventHandler for SerenityHandler {
         if let Interaction::ApplicationCommand(mut command) = interaction {
             match command.data.name.as_str() {
                 "play" => play(&ctx, &mut command).await,
+                "playtop" => playtop(&ctx, &mut command).await,
                 "remove" => remove(&ctx, &mut command).await,
                 "repeat" => repeat(&ctx, &mut command).await,
                 "resume" => resume(&ctx, &mut command).await,

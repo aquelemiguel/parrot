@@ -4,7 +4,7 @@ use serenity::{
     prelude::SerenityError,
 };
 
-async fn playtop(
+pub async fn playtop(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
 ) -> Result<(), SerenityError> {
