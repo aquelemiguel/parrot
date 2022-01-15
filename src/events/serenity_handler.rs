@@ -11,7 +11,7 @@ use serenity::{
     },
 };
 
-use crate::commands::version::*;
+use crate::commands::{summon::*, version::*};
 
 pub struct SerenityHandler;
 
@@ -38,9 +38,17 @@ impl EventHandler for SerenityHandler {
         // }
 
         GuildId::set_application_commands(&yellow_flannel, &ctx.http, |commands| {
-            commands.create_application_command(|command| {
-                command.name("version").description("Get the version!")
-            })
+            commands
+                .create_application_command(|command| {
+                    command
+                        .name("summon")
+                        .description("Summons the bot in your voice channel")
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("version")
+                        .description("Displays the current version")
+                })
         })
         .await
         .unwrap();
@@ -64,6 +72,7 @@ impl EventHandler for SerenityHandler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(mut command) = interaction {
             match command.data.name.as_str() {
+                "summon" => summon(&ctx, &mut command).await,
                 "version" => version(&ctx, &mut command).await,
                 _ => unimplemented!(),
             };
