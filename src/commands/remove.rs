@@ -4,7 +4,7 @@ use serenity::{
 };
 
 use crate::{
-    strings::{MISSING_INDEX_QUEUE, NO_SONG_ON_INDEX, NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    strings::{NO_SONG_ON_INDEX, NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
     utils::create_response,
 };
 
@@ -22,12 +22,14 @@ pub async fn remove(
 
     let args = interaction.data.options.clone();
 
-    let remove_index = match args.first() {
-        Some(t) if t.value.is_some() => t.value.as_ref().unwrap(),
-        _ => return create_response(&ctx.http, interaction, MISSING_INDEX_QUEUE).await, // TODO: Possibly delete this
-    }
-    .as_u64()
-    .unwrap() as usize;
+    let remove_index = args
+        .first()
+        .unwrap()
+        .value
+        .as_ref()
+        .unwrap()
+        .as_u64()
+        .unwrap() as usize;
 
     let handler = call.lock().await;
     let queue = handler.queue().current_queue();

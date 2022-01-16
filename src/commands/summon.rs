@@ -13,6 +13,7 @@ use crate::utils::create_response;
 pub async fn summon(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
+    send_reply: bool,
 ) -> Result<(), SerenityError> {
     let guild_id = interaction.guild_id.unwrap();
     let guild = ctx.cache.guild(guild_id).await.unwrap();
@@ -26,7 +27,10 @@ pub async fn summon(
 
     let channel_id = match channel_opt {
         Some(channel_id) => channel_id,
-        None => return create_response(&ctx.http, interaction, AUTHOR_NOT_FOUND).await,
+        None if send_reply => {
+            return create_response(&ctx.http, interaction, AUTHOR_NOT_FOUND).await
+        }
+        _ => return Ok(()),
     };
 
     if let Some(call) = manager.get(guild.id) {
@@ -36,7 +40,10 @@ pub async fn summon(
 
         // bot is already in the channel
         if has_current_connection {
-            return create_response(&ctx.http, interaction, "I'm already here!").await;
+            if send_reply {
+                return create_response(&ctx.http, interaction, "I'm already here!").await;
+            }
+            return Ok(());
         }
 
         // bot might have been disconnected manually
@@ -64,6 +71,10 @@ pub async fn summon(
         );
     }
 
-    let content = format!("Joining **{}**!", channel_id.mention());
-    create_response(&ctx.http, interaction, &content).await
+    if send_reply {
+        let content = format!("Joining **{}**!", channel_id.mention());
+        return create_response(&ctx.http, interaction, &content).await;
+    }
+
+    Ok(())
 }

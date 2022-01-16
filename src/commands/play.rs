@@ -1,9 +1,9 @@
 use std::{sync::Arc, time::Duration};
 
 use crate::{
-    commands::{now_playing::now_playing, summon::summon, EnqueueType, PlayFlag},
+    commands::{summon::summon, EnqueueType, PlayFlag},
     strings::{MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
-    utils::{create_queued_response, create_response},
+    utils::{create_now_playing_embed, create_queued_embed, create_response},
 };
 
 use serenity::{
@@ -41,12 +41,17 @@ pub async fn _play(
     let manager = songbird::get(ctx).await.unwrap();
 
     // try to join a voice channel if not in one just yet
-    summon(ctx, interaction).await?;
+    summon(ctx, interaction, false).await?;
 
     // halt if isn't in a voice channel at this point
     if manager.get(guild_id).is_none() {
         return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await;
     }
+
+    // reply with a temporary message while we fetch the source
+    create_response(&ctx.http, interaction, "Getting everything ready...")
+        .await
+        .unwrap();
 
     let call = manager.get(guild_id).unwrap();
 
@@ -68,42 +73,55 @@ pub async fn _play(
     let queue = handler.queue().current_queue();
     drop(handler);
 
+    let top_track = queue.first().unwrap();
+
     if queue.len() > 1 {
         let estimated_time = calculate_time_until_play(&queue, flag).await.unwrap();
 
         match enqueue_type {
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
                 PlayFlag::PLAYTOP => {
-                    let track = queue.get(1).unwrap();
+                    let embed =
+                        create_queued_embed("Added to top", top_track, estimated_time).await;
 
-                    return create_queued_response(
-                        &ctx.http,
-                        interaction,
-                        "Added to top",
-                        track,
-                        estimated_time,
-                    )
-                    .await;
+                    interaction
+                        .edit_original_interaction_response(&ctx.http, |r| {
+                            r.content(" ").add_embed(embed)
+                        })
+                        .await
+                        .unwrap();
                 }
                 PlayFlag::DEFAULT => {
-                    let track = queue.last().unwrap();
-                    return create_queued_response(
-                        &ctx.http,
-                        interaction,
-                        "Added to top",
-                        track,
-                        estimated_time,
-                    )
-                    .await;
+                    let embed =
+                        create_queued_embed("Added to queue", top_track, estimated_time).await;
+
+                    interaction
+                        .edit_original_interaction_response(&ctx.http, |r| {
+                            r.content(" ").add_embed(embed)
+                        })
+                        .await
+                        .unwrap();
                 }
             },
             EnqueueType::PLAYLIST => {
-                return create_response(&ctx.http, interaction, "Added playlist to queue!").await;
+                interaction
+                    .edit_original_interaction_response(&ctx.http, |response| {
+                        response.content("Added playlist to queue!")
+                    })
+                    .await
+                    .unwrap();
             }
         }
     } else {
-        return now_playing(ctx, interaction).await;
+        let embed = create_now_playing_embed(top_track).await;
+
+        interaction
+            .edit_original_interaction_response(&ctx.http, |m| m.content(" ").add_embed(embed))
+            .await
+            .unwrap();
     }
+
+    Ok(())
 }
 
 async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Option<Duration> {

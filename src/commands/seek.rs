@@ -3,9 +3,7 @@ use serenity::model::interactions::application_command::ApplicationCommandIntera
 use serenity::prelude::SerenityError;
 use std::time::Duration;
 
-use crate::strings::{
-    MISSING_TIMESTAMP, NO_VOICE_CONNECTION, QUEUE_IS_EMPTY, TIMESTAMP_PARSING_FAILED,
-};
+use crate::strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY, TIMESTAMP_PARSING_FAILED};
 use crate::utils::create_response;
 
 pub async fn seek(
@@ -21,11 +19,7 @@ pub async fn seek(
     };
 
     let args = interaction.data.options.clone();
-
-    let seek_time = match args.first() {
-        Some(t) if t.value.is_some() => t.value.as_ref().unwrap(),
-        _ => return create_response(&ctx.http, interaction, MISSING_TIMESTAMP).await, // TODO: Possibly delete this
-    };
+    let seek_time = args.first().unwrap().value.as_ref().unwrap();
 
     let timestamp = seek_time.as_str().unwrap();
     let mut units_iter = timestamp.split(':');

@@ -1,19 +1,14 @@
-use std::sync::Arc;
-
 use crate::{
     strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
-    utils::{create_response, get_human_readable_timestamp},
+    utils::{create_now_playing_embed, create_response},
 };
 use serenity::{
-    builder::CreateEmbedFooter,
     client::Context,
-    http::Http,
     model::interactions::{
         application_command::ApplicationCommandInteraction, InteractionResponseType,
     },
     prelude::SerenityError,
 };
-use songbird::tracks::TrackHandle;
 
 pub async fn now_playing(
     ctx: &Context,
@@ -34,39 +29,13 @@ pub async fn now_playing(
         None => return create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await,
     };
 
-    send_now_playing_message(&ctx.http, interaction, track).await
-}
-
-async fn send_now_playing_message(
-    http: &Arc<Http>,
-    interaction: &mut ApplicationCommandInteraction,
-    track: TrackHandle,
-) -> Result<(), SerenityError> {
-    let position = track.get_info().await.unwrap().position;
-    let duration = track.metadata().duration.unwrap();
-    let thumbnail = track.metadata().thumbnail.as_ref().unwrap();
+    let embed = create_now_playing_embed(&track).await;
 
     interaction
-        .create_interaction_response(http, |response| {
+        .create_interaction_response(&ctx.http, |response| {
             response
                 .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|message| {
-                    message.create_embed(|e| {
-                        e.title("Now playing");
-                        e.thumbnail(thumbnail);
-
-                        let title = track.metadata().title.as_ref().unwrap();
-                        let url = track.metadata().source_url.as_ref().unwrap();
-                        e.description(format!("[**{}**]({})", title, url));
-
-                        let mut footer = CreateEmbedFooter::default();
-                        let position_human = get_human_readable_timestamp(position);
-                        let duration_human = get_human_readable_timestamp(duration);
-
-                        footer.text(format!("{} / {}", position_human, duration_human));
-                        e.set_footer(footer)
-                    })
-                })
+                .interaction_response_data(|message| message.add_embed(embed))
         })
         .await
 }

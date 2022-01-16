@@ -10,7 +10,7 @@ use serenity::{
 };
 
 use crate::commands::{
-    clear::*, leave::*, now_playing::now_playing, pause::*, play::*, playtop::*, remove::*,
+    clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*, remove::*,
     repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
 };
 
@@ -81,6 +81,9 @@ impl EventHandler for SerenityHandler {
                                 .kind(ApplicationCommandOptionType::String)
                                 .required(true)
                         })
+                })
+                .create_application_command(|command| {
+                    command.name("queue").description("Shows the queue")
                 })
                 .create_application_command(|command| {
                     command
@@ -156,6 +159,7 @@ impl EventHandler for SerenityHandler {
                 "pause" => pause(&ctx, &mut command).await,
                 "play" => play(&ctx, &mut command).await,
                 "playtop" => playtop(&ctx, &mut command).await,
+                "queue" => queue(&ctx, &mut command).await,
                 "remove" => remove(&ctx, &mut command).await,
                 "repeat" => repeat(&ctx, &mut command).await,
                 "resume" => resume(&ctx, &mut command).await,
@@ -163,7 +167,7 @@ impl EventHandler for SerenityHandler {
                 "shuffle" => shuffle(&ctx, &mut command).await,
                 "skip" => skip(&ctx, &mut command).await,
                 "stop" => stop(&ctx, &mut command).await,
-                "summon" => summon(&ctx, &mut command).await,
+                "summon" => summon(&ctx, &mut command, true).await,
                 "version" => version(&ctx, &mut command).await,
                 _ => unimplemented!(),
             }
