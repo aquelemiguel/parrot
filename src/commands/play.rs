@@ -19,8 +19,7 @@ pub async fn play(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
 ) -> Result<(), SerenityError> {
-    _play(ctx, interaction, &PlayFlag::DEFAULT).await?;
-    Ok(())
+    _play(ctx, interaction, &PlayFlag::DEFAULT).await
 }
 
 pub async fn _play(
