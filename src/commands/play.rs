@@ -49,7 +49,7 @@ pub async fn _play(
     }
 
     // reply with a temporary message while we fetch the source
-    create_response(&ctx.http, interaction, "Getting everything ready...")
+    create_response(&ctx.http, interaction, "Searching...")
         .await
         .unwrap();
 
@@ -73,16 +73,15 @@ pub async fn _play(
     let queue = handler.queue().current_queue();
     drop(handler);
 
-    let top_track = queue.first().unwrap();
-
     if queue.len() > 1 {
         let estimated_time = calculate_time_until_play(&queue, flag).await.unwrap();
 
         match enqueue_type {
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
                 PlayFlag::PLAYTOP => {
-                    let embed =
-                        create_queued_embed("Added to top", top_track, estimated_time).await;
+                    let track = queue.get(1).unwrap();
+
+                    let embed = create_queued_embed("Added to top", track, estimated_time).await;
 
                     interaction
                         .edit_original_interaction_response(&ctx.http, |r| {
@@ -92,8 +91,9 @@ pub async fn _play(
                         .unwrap();
                 }
                 PlayFlag::DEFAULT => {
-                    let embed =
-                        create_queued_embed("Added to queue", top_track, estimated_time).await;
+                    let track = queue.last().unwrap();
+
+                    let embed = create_queued_embed("Added to queue", track, estimated_time).await;
 
                     interaction
                         .edit_original_interaction_response(&ctx.http, |r| {
@@ -113,7 +113,8 @@ pub async fn _play(
             }
         }
     } else {
-        let embed = create_now_playing_embed(top_track).await;
+        let track = queue.first().unwrap();
+        let embed = create_now_playing_embed(track).await;
 
         interaction
             .edit_original_interaction_response(&ctx.http, |m| m.content(" ").add_embed(embed))

@@ -4,7 +4,10 @@ use serenity::{
     model::{
         gateway::Ready,
         id::GuildId,
-        interactions::{application_command::ApplicationCommandOptionType, Interaction},
+        interactions::{
+            application_command::{ApplicationCommand, ApplicationCommandOptionType},
+            Interaction,
+        },
         prelude::{Activity, VoiceState},
     },
 };
@@ -24,21 +27,7 @@ impl EventHandler for SerenityHandler {
         let activity = Activity::listening("/play");
         ctx.set_activity(activity).await;
 
-        let yellow_flannel = GuildId(79541187794444288);
-
-        // let commands = yellow_flannel
-        //     .get_application_commands(&ctx.http)
-        //     .await
-        //     .unwrap();
-
-        // for command in commands.iter() {
-        //     yellow_flannel
-        //         .delete_application_command(&ctx.http, command.id)
-        //         .await
-        //         .unwrap();
-        // }
-
-        GuildId::set_application_commands(&yellow_flannel, &ctx.http, |commands| {
+        ApplicationCommand::set_global_application_commands(&ctx.http, |commands| {
             commands
                 .create_application_command(|command| {
                     command.name("clear").description("Clears the queue")
@@ -143,11 +132,6 @@ impl EventHandler for SerenityHandler {
         })
         .await
         .unwrap();
-
-        // ApplicationCommand::create_global_application_command(&ctx.http, |command| {
-        //     command.name("ping").description("pinging ur ass")
-        // })
-        // .await;
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
