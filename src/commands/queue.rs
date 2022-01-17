@@ -81,13 +81,9 @@ pub async fn queue(
                         })
                 })
         })
-        .await
-        .unwrap();
+        .await?;
 
-    let message = interaction
-        .get_interaction_response(&ctx.http)
-        .await
-        .unwrap();
+    let message = interaction.get_interaction_response(&ctx.http).await?;
 
     let mut cib = message.await_component_interactions(&ctx).await;
     let mut current_page: usize = 0;
@@ -116,8 +112,7 @@ pub async fn queue(
                 d.create_embed(|e| create_queue_embed(e, &author_username, &tracks, current_page))
             })
         })
-        .await
-        .unwrap();
+        .await?;
     }
 
     Ok(())

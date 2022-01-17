@@ -28,7 +28,7 @@ impl EventHandler for IdleHandler {
             }
 
             if self.count.fetch_add(1, Ordering::Relaxed) >= self.limit {
-                let guild_id = self.interaction.guild_id.unwrap();
+                let guild_id = self.interaction.guild_id?;
 
                 if let Some(call) = self.manager.get(guild_id) {
                     let mut handler = call.lock().await;

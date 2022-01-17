@@ -49,9 +49,7 @@ pub async fn _play(
     }
 
     // reply with a temporary message while we fetch the source
-    create_response(&ctx.http, interaction, "Searching...")
-        .await
-        .unwrap();
+    create_response(&ctx.http, interaction, "Searching...").await?;
 
     let call = manager.get(guild_id).unwrap();
 
@@ -80,27 +78,23 @@ pub async fn _play(
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
                 PlayFlag::PLAYTOP => {
                     let track = queue.get(1).unwrap();
-
                     let embed = create_queued_embed("Added to top", track, estimated_time).await;
 
                     interaction
                         .edit_original_interaction_response(&ctx.http, |r| {
                             r.content(" ").add_embed(embed)
                         })
-                        .await
-                        .unwrap();
+                        .await?;
                 }
                 PlayFlag::DEFAULT => {
                     let track = queue.last().unwrap();
-
                     let embed = create_queued_embed("Added to queue", track, estimated_time).await;
 
                     interaction
                         .edit_original_interaction_response(&ctx.http, |r| {
                             r.content(" ").add_embed(embed)
                         })
-                        .await
-                        .unwrap();
+                        .await?;
                 }
             },
             EnqueueType::PLAYLIST => {
@@ -108,8 +102,7 @@ pub async fn _play(
                     .edit_original_interaction_response(&ctx.http, |response| {
                         response.content("Added playlist to queue!")
                     })
-                    .await
-                    .unwrap();
+                    .await?;
             }
         }
     } else {
@@ -118,8 +111,7 @@ pub async fn _play(
 
         interaction
             .edit_original_interaction_response(&ctx.http, |m| m.content(" ").add_embed(embed))
-            .await
-            .unwrap();
+            .await?;
     }
 
     Ok(())
@@ -127,11 +119,9 @@ pub async fn _play(
 
 async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Option<Duration> {
     if !queue.is_empty() {
-        let top_track = queue.first().unwrap();
-
+        let top_track = queue.first()?;
         let top_track_elapsed = top_track.get_info().await.unwrap().position;
-
-        let top_track_duration = top_track.metadata().duration.unwrap();
+        let top_track_duration = top_track.metadata().duration?;
 
         let mut estimated_time = match flag {
             PlayFlag::DEFAULT => queue[1..queue.len() - 1]
