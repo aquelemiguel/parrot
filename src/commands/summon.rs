@@ -30,7 +30,7 @@ pub async fn summon(
         None if send_reply => {
             return create_response(&ctx.http, interaction, AUTHOR_NOT_FOUND).await
         }
-        _ => return Ok(()),
+        _ => return Err(SerenityError::Other("Author not found")),
     };
 
     if let Some(call) = manager.get(guild.id) {

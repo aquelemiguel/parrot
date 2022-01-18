@@ -30,11 +30,9 @@ pub async fn _play(
     let args = interaction.data.options.clone();
 
     let url = match args.first() {
-        Some(t) if t.value.is_some() => t.value.as_ref().unwrap(),
+        Some(t) if t.value.is_some() => t.value.as_ref().unwrap().as_str().unwrap(),
         _ => return create_response(&ctx.http, interaction, MISSING_PLAY_QUERY).await,
-    }
-    .as_str()
-    .unwrap();
+    };
 
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
