@@ -13,7 +13,7 @@ impl Client {
     }
 
     pub async fn new(token: String) -> Result<Client, Box<dyn Error>> {
-        let application_id: u64 = env::var("DISCORD_APPID")?.parse()?;
+        let application_id = env::var("DISCORD_APPID")?.parse()?;
 
         let client = serenity::Client::builder(token)
             .event_handler(SerenityHandler)
