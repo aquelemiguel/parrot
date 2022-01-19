@@ -1,8 +1,7 @@
-use serde_json::json;
 use serenity::model::prelude::User;
 use std::time::Duration;
 
-use crate::utils::{get_full_username, get_human_readable_timestamp, merge_json};
+use crate::utils::{get_full_username, get_human_readable_timestamp};
 
 #[test]
 fn test_get_full_username() {
@@ -27,50 +26,4 @@ fn test_get_human_readable_timestamp() {
     let duration = Duration::from_secs(96548);
     let result = get_human_readable_timestamp(duration);
     assert_eq!(result, "26:49:08");
-}
-
-#[test]
-fn test_merge_json() {
-    let mut result = json!({});
-
-    let json = json!({
-        "a": 1,
-        "b": true,
-        "c": "string",
-        "d": {
-            "f": "level1",
-            "g": {
-                "h": "level2"
-            }
-        }
-    });
-    merge_json(&mut result, &json);
-    assert_eq!(result, json);
-
-    let json = json!({
-        "a": 5,
-        "d": {
-            "f": "level1",
-            "g": {
-                "h": "changed prop"
-            },
-            "i": "new prop"
-        }
-    });
-    merge_json(&mut result, &json);
-    assert_eq!(
-        result,
-        json!({
-            "a": 5,
-            "b": true,
-            "c": "string",
-            "d": {
-                "f": "level1",
-                "g": {
-                    "h": "changed prop"
-                },
-                "i": "new prop"
-            }
-        })
-    );
 }

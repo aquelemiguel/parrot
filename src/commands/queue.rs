@@ -1,74 +1,104 @@
-use std::{
-    cmp::{max, min},
-    time::Duration,
-};
+use std::cmp::{max, min};
 
 use crate::{
-    strings::{NO_VOICE_CONNECTION, QUEUE_EXPIRED, QUEUE_IS_EMPTY},
-    utils::{get_full_username, get_human_readable_timestamp, send_simple_message},
+    strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    utils::{create_response, get_full_username, get_human_readable_timestamp},
 };
 use serenity::{
     builder::CreateEmbed,
     client::Context,
-    framework::standard::{macros::command, CommandResult},
     futures::StreamExt,
-    model::channel::{Message, ReactionType},
+    model::{
+        channel::ReactionType,
+        interactions::{
+            application_command::ApplicationCommandInteraction, message_component::ButtonStyle,
+            InteractionResponseType,
+        },
+    },
+    prelude::SerenityError,
 };
 use songbird::tracks::TrackHandle;
 
-const EMBED_TIMEOUT: u64 = 60 * 60;
 const EMBED_PAGE_SIZE: usize = 6;
 
-#[command]
-#[aliases("q")]
-pub async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
-    let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
+pub async fn queue(
+    ctx: &Context,
+    interaction: &mut ApplicationCommandInteraction,
+) -> Result<(), SerenityError> {
+    let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
 
-    let author_id = msg.author.id;
-    let author_username = get_full_username(&msg.author);
+    let author_username = get_full_username(&interaction.user);
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;
     let tracks = handler.queue().current_queue();
-
     drop(handler);
 
     if tracks.is_empty() {
-        return send_simple_message(&ctx.http, msg, QUEUE_IS_EMPTY).await;
+        return create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await;
     }
 
-    let mut message = msg
-        .channel_id
-        .send_message(&ctx.http, |m| {
-            m.embed(|e| create_queue_embed(e, &author_username, &tracks, 0))
+    interaction
+        .create_interaction_response(&ctx.http, |response| {
+            response
+                .kind(InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(|message| {
+                    message
+                        .create_embed(|e| create_queue_embed(e, &author_username, &tracks, 0))
+                        .components(|components| {
+                            components.create_action_row(|action_row| {
+                                action_row
+                                    .create_button(|button| {
+                                        button
+                                            .custom_id("⏪".to_string().to_ascii_lowercase())
+                                            .emoji(ReactionType::Unicode("⏪".to_string()))
+                                            .style(ButtonStyle::Secondary)
+                                    })
+                                    .create_button(|button| {
+                                        button
+                                            .custom_id("◀️".to_string().to_ascii_lowercase())
+                                            .emoji(ReactionType::Unicode("◀️".to_string()))
+                                            .style(ButtonStyle::Secondary)
+                                    })
+                                    .create_button(|button| {
+                                        button
+                                            .custom_id("▶️".to_string().to_ascii_lowercase())
+                                            .emoji(ReactionType::Unicode("▶️".to_string()))
+                                            .style(ButtonStyle::Secondary)
+                                    })
+                                    .create_button(|button| {
+                                        button
+                                            .custom_id("⏩".to_string().to_ascii_lowercase())
+                                            .emoji(ReactionType::Unicode("⏩".to_string()))
+                                            .style(ButtonStyle::Secondary)
+                                    })
+                            })
+                        })
+                })
         })
         .await?;
 
-    reset_reactions(ctx, &message).await;
+    let message = interaction.get_interaction_response(&ctx.http).await?;
 
+    let mut cib = message.await_component_interactions(&ctx).await;
     let mut current_page: usize = 0;
-    let mut stream = message
-        .await_reactions(&ctx)
-        .timeout(Duration::from_secs(EMBED_TIMEOUT))
-        .author_id(author_id)
-        .await;
 
-    while let Some(reaction) = stream.next().await {
-        let emoji = &reaction.as_inner_ref().emoji;
+    while let Some(mci) = cib.next().await {
+        let btn_id = &mci.data.custom_id;
 
-        // Refetch the queue in case it changed.
+        // refetch the queue in case it changed
         let handler = call.lock().await;
         let tracks = handler.queue().current_queue();
         drop(handler);
 
         let num_pages = calculate_num_pages(&tracks);
 
-        current_page = match emoji.as_data().as_str() {
+        current_page = match btn_id.as_str() {
             "⏪" => 0,
             "◀️" => min(current_page.saturating_sub(1), num_pages - 1),
             "▶️" => min(current_page + 1, num_pages - 1),
@@ -76,40 +106,19 @@ pub async fn queue(ctx: &Context, msg: &Message) -> CommandResult {
             _ => continue,
         };
 
-        message
-            .edit(&ctx, |m| {
-                m.embed(|e| create_queue_embed(e, &author_username, &tracks, current_page))
+        mci.create_interaction_response(&ctx, |r| {
+            r.kind(InteractionResponseType::UpdateMessage);
+            r.interaction_response_data(|d| {
+                d.create_embed(|e| create_queue_embed(e, &author_username, &tracks, current_page))
             })
-            .await?;
-
-        reset_reactions(ctx, &message).await;
-    }
-
-    // if it reaches this point, the stream has expired.
-    message.delete_reactions(&ctx.http).await.unwrap();
-    message
-        .edit(&ctx, |m| {
-            m.embed(|e| e.title("Queue").description(QUEUE_EXPIRED))
         })
         .await?;
+    }
 
     Ok(())
 }
 
-async fn reset_reactions(ctx: &Context, message: &Message) {
-    message.delete_reactions(&ctx.http).await.unwrap();
-
-    let reactions = vec!["⏪", "◀️", "▶️", "⏩"]
-        .iter()
-        .map(|r| ReactionType::Unicode(r.to_string()))
-        .collect::<Vec<ReactionType>>();
-
-    for reaction in reactions.clone() {
-        message.react(&ctx.http, reaction).await.unwrap();
-    }
-}
-
-pub fn create_queue_embed<'a>(
+fn create_queue_embed<'a>(
     embed: &'a mut CreateEmbed,
     author: &str,
     tracks: &[TrackHandle],

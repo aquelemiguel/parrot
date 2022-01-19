@@ -1,21 +1,21 @@
 use serenity::{
-    client::Context,
-    framework::standard::{macros::command, CommandResult},
-    model::channel::Message,
+    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
+    prelude::SerenityError,
 };
 
-use crate::{strings::NO_VOICE_CONNECTION, utils::send_simple_message};
+use crate::{strings::NO_VOICE_CONNECTION, utils::create_response};
 
-#[command]
-#[aliases("disconnect", "dc", "exit")]
-async fn leave(ctx: &Context, msg: &Message) -> CommandResult {
-    let guild_id = msg.guild(&ctx.cache).await.unwrap().id;
+pub async fn leave(
+    ctx: &Context,
+    interaction: &mut ApplicationCommandInteraction,
+) -> Result<(), SerenityError> {
+    let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
 
     if manager.get(guild_id).is_some() {
-        manager.remove(guild_id).await?;
-        send_simple_message(&ctx.http, msg, "See you soon!").await
+        manager.remove(guild_id).await.unwrap();
+        create_response(&ctx.http, interaction, "See you soon!").await
     } else {
-        send_simple_message(&ctx.http, msg, NO_VOICE_CONNECTION).await
+        create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await
     }
 }

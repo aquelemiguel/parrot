@@ -1,58 +1,31 @@
-use serde_json::Value;
+use std::{sync::Arc, time::Duration};
+
 use serenity::{
-    framework::standard::CommandResult,
+    builder::CreateEmbed,
     http::Http,
-    model::{channel::Message, prelude::User},
-    utils::Color,
+    model::{
+        interactions::{
+            application_command::ApplicationCommandInteraction, InteractionResponseType,
+        },
+        prelude::User,
+    },
+    prelude::SerenityError,
 };
+
 use songbird::tracks::TrackHandle;
-use std::{
-    fs::{self, OpenOptions},
-    io::BufReader,
-    sync::Arc,
-    time::Duration,
-};
 
-pub async fn send_simple_message(http: &Arc<Http>, msg: &Message, content: &str) -> CommandResult {
-    msg.channel_id
-        .send_message(http, |m| {
-            m.embed(|e| e.description(content.to_string()).color(Color::RED))
-        })
-        .await?;
-    Ok(())
-}
-
-pub async fn send_added_to_queue_message(
+pub async fn create_response(
     http: &Arc<Http>,
-    msg: &Message,
-    title: &str,
-    track: &TrackHandle,
-    estimated_time: Duration,
-) -> CommandResult {
-    let metadata = track.metadata().clone();
-    msg.channel_id
-        .send_message(http, |m| {
-            m.embed(|e| {
-                e.title(title);
-                e.thumbnail(metadata.thumbnail.unwrap());
-
-                e.description(format!(
-                    "[**{}**]({})",
-                    metadata.title.unwrap(),
-                    metadata.source_url.unwrap()
-                ));
-
-                let footer_text = format!(
-                    "Track duration: {}\nEstimated time until play: {}",
-                    get_human_readable_timestamp(metadata.duration.unwrap()),
-                    get_human_readable_timestamp(estimated_time)
-                );
-
-                e.footer(|f| f.text(footer_text))
-            })
+    interaction: &mut ApplicationCommandInteraction,
+    content: &str,
+) -> Result<(), SerenityError> {
+    interaction
+        .create_interaction_response(&http, |response| {
+            response
+                .kind(InteractionResponseType::ChannelMessageWithSource)
+                .interaction_response_data(|message| message.content(content))
         })
-        .await?;
-    Ok(())
+        .await
 }
 
 pub fn get_full_username(user: &User) -> String {
@@ -71,31 +44,52 @@ pub fn get_human_readable_timestamp(duration: Duration) -> String {
     }
 }
 
-pub fn get_prefixes() -> serde_json::Value {
-    let file_exists = fs::metadata("prefixes.json").is_ok();
-    let file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .create(true)
-        .open("prefixes.json")
-        .unwrap();
+pub async fn create_queued_embed(
+    title: &str,
+    track: &TrackHandle,
+    estimated_time: Duration,
+) -> CreateEmbed {
+    let mut embed = CreateEmbed::default();
+    let metadata = track.metadata().clone();
 
-    if !file_exists {
-        fs::write("prefixes.json", "{}").unwrap();
-    };
+    embed.title(title);
+    embed.thumbnail(metadata.thumbnail.unwrap());
 
-    serde_json::from_reader(BufReader::new(file)).unwrap()
+    embed.description(format!(
+        "[**{}**]({})",
+        metadata.title.unwrap(),
+        metadata.source_url.unwrap()
+    ));
+
+    let footer_text = format!(
+        "Track duration: {}\nEstimated time until play: {}",
+        get_human_readable_timestamp(metadata.duration.unwrap()),
+        get_human_readable_timestamp(estimated_time)
+    );
+
+    embed.footer(|footer| footer.text(footer_text));
+    embed
 }
 
-pub fn merge_json(a: &mut Value, b: &Value) {
-    match (a, b) {
-        (&mut Value::Object(ref mut a), &Value::Object(ref b)) => {
-            for (k, v) in b {
-                merge_json(a.entry(k.clone()).or_insert(Value::Null), v);
-            }
-        }
-        (a, b) => {
-            *a = b.clone();
-        }
-    }
+pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
+    let mut embed = CreateEmbed::default();
+    let metadata = track.metadata().clone();
+
+    embed.title("Now playing");
+    embed.thumbnail(metadata.thumbnail.unwrap());
+
+    let description_text = format!(
+        "[**{}**]({})",
+        metadata.title.unwrap(),
+        metadata.source_url.unwrap()
+    );
+
+    embed.description(description_text);
+
+    let position = get_human_readable_timestamp(track.get_info().await.unwrap().position);
+    let duration = get_human_readable_timestamp(metadata.duration.unwrap());
+
+    let footer_text = format!("{} / {}", position, duration);
+    embed.footer(|footer| footer.text(footer_text));
+    embed
 }

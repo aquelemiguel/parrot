@@ -1,31 +1,36 @@
 use std::time::Duration;
 
+use serenity::client::Context;
+use serenity::model::interactions::application_command::ApplicationCommandInteraction;
 use serenity::prelude::Mentionable;
-use serenity::{
-    client::Context,
-    framework::standard::{macros::command, CommandResult},
-    model::channel::Message,
-};
+use serenity::prelude::SerenityError;
 use songbird::Event;
 
 use crate::events::idle_handler::IdleHandler;
 use crate::strings::AUTHOR_NOT_FOUND;
-use crate::utils::send_simple_message;
+use crate::utils::create_response;
 
-#[command]
-#[aliases("join")]
-pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
-    let guild = msg.guild(&ctx.cache).await.unwrap();
+pub async fn summon(
+    ctx: &Context,
+    interaction: &mut ApplicationCommandInteraction,
+    send_reply: bool,
+) -> Result<(), SerenityError> {
+    let guild_id = interaction.guild_id.unwrap();
+    let guild = ctx.cache.guild(guild_id).await.unwrap();
+
     let manager = songbird::get(ctx).await.unwrap();
 
     let channel_opt = guild
         .voice_states
-        .get(&msg.author.id)
+        .get(&interaction.user.id)
         .and_then(|voice_state| voice_state.channel_id);
 
     let channel_id = match channel_opt {
         Some(channel_id) => channel_id,
-        None => return send_simple_message(&ctx.http, msg, AUTHOR_NOT_FOUND).await,
+        None if send_reply => {
+            return create_response(&ctx.http, interaction, AUTHOR_NOT_FOUND).await
+        }
+        _ => return Err(SerenityError::Other("Author not found")),
     };
 
     if let Some(call) = manager.get(guild.id) {
@@ -35,6 +40,9 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
 
         // bot is already in the channel
         if has_current_connection {
+            if send_reply {
+                return create_response(&ctx.http, interaction, "I'm already here!").await;
+            }
             return Ok(());
         }
 
@@ -43,7 +51,7 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
     }
 
     // join the channel
-    manager.join(guild.id, channel_id).await.1?;
+    manager.join(guild.id, channel_id).await.1.unwrap();
 
     // unregister existing events and register idle notifier
     if let Some(call) = manager.get(guild.id) {
@@ -56,17 +64,17 @@ pub async fn summon(ctx: &Context, msg: &Message) -> CommandResult {
             IdleHandler {
                 http: ctx.http.clone(),
                 manager,
-                msg: msg.clone(),
+                interaction: interaction.clone(),
                 limit: 60 * 10,
                 count: Default::default(),
             },
         );
     }
 
-    return send_simple_message(
-        &ctx.http,
-        msg,
-        &format!("Joining **{}**!", channel_id.mention()),
-    )
-    .await;
+    if send_reply {
+        let content = format!("Joining **{}**!", channel_id.mention());
+        return create_response(&ctx.http, interaction, &content).await;
+    }
+
+    Ok(())
 }
