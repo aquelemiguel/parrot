@@ -5,8 +5,10 @@ use serenity::model::interactions::application_command::ApplicationCommandIntera
 use serenity::prelude::Mentionable;
 use serenity::prelude::SerenityError;
 use songbird::Event;
+use songbird::TrackEvent;
 
 use crate::events::idle_handler::IdleHandler;
+use crate::events::idle_handler::SongEndNotifier;
 use crate::strings::AUTHOR_NOT_FOUND;
 use crate::utils::create_response;
 
@@ -67,6 +69,15 @@ pub async fn summon(
                 interaction: interaction.clone(),
                 limit: 60 * 10,
                 count: Default::default(),
+            },
+        );
+
+        handler.add_global_event(
+            Event::Track(TrackEvent::End),
+            SongEndNotifier {
+                guild_id: guild.id,
+                call: call.clone(),
+                ctx_data: ctx.data.clone(),
             },
         );
     }
