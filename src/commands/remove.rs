@@ -1,12 +1,15 @@
 use serenity::{
-    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
+    builder::CreateEmbed, client::Context,
+    model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,
 };
 
 use crate::{
     strings::{NO_SONG_ON_INDEX, NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
-    utils::create_response,
+    utils::{create_embed_response, create_response},
 };
+
+use songbird::tracks::TrackHandle;
 
 pub async fn remove(
     ctx: &Context,
@@ -44,14 +47,30 @@ pub async fn remove(
     } else if queue.len() < remove_index + 1 {
         create_response(&ctx.http, interaction, NO_SONG_ON_INDEX).await
     } else {
+        let track = queue.get(remove_index).unwrap();
         handler.queue().modify_queue(|v| {
             v.remove(remove_index);
         });
-        create_response(
-            &ctx.http,
-            interaction,
-            &format!("Removed track #{}!", remove_index),
-        )
-        .await
+
+        let embed = create_remove_enqueued_embed(&track).await;
+        create_embed_response(&ctx.http, interaction, embed).await
     }
+}
+
+async fn create_remove_enqueued_embed(track: &TrackHandle) -> CreateEmbed {
+    let mut embed = CreateEmbed::default();
+    let metadata = track.metadata().clone();
+
+    embed.field(
+        "❌  Removed from queue",
+        format!(
+            "[**{}**]({})",
+            metadata.title.unwrap(),
+            metadata.source_url.unwrap()
+        ),
+        false,
+    );
+    embed.thumbnail(metadata.thumbnail.unwrap());
+
+    embed
 }

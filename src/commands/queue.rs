@@ -135,10 +135,9 @@ fn create_queue_embed<'a>(
             get_human_readable_timestamp(metadata.duration.unwrap())
         )
     } else {
-        String::from("Nothing is playing!")
+        String::from("🔇  Nothing is playing!")
     };
 
-    embed.title("Queue");
     embed.field("🔊  Now playing", description, false);
     embed.field("⌛  Up next", build_queue_page(tracks, page), false);
     embed.footer(|f| {

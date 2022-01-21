@@ -29,8 +29,8 @@ pub async fn repeat(
     };
 
     match toggler(&track) {
-        Ok(_) if was_looping => create_response(&ctx.http, interaction, "Disabled loop!").await,
-        Ok(_) if !was_looping => create_response(&ctx.http, interaction, "Enabled loop!").await,
-        _ => create_response(&ctx.http, interaction, "Failed to toggle loop!").await,
+        Ok(_) if was_looping => create_response(&ctx.http, interaction, "🔁  Disabled loop!").await,
+        Ok(_) if !was_looping => create_response(&ctx.http, interaction, "🔁  Enabled loop!").await,
+        _ => create_response(&ctx.http, interaction, "⚠️  Failed to toggle loop!").await,
     }
 }

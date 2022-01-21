@@ -1,12 +1,9 @@
 use crate::{
     strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
-    utils::{create_now_playing_embed, create_response},
+    utils::{create_embed_response, create_now_playing_embed, create_response},
 };
 use serenity::{
-    client::Context,
-    model::interactions::{
-        application_command::ApplicationCommandInteraction, InteractionResponseType,
-    },
+    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,
 };
 
@@ -31,11 +28,5 @@ pub async fn now_playing(
 
     let embed = create_now_playing_embed(&track).await;
 
-    interaction
-        .create_interaction_response(&ctx.http, |response| {
-            response
-                .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|message| message.add_embed(embed))
-        })
-        .await
+    create_embed_response(&ctx.http, interaction, embed).await
 }

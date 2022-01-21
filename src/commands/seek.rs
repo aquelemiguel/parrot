@@ -53,7 +53,7 @@ pub async fn seek(
     create_response(
         &ctx.http,
         interaction,
-        &format!("Seeked current track to **{}**!", seek_time),
+        &format!("⏭  Seeked current track to **{}**!", seek_time),
     )
     .await
 }

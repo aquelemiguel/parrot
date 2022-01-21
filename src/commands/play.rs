@@ -3,10 +3,14 @@ use std::{sync::Arc, time::Duration};
 use crate::{
     commands::{summon::summon, EnqueueType, PlayFlag},
     strings::{MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
-    utils::{create_now_playing_embed, create_queued_embed, create_response},
+    utils::{
+        create_now_playing_embed, create_response, edit_embed_response, edit_response,
+        get_human_readable_timestamp,
+    },
 };
 
 use serenity::{
+    builder::CreateEmbed,
     client::Context,
     model::interactions::application_command::ApplicationCommandInteraction,
     prelude::{Mutex, SerenityError},
@@ -75,40 +79,28 @@ pub async fn _play(
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
                 PlayFlag::PLAYTOP => {
                     let track = queue.get(1).unwrap();
-                    let embed = create_queued_embed("Added to top", track, estimated_time).await;
+                    let embed =
+                        create_queued_embed("⌛  Added to top", track, estimated_time).await;
 
-                    interaction
-                        .edit_original_interaction_response(&ctx.http, |r| {
-                            r.content(" ").add_embed(embed)
-                        })
-                        .await?;
+                    edit_embed_response(&ctx.http, interaction, embed).await?;
                 }
                 PlayFlag::DEFAULT => {
                     let track = queue.last().unwrap();
-                    let embed = create_queued_embed("Added to queue", track, estimated_time).await;
+                    let embed =
+                        create_queued_embed("⌛  Added to queue", track, estimated_time).await;
 
-                    interaction
-                        .edit_original_interaction_response(&ctx.http, |r| {
-                            r.content(" ").add_embed(embed)
-                        })
-                        .await?;
+                    edit_embed_response(&ctx.http, interaction, embed).await?;
                 }
             },
             EnqueueType::PLAYLIST => {
-                interaction
-                    .edit_original_interaction_response(&ctx.http, |response| {
-                        response.content("Added playlist to queue!")
-                    })
-                    .await?;
+                edit_response(&ctx.http, interaction, "⌛  Added {} tracks to queue").await?;
             }
         }
     } else {
         let track = queue.first().unwrap();
         let embed = create_now_playing_embed(track).await;
 
-        interaction
-            .edit_original_interaction_response(&ctx.http, |m| m.content(" ").add_embed(embed))
-            .await?;
+        edit_embed_response(&ctx.http, interaction, embed).await?;
     }
 
     Ok(())
@@ -152,6 +144,36 @@ async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str) {
             enqueue_song(call, url, true, &PlayFlag::DEFAULT).await;
         }
     }
+}
+
+async fn create_queued_embed(
+    title: &str,
+    track: &TrackHandle,
+    estimated_time: Duration,
+) -> CreateEmbed {
+    let mut embed = CreateEmbed::default();
+    let metadata = track.metadata().clone();
+
+    embed.thumbnail(metadata.thumbnail.unwrap());
+
+    embed.field(
+        title,
+        format!(
+            "[**{}**]({})",
+            metadata.title.unwrap(),
+            metadata.source_url.unwrap()
+        ),
+        false,
+    );
+
+    let footer_text = format!(
+        "Track duration: {}\nEstimated time until play: {}",
+        get_human_readable_timestamp(metadata.duration.unwrap()),
+        get_human_readable_timestamp(estimated_time)
+    );
+
+    embed.footer(|footer| footer.text(footer_text));
+    embed
 }
 
 async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag: &PlayFlag) {
