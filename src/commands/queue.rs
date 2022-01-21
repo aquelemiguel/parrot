@@ -5,15 +5,12 @@ use crate::{
     utils::{create_response, get_full_username, get_human_readable_timestamp},
 };
 use serenity::{
-    builder::CreateEmbed,
+    builder::{CreateButton, CreateComponents, CreateEmbed},
     client::Context,
     futures::StreamExt,
-    model::{
-        channel::ReactionType,
-        interactions::{
-            application_command::ApplicationCommandInteraction, message_component::ButtonStyle,
-            InteractionResponseType,
-        },
+    model::interactions::{
+        application_command::ApplicationCommandInteraction, message_component::ButtonStyle,
+        InteractionResponseType,
     },
     prelude::SerenityError,
 };
@@ -50,35 +47,7 @@ pub async fn queue(
                 .interaction_response_data(|message| {
                     message
                         .create_embed(|e| create_queue_embed(e, &author_username, &tracks, 0))
-                        .components(|components| {
-                            components.create_action_row(|action_row| {
-                                action_row
-                                    .create_button(|button| {
-                                        button
-                                            .custom_id("⏪".to_string().to_ascii_lowercase())
-                                            .emoji(ReactionType::Unicode("⏪".to_string()))
-                                            .style(ButtonStyle::Secondary)
-                                    })
-                                    .create_button(|button| {
-                                        button
-                                            .custom_id("◀️".to_string().to_ascii_lowercase())
-                                            .emoji(ReactionType::Unicode("◀️".to_string()))
-                                            .style(ButtonStyle::Secondary)
-                                    })
-                                    .create_button(|button| {
-                                        button
-                                            .custom_id("▶️".to_string().to_ascii_lowercase())
-                                            .emoji(ReactionType::Unicode("▶️".to_string()))
-                                            .style(ButtonStyle::Secondary)
-                                    })
-                                    .create_button(|button| {
-                                        button
-                                            .custom_id("⏩".to_string().to_ascii_lowercase())
-                                            .emoji(ReactionType::Unicode("⏩".to_string()))
-                                            .style(ButtonStyle::Secondary)
-                                    })
-                            })
-                        })
+                        .components(|components| build_nav_btns(components))
                 })
         })
         .await?;
@@ -99,10 +68,10 @@ pub async fn queue(
         let num_pages = calculate_num_pages(&tracks);
 
         current_page = match btn_id.as_str() {
-            "⏪" => 0,
-            "◀️" => min(current_page.saturating_sub(1), num_pages - 1),
-            "▶️" => min(current_page + 1, num_pages - 1),
-            "⏩" => num_pages - 1,
+            "⏮" => 0,
+            "⏴" => min(current_page.saturating_sub(1), num_pages - 1),
+            "⏵" => min(current_page + 1, num_pages - 1),
+            "⏭" => num_pages - 1,
             _ => continue,
         };
 
@@ -148,6 +117,28 @@ fn create_queue_embed<'a>(
             calculate_num_pages(tracks),
             author
         ))
+    })
+}
+
+fn build_single_nav_btn(label: &str, is_disabled: bool) -> CreateButton {
+    let mut button = CreateButton::default();
+
+    button
+        .custom_id(label.to_string().to_ascii_lowercase())
+        .label(label)
+        .style(ButtonStyle::Primary)
+        .disabled(is_disabled);
+
+    button
+}
+
+fn build_nav_btns(components: &mut CreateComponents) -> &mut CreateComponents {
+    components.create_action_row(|action_row| {
+        action_row
+            .add_button(build_single_nav_btn("⏮", false))
+            .add_button(build_single_nav_btn("⏴", false))
+            .add_button(build_single_nav_btn("⏵", false))
+            .add_button(build_single_nav_btn("⏭", false))
     })
 }
 
