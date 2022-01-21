@@ -81,7 +81,7 @@ impl EventHandler for SerenityHandler {
                         .create_option(|option| {
                             option
                                 .name("index")
-                                .description("Position of the track (0 is currently playing)")
+                                .description("Position of the track (next track is 1)")
                                 .kind(ApplicationCommandOptionType::Integer)
                                 .required(true)
                         })
