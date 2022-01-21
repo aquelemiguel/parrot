@@ -1,4 +1,4 @@
-use crate::{events::serenity_handler::SerenityHandler, settings::GuildSettingsMap};
+use crate::{handlers::serenity::SerenityHandler, settings::GuildSettingsMap};
 use songbird::SerenityInit;
 use std::{collections::HashMap, env, error::Error};
 

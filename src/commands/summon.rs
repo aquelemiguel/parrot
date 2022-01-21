@@ -7,8 +7,8 @@ use serenity::prelude::SerenityError;
 use songbird::Event;
 use songbird::TrackEvent;
 
-use crate::events::idle_handler::IdleHandler;
-use crate::events::track_end_handler::TrackEndHandler;
+use crate::handlers::idle::IdleHandler;
+use crate::handlers::track_end::TrackEndHandler;
 use crate::strings::AUTHOR_NOT_FOUND;
 use crate::utils::create_response;
 
