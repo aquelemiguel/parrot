@@ -1,16 +1,14 @@
 use serenity::{
-    async_trait,
-    http::Http,
-    model::{id::GuildId, interactions::application_command::ApplicationCommandInteraction},
-    prelude::{Mutex, RwLock, TypeMap},
+    async_trait, http::Http,
+    model::interactions::application_command::ApplicationCommandInteraction,
 };
-use songbird::{Call, Event, EventContext, EventHandler, Songbird};
+use songbird::{Event, EventContext, EventHandler, Songbird};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
 
-use crate::{settings::GuildSettingsMap, strings::IDLE_ALERT};
+use crate::strings::IDLE_ALERT;
 
 pub struct IdleHandler {
     pub http: Arc<Http>,
@@ -45,25 +43,6 @@ impl EventHandler for IdleHandler {
                 }
             }
         }
-        None
-    }
-}
-
-pub struct SongEndNotifier {
-    pub guild_id: GuildId,
-    pub call: Arc<Mutex<Call>>,
-    pub ctx_data: Arc<RwLock<TypeMap>>,
-}
-
-#[async_trait]
-impl EventHandler for SongEndNotifier {
-    async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
-        if GuildSettingsMap::autopause(self.guild_id, &self.ctx_data).await {
-            let handler = self.call.lock().await;
-            let queue = handler.queue();
-            queue.pause().ok();
-        }
-
         None
     }
 }

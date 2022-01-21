@@ -8,7 +8,7 @@ use songbird::Event;
 use songbird::TrackEvent;
 
 use crate::events::idle_handler::IdleHandler;
-use crate::events::idle_handler::SongEndNotifier;
+use crate::events::track_end_handler::TrackEndNotifier;
 use crate::strings::AUTHOR_NOT_FOUND;
 use crate::utils::create_response;
 
@@ -74,7 +74,7 @@ pub async fn summon(
 
         handler.add_global_event(
             Event::Track(TrackEvent::End),
-            SongEndNotifier {
+            TrackEndNotifier {
                 guild_id: guild.id,
                 call: call.clone(),
                 ctx_data: ctx.data.clone(),
