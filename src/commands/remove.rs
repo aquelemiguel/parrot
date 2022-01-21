@@ -31,7 +31,7 @@ pub async fn remove(
         .as_i64()
         .unwrap();
 
-    if signed_remove_index.is_negative() || signed_remove_index <= 0 {
+    if !signed_remove_index.is_positive() {
         return create_response(&ctx.http, interaction, "Please provide an index >= 1!").await;
     }
 
