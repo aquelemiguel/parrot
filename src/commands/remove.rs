@@ -52,7 +52,7 @@ pub async fn remove(
             v.remove(remove_index);
         });
 
-        let embed = create_remove_enqueued_embed(&track).await;
+        let embed = create_remove_enqueued_embed(track).await;
         create_embed_response(&ctx.http, interaction, embed).await
     }
 }
