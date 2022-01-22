@@ -1,14 +1,12 @@
-use std::time::Duration;
-
 use serenity::client::Context;
 use serenity::model::interactions::application_command::ApplicationCommandInteraction;
 use serenity::prelude::Mentionable;
 use serenity::prelude::SerenityError;
 use songbird::Event;
 use songbird::TrackEvent;
+use std::time::Duration;
 
-use crate::handlers::idle::IdleHandler;
-use crate::handlers::track_end::TrackEndHandler;
+use crate::handlers::{IdleHandler, TrackEndHandler};
 use crate::strings::AUTHOR_NOT_FOUND;
 use crate::utils::create_response;
 

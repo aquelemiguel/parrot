@@ -1,6 +1,7 @@
-use crate::{handlers::serenity::SerenityHandler, settings::GuildSettingsMap};
 use songbird::SerenityInit;
 use std::{collections::HashMap, env, error::Error};
+
+use crate::{handlers::SerenityHandler, settings::GuildSettingsMap};
 
 pub struct Client {
     client: serenity::Client,
