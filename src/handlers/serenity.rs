@@ -13,8 +13,8 @@ use serenity::{
 };
 
 use crate::commands::{
-    clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*, remove::*,
-    repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
+    autopause::*, clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*,
+    remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
 };
 
 pub struct SerenityHandler;
@@ -29,6 +29,11 @@ impl EventHandler for SerenityHandler {
 
         ApplicationCommand::set_global_application_commands(&ctx.http, |commands| {
             commands
+                .create_application_command(|command| {
+                    command
+                        .name("autopause")
+                        .description("Toggles whether to pause after a song ends")
+                })
                 .create_application_command(|command| {
                     command.name("clear").description("Clears the queue")
                 })
@@ -137,6 +142,7 @@ impl EventHandler for SerenityHandler {
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(mut command) = interaction {
             match command.data.name.as_str() {
+                "autopause" => autopause(&ctx, &mut command).await,
                 "clear" => clear(&ctx, &mut command).await,
                 "leave" => leave(&ctx, &mut command).await,
                 "np" => now_playing(&ctx, &mut command).await,

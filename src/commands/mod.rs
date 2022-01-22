@@ -1,3 +1,4 @@
+pub mod autopause;
 pub mod clear;
 pub mod leave;
 pub mod now_playing;
