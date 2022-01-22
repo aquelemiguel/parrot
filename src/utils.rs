@@ -3,11 +3,8 @@ use std::{sync::Arc, time::Duration};
 use serenity::{
     builder::CreateEmbed,
     http::Http,
-    model::{
-        interactions::{
-            application_command::ApplicationCommandInteraction, InteractionResponseType,
-        },
-        prelude::User,
+    model::interactions::{
+        application_command::ApplicationCommandInteraction, InteractionResponseType,
     },
     prelude::SerenityError,
 };
@@ -26,10 +23,6 @@ pub async fn create_response(
                 .interaction_response_data(|message| message.content(content))
         })
         .await
-}
-
-pub fn get_full_username(user: &User) -> String {
-    format!("{}#{:04}", user.name, user.discriminator)
 }
 
 pub fn get_human_readable_timestamp(duration: Option<Duration>) -> String {

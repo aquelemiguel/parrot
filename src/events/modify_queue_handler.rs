@@ -13,7 +13,6 @@ use crate::{
     commands::queue::{
         build_nav_btns, calculate_num_pages, create_queue_embed, forget_queue_message,
     },
-    utils::get_full_username,
 };
 
 pub struct ModifyQueueHandler {
@@ -50,8 +49,6 @@ pub async fn update_queue_messages(
     drop(data);
 
     for (message, page_lock) in messages.iter_mut() {
-        let author = get_full_username(&message.author);
-
         let handler = call.lock().await;
         let tracks = handler.queue().current_queue();
         drop(handler);
@@ -62,7 +59,7 @@ pub async fn update_queue_messages(
         let mut page = page_lock.write().await;
         *page = usize::min(*page, num_pages - 1);
 
-        let embed = create_queue_embed(&author, &tracks, *page);
+        let embed = create_queue_embed(&tracks, *page);
 
         let edit_message = message
             .edit(&http, |edit| {

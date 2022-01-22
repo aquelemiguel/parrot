@@ -9,7 +9,7 @@ use crate::{
     client::GuildQueueInteractions,
     events::modify_queue_handler::ModifyQueueHandler,
     strings::{NO_VOICE_CONNECTION, QUEUE_EXPIRED, QUEUE_IS_EMPTY},
-    utils::{create_response, get_full_username, get_human_readable_timestamp},
+    utils::{create_response, get_human_readable_timestamp},
 };
 use serenity::{
     builder::{CreateButton, CreateComponents, CreateEmbed},
@@ -37,8 +37,6 @@ pub async fn queue(
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
 
-    let author_username = get_full_username(&interaction.user);
-
     let call = match manager.get(guild_id) {
         Some(call) => call,
         None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
@@ -60,7 +58,7 @@ pub async fn queue(
                     let num_pages = calculate_num_pages(&tracks);
 
                     message
-                        .add_embed(create_queue_embed(&author_username, &tracks, 0))
+                        .add_embed(create_queue_embed(&tracks, 0))
                         .components(|components| build_nav_btns(components, 0, num_pages))
                 })
         })
@@ -117,7 +115,7 @@ pub async fn queue(
         mci.create_interaction_response(&ctx, |r| {
             r.kind(InteractionResponseType::UpdateMessage);
             r.interaction_response_data(|d| {
-                d.add_embed(create_queue_embed(&author_username, &tracks, *page));
+                d.add_embed(create_queue_embed(&tracks, *page));
                 d.components(|components| build_nav_btns(components, *page, num_pages))
             })
         })
@@ -138,7 +136,7 @@ pub async fn queue(
     Ok(())
 }
 
-pub fn create_queue_embed(author: &str, tracks: &[TrackHandle], page: usize) -> CreateEmbed {
+pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
     let mut embed: CreateEmbed = CreateEmbed::default();
 
     let description = if !tracks.is_empty() {
@@ -158,14 +156,7 @@ pub fn create_queue_embed(author: &str, tracks: &[TrackHandle], page: usize) -> 
     embed.title("Queue");
     embed.field("🔊  Now playing", description, false);
     embed.field("⌛  Up next", build_queue_page(tracks, page), false);
-    embed.footer(|f| {
-        f.text(format!(
-            "Page {} of {} • Requested by {}",
-            page + 1,
-            calculate_num_pages(tracks),
-            author
-        ))
-    });
+    embed.footer(|f| f.text(format!("Page {}/{}", page + 1, calculate_num_pages(tracks))));
 
     embed
 }

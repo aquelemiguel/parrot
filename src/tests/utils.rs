@@ -1,17 +1,7 @@
 use serenity::model::prelude::User;
 use std::time::Duration;
 
-use crate::utils::{get_full_username, get_human_readable_timestamp};
-
-#[test]
-fn test_get_full_username() {
-    let mut user = User::default();
-    user.name = "hello world".to_string();
-    user.discriminator = 1234;
-
-    let result = get_full_username(&user);
-    assert_eq!(result, "hello world#1234");
-}
+use crate::utils::get_human_readable_timestamp;
 
 #[test]
 fn test_get_human_readable_timestamp() {
