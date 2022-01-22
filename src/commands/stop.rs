@@ -4,6 +4,7 @@ use serenity::{
 };
 
 use crate::{
+    events::modify_queue_handler::update_queue_messages,
     strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
     utils::create_response,
 };
@@ -28,5 +29,8 @@ pub async fn stop(
     }
 
     queue.stop();
-    return create_response(&ctx.http, interaction, "Stopped!").await;
+    drop(handler);
+
+    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+    create_response(&ctx.http, interaction, "Stopped!").await
 }

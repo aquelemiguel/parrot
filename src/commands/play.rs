@@ -65,7 +65,6 @@ pub async fn _play(
         EnqueueType::PLAYLIST => enqueue_playlist(&call, url).await,
     };
 
-    // after queueing the track, update the queue messages
     update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
 
     let handler = call.lock().await;

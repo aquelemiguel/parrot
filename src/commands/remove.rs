@@ -4,6 +4,7 @@ use serenity::{
 };
 
 use crate::{
+    events::modify_queue_handler::update_queue_messages,
     strings::{NO_SONG_ON_INDEX, NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
     utils::create_response,
 };
@@ -49,6 +50,10 @@ pub async fn remove(
         handler.queue().modify_queue(|v| {
             v.remove(remove_index);
         });
+
+        drop(handler);
+        update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+
         create_response(
             &ctx.http,
             interaction,

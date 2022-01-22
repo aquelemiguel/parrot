@@ -1,3 +1,4 @@
+use crate::events::modify_queue_handler::update_queue_messages;
 use crate::strings::NO_VOICE_CONNECTION;
 use crate::utils::create_response;
 use rand::Rng;
@@ -25,6 +26,9 @@ pub async fn shuffle(
             &mut rand::thread_rng(),
         )
     });
+
+    drop(handler);
+    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
 
     create_response(&ctx.http, interaction, "Shuffled successfully!").await
 }
