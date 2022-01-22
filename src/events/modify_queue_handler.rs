@@ -45,6 +45,7 @@ pub async fn update_queue_messages(
         Some(messages) => messages.clone(),
         None => return,
     };
+    drop(data);
 
     for (message, page_lock) in messages.iter_mut() {
         let author = get_full_username(&message.author);
@@ -61,9 +62,13 @@ pub async fn update_queue_messages(
 
         let embed = create_queue_embed(&author, &tracks, *page);
 
-        message
-            .edit(&http, |edit| edit.set_embed(embed))
-            .await
-            .unwrap();
+        if let Err(_) = message.edit(&http, |edit| edit.set_embed(embed)).await {
+            let mut data = ctx_data.write().await;
+            let gqi_map = data.get_mut::<GuildQueueInteractions>().unwrap();
+
+            let msgs = gqi_map.get_mut(&guild_id).unwrap();
+            msgs.retain(|(m, _)| m.id != message.id);
+            println!("im out");
+        };
     }
 }
