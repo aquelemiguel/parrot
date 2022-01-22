@@ -1,9 +1,7 @@
 use std::{
     cmp::{max, min},
-    collections::HashMap,
     ops::Add,
     sync::Arc,
-    vec,
 };
 
 use crate::{
@@ -16,15 +14,11 @@ use serenity::{
     builder::{CreateButton, CreateComponents, CreateEmbed},
     client::Context,
     futures::StreamExt,
-    model::{
-        channel::Message,
-        id::{GuildId, MessageId},
-        interactions::{
-            application_command::ApplicationCommandInteraction, message_component::ButtonStyle,
-            InteractionResponseType,
-        },
+    model::interactions::{
+        application_command::ApplicationCommandInteraction, message_component::ButtonStyle,
+        InteractionResponseType,
     },
-    prelude::{RwLock, SerenityError, TypeMapKey},
+    prelude::{RwLock, SerenityError},
 };
 use songbird::{tracks::TrackHandle, Event, TrackEvent};
 
@@ -71,7 +65,7 @@ pub async fn queue(
     let mut data = ctx.data.write().await;
     let gqi_map = data.get_mut::<GuildQueueInteractions>().unwrap();
 
-    let entry = gqi_map.entry(guild_id).or_insert(vec![]);
+    let entry = gqi_map.entry(guild_id).or_insert_with(Vec::new);
     entry.push((message.clone(), page_lock.clone()));
     drop(data);
 
@@ -92,8 +86,13 @@ pub async fn queue(
 
     while let Some(mci) = cib.next().await {
         let btn_id = &mci.data.custom_id;
-        let num_pages = calculate_num_pages(&tracks);
 
+        // refetch the queue in case it changed
+        let handler = call.lock().await;
+        let tracks = handler.queue().current_queue();
+        drop(handler);
+
+        let num_pages = calculate_num_pages(&tracks);
         let mut page = page_lock.write().await;
 
         *page = match btn_id.as_str() {

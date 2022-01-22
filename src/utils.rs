@@ -4,21 +4,15 @@ use serenity::{
     builder::CreateEmbed,
     http::Http,
     model::{
-        id::GuildId,
         interactions::{
             application_command::ApplicationCommandInteraction, InteractionResponseType,
         },
         prelude::User,
     },
-    prelude::{Mutex, RwLock, SerenityError, TypeMap},
+    prelude::SerenityError,
 };
 
-use songbird::{tracks::TrackHandle, Call};
-
-use crate::{
-    client::GuildQueueInteractions,
-    commands::queue::{calculate_num_pages, create_queue_embed},
-};
+use songbird::tracks::TrackHandle;
 
 pub async fn create_response(
     http: &Arc<Http>,

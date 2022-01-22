@@ -11,9 +11,10 @@ pub struct Client {
 }
 
 pub struct GuildQueueInteractions;
+type QueueMessage = (Message, Arc<RwLock<usize>>);
 
 impl TypeMapKey for GuildQueueInteractions {
-    type Value = HashMap<GuildId, Vec<(Message, Arc<RwLock<usize>>)>>;
+    type Value = HashMap<GuildId, Vec<QueueMessage>>;
 }
 
 impl Client {

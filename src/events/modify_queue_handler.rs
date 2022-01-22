@@ -50,6 +50,7 @@ pub async fn update_queue_messages(
     for (message, page_lock) in messages.iter_mut() {
         let author = get_full_username(&message.author);
 
+        // bot might have been disconnected manually
         let handler = call.lock().await;
         let tracks = handler.queue().current_queue();
         drop(handler);
@@ -58,17 +59,20 @@ pub async fn update_queue_messages(
         let num_pages = calculate_num_pages(&tracks);
 
         let mut page = page_lock.write().await;
-        *page = usize::min(*page, num_pages);
+        *page = usize::min(*page, num_pages - 1);
 
         let embed = create_queue_embed(&author, &tracks, *page);
 
-        if let Err(_) = message.edit(&http, |edit| edit.set_embed(embed)).await {
+        if message
+            .edit(&http, |edit| edit.set_embed(embed))
+            .await
+            .is_err()
+        {
             let mut data = ctx_data.write().await;
             let gqi_map = data.get_mut::<GuildQueueInteractions>().unwrap();
 
             let msgs = gqi_map.get_mut(&guild_id).unwrap();
             msgs.retain(|(m, _)| m.id != message.id);
-            println!("im out");
         };
     }
 }
