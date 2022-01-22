@@ -2,6 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use crate::{
     commands::{summon::summon, EnqueueType, PlayFlag},
+    events::modify_queue_handler::update_queue_messages,
     strings::{MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
     utils::{create_now_playing_embed, create_queued_embed, create_response},
 };
@@ -63,6 +64,9 @@ pub async fn _play(
         EnqueueType::SEARCH => enqueue_song(&call, url.to_string(), false, flag).await,
         EnqueueType::PLAYLIST => enqueue_playlist(&call, url).await,
     };
+
+    // after queueing the track, update the queue messages
+    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
 
     let handler = call.lock().await;
     let queue = handler.queue().current_queue();

@@ -81,7 +81,7 @@ pub async fn queue(
         Event::Track(TrackEvent::End),
         ModifyQueueHandler {
             http: ctx.http.clone(),
-            data: ctx.data.clone(),
+            ctx_data: ctx.data.clone(),
             call: call.clone(),
             guild_id,
         },
