@@ -2,27 +2,33 @@ use std::{
     cmp::{max, min},
     ops::Add,
     sync::Arc,
+    time::Duration,
 };
 
 use crate::{
     client::GuildQueueInteractions,
     events::modify_queue_handler::ModifyQueueHandler,
-    strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    strings::{NO_VOICE_CONNECTION, QUEUE_EXPIRED, QUEUE_IS_EMPTY},
     utils::{create_response, get_full_username, get_human_readable_timestamp},
 };
 use serenity::{
     builder::{CreateButton, CreateComponents, CreateEmbed},
     client::Context,
     futures::StreamExt,
-    model::interactions::{
-        application_command::ApplicationCommandInteraction, message_component::ButtonStyle,
-        InteractionResponseType,
+    model::{
+        channel::Message,
+        id::GuildId,
+        interactions::{
+            application_command::ApplicationCommandInteraction, message_component::ButtonStyle,
+            InteractionResponseType,
+        },
     },
-    prelude::{RwLock, SerenityError},
+    prelude::{RwLock, SerenityError, TypeMap},
 };
 use songbird::{tracks::TrackHandle, Event, TrackEvent};
 
 const EMBED_PAGE_SIZE: usize = 6;
+const COLLECTION_TIMEOUT: u64 = 3600;
 
 pub async fn queue(
     ctx: &Context,
@@ -60,7 +66,7 @@ pub async fn queue(
         })
         .await?;
 
-    let message = interaction.get_interaction_response(&ctx.http).await?;
+    let mut message = interaction.get_interaction_response(&ctx.http).await?;
     let page_lock: Arc<RwLock<usize>> = Arc::new(RwLock::new(0));
 
     // store this interaction to context.data for later edits
@@ -84,7 +90,10 @@ pub async fn queue(
     );
     drop(handler);
 
-    let mut cib = message.await_component_interactions(&ctx).await;
+    let mut cib = message
+        .await_component_interactions(&ctx)
+        .timeout(Duration::from_secs(COLLECTION_TIMEOUT))
+        .await;
 
     while let Some(mci) = cib.next().await {
         let btn_id = &mci.data.custom_id;
@@ -115,6 +124,17 @@ pub async fn queue(
         .await?;
     }
 
+    message
+        .edit(&ctx.http, |edit| {
+            let mut embed = CreateEmbed::default();
+            embed.description(QUEUE_EXPIRED);
+            edit.set_embed(embed);
+            edit.components(|f| f)
+        })
+        .await
+        .unwrap();
+
+    forget_queue_message(&ctx.data, &mut message, guild_id).await;
     Ok(())
 }
 
@@ -168,11 +188,13 @@ pub fn build_nav_btns(
     num_pages: usize,
 ) -> &mut CreateComponents {
     components.create_action_row(|action_row| {
+        let (cant_left, cant_right) = (page < 1, page >= num_pages - 1);
+
         action_row
-            .add_button(build_single_nav_btn("⏮", page + 1 <= 1))
-            .add_button(build_single_nav_btn("⏴", page + 1 <= 1))
-            .add_button(build_single_nav_btn("⏵", page + 1 >= num_pages))
-            .add_button(build_single_nav_btn("⏭", page + 1 >= num_pages))
+            .add_button(build_single_nav_btn("⏮", cant_left))
+            .add_button(build_single_nav_btn("⏴", cant_left))
+            .add_button(build_single_nav_btn("⏵", cant_right))
+            .add_button(build_single_nav_btn("⏭", cant_right))
     })
 }
 
@@ -210,4 +232,16 @@ fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
 pub fn calculate_num_pages(tracks: &[TrackHandle]) -> usize {
     let num_pages = ((tracks.len() as f64 - 1.0) / EMBED_PAGE_SIZE as f64).ceil() as usize;
     max(1, num_pages)
+}
+
+pub async fn forget_queue_message(
+    data: &Arc<RwLock<TypeMap>>,
+    message: &mut Message,
+    guild_id: GuildId,
+) {
+    let mut data = data.write().await;
+    let gqi_map = data.get_mut::<GuildQueueInteractions>().unwrap();
+
+    let msgs = gqi_map.get_mut(&guild_id).unwrap();
+    msgs.retain(|(m, _)| m.id != message.id);
 }

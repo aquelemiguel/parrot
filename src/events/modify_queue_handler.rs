@@ -10,7 +10,9 @@ use songbird::{Call, Event, EventContext, EventHandler};
 
 use crate::{
     client::GuildQueueInteractions,
-    commands::queue::{build_nav_btns, calculate_num_pages, create_queue_embed},
+    commands::queue::{
+        build_nav_btns, calculate_num_pages, create_queue_embed, forget_queue_message,
+    },
     utils::get_full_username,
 };
 
@@ -63,19 +65,15 @@ pub async fn update_queue_messages(
 
         let embed = create_queue_embed(&author, &tracks, *page);
 
-        if message
+        let edit_message = message
             .edit(&http, |edit| {
-                edit.set_embed(embed)
-                    .components(|components| build_nav_btns(components, *page, num_pages))
+                edit.set_embed(embed);
+                edit.components(|components| build_nav_btns(components, *page, num_pages))
             })
-            .await
-            .is_err()
-        {
-            let mut data = ctx_data.write().await;
-            let gqi_map = data.get_mut::<GuildQueueInteractions>().unwrap();
+            .await;
 
-            let msgs = gqi_map.get_mut(&guild_id).unwrap();
-            msgs.retain(|(m, _)| m.id != message.id);
+        if edit_message.is_err() {
+            forget_queue_message(ctx_data, message, guild_id).await;
         };
     }
 }
