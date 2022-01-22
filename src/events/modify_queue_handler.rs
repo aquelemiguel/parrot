@@ -10,7 +10,7 @@ use songbird::{Call, Event, EventContext, EventHandler};
 
 use crate::{
     client::GuildQueueInteractions,
-    commands::queue::{calculate_num_pages, create_queue_embed},
+    commands::queue::{build_nav_btns, calculate_num_pages, create_queue_embed},
     utils::get_full_username,
 };
 
@@ -64,7 +64,10 @@ pub async fn update_queue_messages(
         let embed = create_queue_embed(&author, &tracks, *page);
 
         if message
-            .edit(&http, |edit| edit.set_embed(embed))
+            .edit(&http, |edit| {
+                edit.set_embed(embed)
+                    .components(|components| build_nav_btns(components, *page, num_pages))
+            })
             .await
             .is_err()
         {

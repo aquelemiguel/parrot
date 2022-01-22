@@ -51,9 +51,11 @@ pub async fn queue(
             response
                 .kind(InteractionResponseType::ChannelMessageWithSource)
                 .interaction_response_data(|message| {
+                    let num_pages = calculate_num_pages(&tracks);
+
                     message
                         .add_embed(create_queue_embed(&author_username, &tracks, 0))
-                        .components(|components| build_nav_btns(components))
+                        .components(|components| build_nav_btns(components, 0, num_pages))
                 })
         })
         .await?;
@@ -106,7 +108,8 @@ pub async fn queue(
         mci.create_interaction_response(&ctx, |r| {
             r.kind(InteractionResponseType::UpdateMessage);
             r.interaction_response_data(|d| {
-                d.add_embed(create_queue_embed(&author_username, &tracks, *page))
+                d.add_embed(create_queue_embed(&author_username, &tracks, *page));
+                d.components(|components| build_nav_btns(components, *page, num_pages))
             })
         })
         .await?;
@@ -159,13 +162,17 @@ fn build_single_nav_btn(label: &str, is_disabled: bool) -> CreateButton {
     button
 }
 
-fn build_nav_btns(components: &mut CreateComponents) -> &mut CreateComponents {
+pub fn build_nav_btns(
+    components: &mut CreateComponents,
+    page: usize,
+    num_pages: usize,
+) -> &mut CreateComponents {
     components.create_action_row(|action_row| {
         action_row
-            .add_button(build_single_nav_btn("⏮", false))
-            .add_button(build_single_nav_btn("⏴", false))
-            .add_button(build_single_nav_btn("⏵", false))
-            .add_button(build_single_nav_btn("⏭", false))
+            .add_button(build_single_nav_btn("⏮", page + 1 <= 1))
+            .add_button(build_single_nav_btn("⏴", page + 1 <= 1))
+            .add_button(build_single_nav_btn("⏵", page + 1 >= num_pages))
+            .add_button(build_single_nav_btn("⏭", page + 1 >= num_pages))
     })
 }
 
