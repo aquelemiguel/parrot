@@ -50,7 +50,7 @@ pub async fn _play(
     }
 
     // reply with a temporary message while we fetch the source
-    create_response(&ctx.http, interaction, "Searching...").await?;
+    create_response(&ctx.http, interaction, "🔎  Searching...").await?;
 
     let call = manager.get(guild_id).unwrap();
 

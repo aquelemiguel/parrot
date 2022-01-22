@@ -28,5 +28,5 @@ pub async fn stop(
     }
 
     queue.stop();
-    return create_response(&ctx.http, interaction, "Stopped!").await;
+    return create_response(&ctx.http, interaction, "⏹️  Stopped!").await;
 }

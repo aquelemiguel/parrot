@@ -28,7 +28,7 @@ pub async fn resume(
     }
 
     if queue.resume().is_ok() {
-        return create_response(&ctx.http, interaction, "Resumed!").await;
+        return create_response(&ctx.http, interaction, "▶️  Resumed!").await;
     }
 
     Ok(())

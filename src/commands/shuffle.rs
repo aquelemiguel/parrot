@@ -26,7 +26,7 @@ pub async fn shuffle(
         )
     });
 
-    create_response(&ctx.http, interaction, "Shuffled successfully!").await
+    create_response(&ctx.http, interaction, "🔀  Shuffled successfully!").await
 }
 
 fn fisher_yates<T, R>(values: &mut [T], mut rng: R)

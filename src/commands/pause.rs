@@ -28,7 +28,7 @@ pub async fn pause(
     }
 
     if queue.pause().is_ok() {
-        return create_response(&ctx.http, interaction, "Paused!").await;
+        return create_response(&ctx.http, interaction, "⏸️  Paused!").await;
     }
 
     Ok(())
