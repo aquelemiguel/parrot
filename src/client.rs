@@ -1,9 +1,19 @@
 use crate::events::serenity_handler::SerenityHandler;
+use serenity::{
+    model::{channel::Message, id::GuildId},
+    prelude::{RwLock, TypeMapKey},
+};
 use songbird::SerenityInit;
-use std::{env, error::Error};
+use std::{collections::HashMap, env, error::Error, sync::Arc};
 
 pub struct Client {
     client: serenity::Client,
+}
+
+pub struct GuildQueueInteractions;
+
+impl TypeMapKey for GuildQueueInteractions {
+    type Value = HashMap<GuildId, Vec<(Message, Arc<RwLock<usize>>)>>;
 }
 
 impl Client {
@@ -20,6 +30,10 @@ impl Client {
             .application_id(application_id)
             .register_songbird()
             .await?;
+
+        let mut data = client.data.write().await;
+        data.insert::<GuildQueueInteractions>(HashMap::default());
+        drop(data);
 
         Ok(Client { client })
     }

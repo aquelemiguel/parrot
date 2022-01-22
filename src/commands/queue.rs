@@ -1,6 +1,14 @@
-use std::cmp::{max, min};
+use std::{
+    cmp::{max, min},
+    collections::HashMap,
+    ops::Add,
+    sync::Arc,
+    vec,
+};
 
 use crate::{
+    client::GuildQueueInteractions,
+    events::modify_queue_handler::ModifyQueueHandler,
     strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
     utils::{create_response, get_full_username, get_human_readable_timestamp},
 };
@@ -8,13 +16,17 @@ use serenity::{
     builder::{CreateButton, CreateComponents, CreateEmbed},
     client::Context,
     futures::StreamExt,
-    model::interactions::{
-        application_command::ApplicationCommandInteraction, message_component::ButtonStyle,
-        InteractionResponseType,
+    model::{
+        channel::Message,
+        id::{GuildId, MessageId},
+        interactions::{
+            application_command::ApplicationCommandInteraction, message_component::ButtonStyle,
+            InteractionResponseType,
+        },
     },
-    prelude::SerenityError,
+    prelude::{RwLock, SerenityError, TypeMapKey},
 };
-use songbird::tracks::TrackHandle;
+use songbird::{tracks::TrackHandle, Event, TrackEvent};
 
 const EMBED_PAGE_SIZE: usize = 6;
 
@@ -46,31 +58,48 @@ pub async fn queue(
                 .kind(InteractionResponseType::ChannelMessageWithSource)
                 .interaction_response_data(|message| {
                     message
-                        .create_embed(|e| create_queue_embed(e, &author_username, &tracks, 0))
+                        .add_embed(create_queue_embed(&author_username, &tracks, 0))
                         .components(|components| build_nav_btns(components))
                 })
         })
         .await?;
 
     let message = interaction.get_interaction_response(&ctx.http).await?;
+    let page_lock: Arc<RwLock<usize>> = Arc::new(RwLock::new(0));
+
+    // store this interaction to context.data for later edits
+    let mut data = ctx.data.write().await;
+    let gqi_map = data.get_mut::<GuildQueueInteractions>().unwrap();
+
+    let entry = gqi_map.entry(guild_id).or_insert(vec![]);
+    entry.push((message.clone(), page_lock.clone()));
+    drop(data);
+
+    // refresh the queue interaction whenever a track ends
+    let mut handler = call.lock().await;
+    handler.add_global_event(
+        Event::Track(TrackEvent::End),
+        ModifyQueueHandler {
+            http: ctx.http.clone(),
+            data: ctx.data.clone(),
+            call: call.clone(),
+            guild_id,
+        },
+    );
+    drop(handler);
 
     let mut cib = message.await_component_interactions(&ctx).await;
-    let mut current_page: usize = 0;
 
     while let Some(mci) = cib.next().await {
         let btn_id = &mci.data.custom_id;
-
-        // refetch the queue in case it changed
-        let handler = call.lock().await;
-        let tracks = handler.queue().current_queue();
-        drop(handler);
-
         let num_pages = calculate_num_pages(&tracks);
 
-        current_page = match btn_id.as_str() {
+        let mut page = page_lock.write().await;
+
+        *page = match btn_id.as_str() {
             "⏮" => 0,
-            "⏴" => min(current_page.saturating_sub(1), num_pages - 1),
-            "⏵" => min(current_page + 1, num_pages - 1),
+            "⏴" => min(page.saturating_sub(1), num_pages - 1),
+            "⏵" => min(page.add(1), num_pages - 1),
             "⏭" => num_pages - 1,
             _ => continue,
         };
@@ -78,7 +107,7 @@ pub async fn queue(
         mci.create_interaction_response(&ctx, |r| {
             r.kind(InteractionResponseType::UpdateMessage);
             r.interaction_response_data(|d| {
-                d.create_embed(|e| create_queue_embed(e, &author_username, &tracks, current_page))
+                d.add_embed(create_queue_embed(&author_username, &tracks, *page))
             })
         })
         .await?;
@@ -87,12 +116,9 @@ pub async fn queue(
     Ok(())
 }
 
-fn create_queue_embed<'a>(
-    embed: &'a mut CreateEmbed,
-    author: &str,
-    tracks: &[TrackHandle],
-    page: usize,
-) -> &'a mut CreateEmbed {
+pub fn create_queue_embed(author: &str, tracks: &[TrackHandle], page: usize) -> CreateEmbed {
+    let mut embed: CreateEmbed = CreateEmbed::default();
+
     let description = if !tracks.is_empty() {
         let metadata = tracks[0].metadata();
         embed.thumbnail(tracks[0].metadata().thumbnail.as_ref().unwrap());
@@ -117,7 +143,9 @@ fn create_queue_embed<'a>(
             calculate_num_pages(tracks),
             author
         ))
-    })
+    });
+
+    embed
 }
 
 fn build_single_nav_btn(label: &str, is_disabled: bool) -> CreateButton {
@@ -173,7 +201,7 @@ fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
     description
 }
 
-fn calculate_num_pages(tracks: &[TrackHandle]) -> usize {
+pub fn calculate_num_pages(tracks: &[TrackHandle]) -> usize {
     let num_pages = ((tracks.len() as f64 - 1.0) / EMBED_PAGE_SIZE as f64).ceil() as usize;
     max(1, num_pages)
 }
