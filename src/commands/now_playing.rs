@@ -1,5 +1,5 @@
 use crate::{
-    strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    strings::{NOTHING_IS_PLAYING, NO_VOICE_CONNECTION},
     utils::{create_embed_response, create_now_playing_embed, create_response},
 };
 use serenity::{
@@ -23,7 +23,7 @@ pub async fn now_playing(
 
     let track = match handler.queue().current() {
         Some(track) => track,
-        None => return create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await,
+        None => return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await,
     };
 
     let embed = create_now_playing_embed(&track).await;

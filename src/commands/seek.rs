@@ -3,7 +3,7 @@ use serenity::model::interactions::application_command::ApplicationCommandIntera
 use serenity::prelude::SerenityError;
 use std::time::Duration;
 
-use crate::strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY, TIMESTAMP_PARSING_FAILED};
+use crate::strings::{NOTHING_IS_PLAYING, NO_VOICE_CONNECTION, TIMESTAMP_PARSING_FAILED};
 use crate::utils::create_response;
 
 pub async fn seek(
@@ -44,7 +44,7 @@ pub async fn seek(
     let handler = call.lock().await;
     let track = match handler.queue().current() {
         Some(track) => track,
-        None => return create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await,
+        None => return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await,
     };
     drop(handler);
 

@@ -9,6 +9,8 @@ pub const NO_VOICE_CONNECTION: &str = "I'm not connected to any voice channel!";
 
 pub const QUEUE_IS_EMPTY: &str = "Queue is empty!";
 
+pub const NOTHING_IS_PLAYING: &str = "🔈  Nothing is playing!";
+
 pub const QUEUE_EXPIRED: &str =
     "In order to save resources, this command has expired.\nPlease feel free to reinvoke it!";
 

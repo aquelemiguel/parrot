@@ -42,7 +42,7 @@ pub async fn remove(
     let handler = call.lock().await;
     let queue = handler.queue().current_queue();
 
-    if queue.is_empty() {
+    if queue.len() <= 1 {
         create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await
     } else if queue.len() < remove_index + 1 {
         create_response(&ctx.http, interaction, NO_SONG_ON_INDEX).await

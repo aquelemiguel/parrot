@@ -23,7 +23,7 @@ pub async fn clear(
     let handler = call.lock().await;
     let queue = handler.queue().current_queue();
 
-    if queue.is_empty() {
+    if queue.len() <= 1 {
         return create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await;
     }
 

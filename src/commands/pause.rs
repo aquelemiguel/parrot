@@ -4,7 +4,7 @@ use serenity::{
 };
 
 use crate::{
-    strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    strings::{NOTHING_IS_PLAYING, NO_VOICE_CONNECTION},
     utils::create_response,
 };
 
@@ -24,7 +24,7 @@ pub async fn pause(
     let queue = handler.queue();
 
     if queue.is_empty() {
-        return create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await;
+        return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await;
     }
 
     if queue.pause().is_ok() {
