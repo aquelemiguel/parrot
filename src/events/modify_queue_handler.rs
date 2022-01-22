@@ -52,7 +52,6 @@ pub async fn update_queue_messages(
     for (message, page_lock) in messages.iter_mut() {
         let author = get_full_username(&message.author);
 
-        // bot might have been disconnected manually
         let handler = call.lock().await;
         let tracks = handler.queue().current_queue();
         drop(handler);
