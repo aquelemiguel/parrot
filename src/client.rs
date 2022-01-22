@@ -1,6 +1,6 @@
-use crate::handlers::serenity::SerenityHandler;
+use crate::{handlers::serenity::SerenityHandler, settings::GuildSettingsMap};
 use songbird::SerenityInit;
-use std::{env, error::Error};
+use std::{collections::HashMap, env, error::Error};
 
 pub struct Client {
     client: serenity::Client,
@@ -20,6 +20,10 @@ impl Client {
             .application_id(application_id)
             .register_songbird()
             .await?;
+
+        let mut data = client.data.write().await;
+        data.insert::<GuildSettingsMap>(HashMap::default());
+        drop(data);
 
         Ok(Client { client })
     }
