@@ -11,13 +11,14 @@ pub async fn autopause(
     let guild_id = interaction.guild_id.unwrap();
     let mut data = ctx.data.write().await;
     let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+
     let guild_settings = settings.entry(guild_id).or_default();
     guild_settings.autopause = !guild_settings.autopause;
 
-    create_response(
-        &ctx.http,
-        interaction,
-        &format!("Autopause is now {}", guild_settings.autopause),
-    )
-    .await
+    let message = if guild_settings.autopause {
+        "Autopause ON!".to_string()
+    } else {
+        "Autopause OFF!".to_string()
+    };
+    create_response(&ctx.http, interaction, &message).await
 }
