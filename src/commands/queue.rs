@@ -107,10 +107,10 @@ pub async fn queue(
         let mut page = page_lock.write().await;
 
         *page = match btn_id.as_str() {
-            "⏮" => 0,
-            "⏴" => min(page.saturating_sub(1), num_pages - 1),
-            "⏵" => min(page.add(1), num_pages - 1),
-            "⏭" => num_pages - 1,
+            "<<" => 0,
+            "<" => min(page.saturating_sub(1), num_pages - 1),
+            ">" => min(page.add(1), num_pages - 1),
+            ">>" => num_pages - 1,
             _ => continue,
         };
 
@@ -149,7 +149,7 @@ pub fn create_queue_embed(author: &str, tracks: &[TrackHandle], page: usize) -> 
             "[{}]({}) • `{}`",
             metadata.title.as_ref().unwrap(),
             metadata.source_url.as_ref().unwrap(),
-            get_human_readable_timestamp(metadata.duration.unwrap())
+            get_human_readable_timestamp(metadata.duration)
         )
     } else {
         String::from("Nothing is playing!")
@@ -191,10 +191,10 @@ pub fn build_nav_btns(
         let (cant_left, cant_right) = (page < 1, page >= num_pages - 1);
 
         action_row
-            .add_button(build_single_nav_btn("⏮", cant_left))
-            .add_button(build_single_nav_btn("⏴", cant_left))
-            .add_button(build_single_nav_btn("⏵", cant_right))
-            .add_button(build_single_nav_btn("⏭", cant_right))
+            .add_button(build_single_nav_btn("<<", cant_left))
+            .add_button(build_single_nav_btn("<", cant_left))
+            .add_button(build_single_nav_btn(">", cant_right))
+            .add_button(build_single_nav_btn(">>", cant_right))
     })
 }
 
@@ -215,7 +215,7 @@ fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
     for (i, t) in queue.iter().enumerate() {
         let title = t.metadata().title.as_ref().unwrap();
         let url = t.metadata().source_url.as_ref().unwrap();
-        let duration = get_human_readable_timestamp(t.metadata().duration.unwrap());
+        let duration = get_human_readable_timestamp(t.metadata().duration);
 
         description.push_str(&format!(
             "`{}.` [{}]({}) • `{}`\n",

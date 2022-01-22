@@ -119,6 +119,12 @@ pub async fn _play(
 
 async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Option<Duration> {
     if !queue.is_empty() {
+        let non_livestreams = queue.iter().filter_map(|track| track.metadata().duration);
+
+        if non_livestreams.count() < queue.len() {
+            return Some(Duration::MAX);
+        }
+
         let top_track = queue.first()?;
         let top_track_elapsed = top_track.get_info().await.unwrap().position;
         let top_track_duration = top_track.metadata().duration?;

@@ -16,14 +16,14 @@ fn test_get_full_username() {
 #[test]
 fn test_get_human_readable_timestamp() {
     let duration = Duration::from_secs(53);
-    let result = get_human_readable_timestamp(duration);
+    let result = get_human_readable_timestamp(Some(duration));
     assert_eq!(result, "00:53");
 
     let duration = Duration::from_secs(3599);
-    let result = get_human_readable_timestamp(duration);
+    let result = get_human_readable_timestamp(Some(duration));
     assert_eq!(result, "59:59");
 
     let duration = Duration::from_secs(96548);
-    let result = get_human_readable_timestamp(duration);
+    let result = get_human_readable_timestamp(Some(duration));
     assert_eq!(result, "26:49:08");
 }
