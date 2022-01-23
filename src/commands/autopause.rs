@@ -1,4 +1,4 @@
-use crate::{settings::GuildSettingsMap, utils::create_response};
+use crate::{guild::GuildSettingsMap, utils::create_response};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,

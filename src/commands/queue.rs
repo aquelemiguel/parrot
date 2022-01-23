@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    client::GuildQueueInteractions,
+    guild::GuildCacheMap,
     handlers::track_end::ModifyQueueHandler,
     strings::{NO_VOICE_CONNECTION, QUEUE_EXPIRED, QUEUE_IS_EMPTY},
     utils::{create_response, get_human_readable_timestamp},
@@ -69,10 +69,10 @@ pub async fn queue(
 
     // store this interaction to context.data for later edits
     let mut data = ctx.data.write().await;
-    let gqi_map = data.get_mut::<GuildQueueInteractions>().unwrap();
+    let cache_map = data.get_mut::<GuildCacheMap>().unwrap();
 
-    let entry = gqi_map.entry(guild_id).or_insert_with(Vec::new);
-    entry.push((message.clone(), page.clone()));
+    let cache = cache_map.entry(guild_id).or_default();
+    cache.queue_messages.push((message.clone(), page.clone()));
     drop(data);
 
     // refresh the queue interaction whenever a track ends
@@ -228,8 +228,8 @@ pub async fn forget_queue_message(
     guild_id: GuildId,
 ) {
     let mut data = data.write().await;
-    let gqi_map = data.get_mut::<GuildQueueInteractions>().unwrap();
+    let cache_map = data.get_mut::<GuildCacheMap>().unwrap();
 
-    let msgs = gqi_map.get_mut(&guild_id).unwrap();
-    msgs.retain(|(m, _)| m.id != message.id);
+    let cache = cache_map.get_mut(&guild_id).unwrap();
+    cache.queue_messages.retain(|(m, _)| m.id != message.id);
 }

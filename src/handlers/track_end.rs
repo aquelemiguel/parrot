@@ -8,11 +8,10 @@ use songbird::{Call, Event, EventContext, EventHandler};
 use std::sync::Arc;
 
 use crate::{
-    client::GuildQueueInteractions,
     commands::queue::{
         build_nav_btns, calculate_num_pages, create_queue_embed, forget_queue_message,
     },
-    settings::GuildSettingsMap,
+    guild::{GuildCacheMap, GuildSettingsMap},
 };
 
 pub struct TrackEndHandler {
@@ -64,10 +63,10 @@ pub async fn update_queue_messages(
     guild_id: GuildId,
 ) {
     let data = ctx_data.read().await;
-    let gqi_map = data.get::<GuildQueueInteractions>().unwrap();
+    let cache_map = data.get::<GuildCacheMap>().unwrap();
 
-    let mut messages = match gqi_map.get(&guild_id) {
-        Some(messages) => messages.clone(),
+    let mut messages = match cache_map.get(&guild_id) {
+        Some(cache) => cache.queue_messages.clone(),
         None => return,
     };
     drop(data);

@@ -1,21 +1,13 @@
-use serenity::{
-    model::{channel::Message, id::GuildId},
-    prelude::{RwLock, TypeMapKey},
-};
 use songbird::SerenityInit;
-use std::{collections::HashMap, env, error::Error, sync::Arc};
+use std::{collections::HashMap, env, error::Error};
 
-use crate::{handlers::SerenityHandler, settings::GuildSettingsMap};
+use crate::{
+    guild::{GuildCacheMap, GuildSettingsMap},
+    handlers::SerenityHandler,
+};
 
 pub struct Client {
     client: serenity::Client,
-}
-
-pub struct GuildQueueInteractions;
-type QueueMessage = (Message, Arc<RwLock<usize>>);
-
-impl TypeMapKey for GuildQueueInteractions {
-    type Value = HashMap<GuildId, Vec<QueueMessage>>;
 }
 
 impl Client {
@@ -34,7 +26,7 @@ impl Client {
             .await?;
 
         let mut data = client.data.write().await;
-        data.insert::<GuildQueueInteractions>(HashMap::default());
+        data.insert::<GuildCacheMap>(HashMap::default());
         data.insert::<GuildSettingsMap>(HashMap::default());
         drop(data);
 
