@@ -4,7 +4,7 @@ use serenity::{
 };
 
 use crate::{
-    strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    strings::{FAIL_NO_VOICE_CONNECTION, NOTHING_IS_PLAYING, RESUMED},
     utils::create_response,
 };
 
@@ -17,18 +17,18 @@ pub async fn resume(
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;
     let queue = handler.queue();
 
     if queue.is_empty() {
-        return create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await;
+        return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await;
     }
 
     if queue.resume().is_ok() {
-        return create_response(&ctx.http, interaction, "Resumed!").await;
+        return create_response(&ctx.http, interaction, RESUMED).await;
     }
 
     Ok(())

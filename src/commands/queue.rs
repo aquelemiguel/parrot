@@ -1,7 +1,10 @@
 use std::cmp::{max, min};
 
 use crate::{
-    strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    strings::{
+        FAIL_NO_VOICE_CONNECTION, QUEUE_NOTHING_IS_PLAYING, QUEUE_NOW_PLAYING, QUEUE_NO_SONGS,
+        QUEUE_PAGE, QUEUE_PAGE_OF, QUEUE_REQUEST_BY, QUEUE_UP_NEXT,
+    },
     utils::{create_response, get_full_username, get_human_readable_timestamp},
 };
 use serenity::{
@@ -32,16 +35,12 @@ pub async fn queue(
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;
     let tracks = handler.queue().current_queue();
     drop(handler);
-
-    if tracks.is_empty() {
-        return create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await;
-    }
 
     interaction
         .create_interaction_response(&ctx.http, |response| {
@@ -135,17 +134,19 @@ fn create_queue_embed<'a>(
             get_human_readable_timestamp(metadata.duration.unwrap())
         )
     } else {
-        String::from("Nothing is playing!")
+        String::from(QUEUE_NOTHING_IS_PLAYING)
     };
 
-    embed.title("Queue");
-    embed.field("🔊  Now playing", description, false);
-    embed.field("⌛  Up next", build_queue_page(tracks, page), false);
+    embed.field(QUEUE_NOW_PLAYING, description, false);
+    embed.field(QUEUE_UP_NEXT, build_queue_page(tracks, page), false);
     embed.footer(|f| {
         f.text(format!(
-            "Page {} of {} • Requested by {}",
+            "{} {} {} {} • {} {}",
+            QUEUE_PAGE,
             page + 1,
+            QUEUE_PAGE_OF,
             calculate_num_pages(tracks),
+            QUEUE_REQUEST_BY,
             author
         ))
     })
@@ -160,7 +161,7 @@ fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
         .collect();
 
     if queue.is_empty() {
-        return String::from("There's no songs up next!");
+        return String::from(QUEUE_NO_SONGS);
     }
 
     let mut description = String::new();

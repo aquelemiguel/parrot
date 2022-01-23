@@ -1,4 +1,8 @@
-use crate::{settings::GuildSettingsMap, utils::create_response};
+use crate::{
+    settings::GuildSettingsMap,
+    strings::{AUTOPAUSE_OFF, AUTOPAUSE_ON},
+    utils::create_response,
+};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,
@@ -16,9 +20,9 @@ pub async fn autopause(
     guild_settings.autopause = !guild_settings.autopause;
 
     let message = if guild_settings.autopause {
-        "Autopause ON!".to_string()
+        AUTOPAUSE_ON.to_string()
     } else {
-        "Autopause OFF!".to_string()
+        AUTOPAUSE_OFF.to_string()
     };
     create_response(&ctx.http, interaction, &message).await
 }
