@@ -23,6 +23,16 @@ pub async fn create_response(
     create_embed_response(http, interaction, embed).await
 }
 
+pub async fn edit_response(
+    http: &Arc<Http>,
+    interaction: &mut ApplicationCommandInteraction,
+    content: &str,
+) -> Result<Message, SerenityError> {
+    let mut embed = CreateEmbed::default();
+    embed.description(content);
+    edit_embed_response(http, interaction, embed).await
+}
+
 pub async fn create_embed_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
@@ -37,61 +47,6 @@ pub async fn create_embed_response(
         .await
 }
 
-pub fn get_human_readable_timestamp(duration: Option<Duration>) -> String {
-    match duration {
-        Some(duration) if duration == Duration::MAX => "∞".to_string(),
-        Some(duration) => {
-            let seconds = duration.as_secs() % 60;
-            let minutes = (duration.as_secs() / 60) % 60;
-            let hours = duration.as_secs() / 3600;
-
-            if hours < 1 {
-                format!("{:02}:{:02}", minutes, seconds)
-            } else {
-                format!("{}:{:02}:{:02}", hours, minutes, seconds)
-            }
-        }
-        None => "∞".to_string(),
-    }
-}
-
-pub async fn create_queued_embed(
-    title: &str,
-    track: &TrackHandle,
-    estimated_time: Duration,
-) -> CreateEmbed {
-    let mut embed = CreateEmbed::default();
-    let metadata = track.metadata().clone();
-
-    embed.title(title);
-    embed.thumbnail(metadata.thumbnail.unwrap());
-
-    embed.description(format!(
-        "[**{}**]({})",
-        metadata.title.unwrap(),
-        metadata.source_url.unwrap()
-    ));
-
-    let footer_text = format!(
-        "Track duration: {}\nEstimated time until play: {}",
-        get_human_readable_timestamp(metadata.duration),
-        get_human_readable_timestamp(Some(estimated_time))
-    );
-
-    embed.footer(|footer| footer.text(footer_text));
-    embed
-}
-
-pub async fn edit_response(
-    http: &Arc<Http>,
-    interaction: &mut ApplicationCommandInteraction,
-    content: &str,
-) -> Result<Message, SerenityError> {
-    let mut embed = CreateEmbed::default();
-    embed.description(content);
-    edit_embed_response(http, interaction, embed).await
-}
-
 pub async fn edit_embed_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
@@ -100,10 +55,6 @@ pub async fn edit_embed_response(
     interaction
         .edit_original_interaction_response(http, |message| message.content(" ").add_embed(embed))
         .await
-}
-
-pub fn get_full_username(user: &User) -> String {
-    format!("{}#{:04}", user.name, user.discriminator)
 }
 
 pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
@@ -127,4 +78,22 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
     let footer_text = format!("{} / {}", position, duration);
     embed.footer(|footer| footer.text(footer_text));
     embed
+}
+
+pub fn get_human_readable_timestamp(duration: Option<Duration>) -> String {
+    match duration {
+        Some(duration) if duration == Duration::MAX => "∞".to_string(),
+        Some(duration) => {
+            let seconds = duration.as_secs() % 60;
+            let minutes = (duration.as_secs() / 60) % 60;
+            let hours = duration.as_secs() / 3600;
+
+            if hours < 1 {
+                format!("{:02}:{:02}", minutes, seconds)
+            } else {
+                format!("{}:{:02}:{:02}", hours, minutes, seconds)
+            }
+        }
+        None => "∞".to_string(),
+    }
 }
