@@ -1,14 +1,16 @@
-use std::time::Duration;
-
 use serenity::{
     client::Context,
     model::interactions::application_command::ApplicationCommandInteraction,
     prelude::{Mentionable, SerenityError},
 };
-use songbird::Event;
 
-use crate::events::idle_handler::IdleHandler;
+use songbird::Event;
+use songbird::TrackEvent;
+use std::time::Duration;
+
+use crate::handlers::{IdleHandler, TrackEndHandler};
 use crate::strings::{FAIL_AUTHOR_NOT_FOUND, FAIL_HERE, JOINING};
+
 use crate::utils::create_response;
 
 pub async fn summon(
@@ -68,6 +70,15 @@ pub async fn summon(
                 interaction: interaction.clone(),
                 limit: 60 * 10,
                 count: Default::default(),
+            },
+        );
+
+        handler.add_global_event(
+            Event::Track(TrackEvent::End),
+            TrackEndHandler {
+                guild_id: guild.id,
+                call: call.clone(),
+                ctx_data: ctx.data.clone(),
             },
         );
     }
