@@ -1,4 +1,9 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    io::{BufRead, BufReader},
+    process::{Command, Stdio},
+    sync::Arc,
+    time::Duration,
+};
 
 use crate::{
     commands::{summon::summon, EnqueueType, PlayFlag},
@@ -7,6 +12,7 @@ use crate::{
     utils::{create_now_playing_embed, create_queued_embed, create_response},
 };
 
+use serde_json::{Value};
 use serenity::{
     client::Context,
     model::interactions::application_command::ApplicationCommandInteraction,
@@ -14,7 +20,6 @@ use serenity::{
 };
 
 use songbird::{input::Restartable, tracks::TrackHandle, Call};
-use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
 pub async fn play(
     ctx: &Context,
@@ -151,16 +156,19 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
 }
 
 async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str) {
-    let res = YoutubeDl::new(uri).flat_playlist(true).run().unwrap();
+    let mut child = Command::new("yt-dlp")
+        .args([uri, "--flat-playlist", "--print-json"])
+        .stdout(Stdio::piped())
+        .spawn()
+        .unwrap();
 
-    if let YoutubeDlOutput::Playlist(playlist) = res {
-        let entries = playlist.entries.unwrap();
+    if let Some(stdout) = &mut child.stdout {
+        let reader = BufReader::new(stdout);
+        let lines: Vec<String> = reader.lines().flatten().collect();
 
-        for entry in entries.iter() {
-            let url = format!(
-                "https://www.youtube.com/watch?v={}",
-                entry.url.as_ref().unwrap()
-            );
+        for line in lines.iter() {
+            let entry: Value = serde_json::from_str(line).unwrap();
+            let url = entry.get("url").unwrap().as_str().unwrap().to_string();
             enqueue_song(call, url, true, &PlayFlag::DEFAULT).await;
         }
     }
