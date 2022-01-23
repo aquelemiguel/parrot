@@ -3,7 +3,7 @@ use std::cmp::{max, min};
 use crate::{
     strings::{
         FAIL_NO_VOICE_CONNECTION, QUEUE_NOTHING_IS_PLAYING, QUEUE_NOW_PLAYING, QUEUE_NO_SONGS,
-        QUEUE_UP_NEXT,
+        QUEUE_PAGE, QUEUE_PAGE_OF, QUEUE_REQUEST_BY, QUEUE_UP_NEXT,
     },
     utils::{create_response, get_full_username, get_human_readable_timestamp},
 };
@@ -141,9 +141,12 @@ fn create_queue_embed<'a>(
     embed.field(QUEUE_UP_NEXT, build_queue_page(tracks, page), false);
     embed.footer(|f| {
         f.text(format!(
-            "Page {} of {} • Requested by {}",
+            "{} {} {} {} • {} {}",
+            QUEUE_PAGE,
             page + 1,
+            QUEUE_PAGE_OF,
             calculate_num_pages(tracks),
+            QUEUE_REQUEST_BY,
             author
         ))
     })
