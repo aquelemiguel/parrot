@@ -6,7 +6,6 @@ use serenity::{
         interactions::{
             application_command::ApplicationCommandInteraction, InteractionResponseType,
         },
-        prelude::User,
     },
     prelude::SerenityError,
 };
