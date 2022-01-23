@@ -1,26 +1,38 @@
-use std::{sync::Arc, time::Duration};
-
 use serenity::{
     builder::CreateEmbed,
     http::Http,
-    model::interactions::{
-        application_command::ApplicationCommandInteraction, InteractionResponseType,
+    model::{
+        channel::Message,
+        interactions::{
+            application_command::ApplicationCommandInteraction, InteractionResponseType,
+        },
+        prelude::User,
     },
     prelude::SerenityError,
 };
-
 use songbird::tracks::TrackHandle;
+use std::{sync::Arc, time::Duration};
 
 pub async fn create_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     content: &str,
 ) -> Result<(), SerenityError> {
+    let mut embed = CreateEmbed::default();
+    embed.description(content);
+    create_embed_response(http, interaction, embed).await
+}
+
+pub async fn create_embed_response(
+    http: &Arc<Http>,
+    interaction: &mut ApplicationCommandInteraction,
+    embed: CreateEmbed,
+) -> Result<(), SerenityError> {
     interaction
         .create_interaction_response(&http, |response| {
             response
                 .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|message| message.content(content))
+                .interaction_response_data(|message| message.add_embed(embed))
         })
         .await
 }
@@ -70,20 +82,44 @@ pub async fn create_queued_embed(
     embed
 }
 
+pub async fn edit_response(
+    http: &Arc<Http>,
+    interaction: &mut ApplicationCommandInteraction,
+    content: &str,
+) -> Result<Message, SerenityError> {
+    let mut embed = CreateEmbed::default();
+    embed.description(content);
+    edit_embed_response(http, interaction, embed).await
+}
+
+pub async fn edit_embed_response(
+    http: &Arc<Http>,
+    interaction: &mut ApplicationCommandInteraction,
+    embed: CreateEmbed,
+) -> Result<Message, SerenityError> {
+    interaction
+        .edit_original_interaction_response(http, |message| message.content(" ").add_embed(embed))
+        .await
+}
+
+pub fn get_full_username(user: &User) -> String {
+    format!("{}#{:04}", user.name, user.discriminator)
+}
+
 pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
     let mut embed = CreateEmbed::default();
     let metadata = track.metadata().clone();
 
-    embed.title("Now playing");
-    embed.thumbnail(metadata.thumbnail.unwrap());
-
-    let description_text = format!(
-        "[**{}**]({})",
-        metadata.title.unwrap(),
-        metadata.source_url.unwrap()
+    embed.field(
+        "🔊  Now playing",
+        format!(
+            "[**{}**]({})",
+            metadata.title.unwrap(),
+            metadata.source_url.unwrap()
+        ),
+        false,
     );
-
-    embed.description(description_text);
+    embed.thumbnail(metadata.thumbnail.unwrap());
 
     let position = get_human_readable_timestamp(Some(track.get_info().await.unwrap().position));
     let duration = get_human_readable_timestamp(metadata.duration);

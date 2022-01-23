@@ -1,14 +1,10 @@
-use std::{
-    cmp::{max, min},
-    ops::Add,
-    sync::Arc,
-    time::Duration,
-};
-
 use crate::{
     guild::cache::GuildCacheMap,
     handlers::track_end::ModifyQueueHandler,
-    strings::{NO_VOICE_CONNECTION, QUEUE_EXPIRED, QUEUE_IS_EMPTY},
+    strings::{
+        FAIL_NO_VOICE_CONNECTION, QUEUE_EXPIRED, QUEUE_NOTHING_IS_PLAYING, QUEUE_NOW_PLAYING,
+        QUEUE_NO_SONGS, QUEUE_PAGE, QUEUE_PAGE_OF, QUEUE_UP_NEXT,
+    },
     utils::{create_response, get_human_readable_timestamp},
 };
 use serenity::{
@@ -26,6 +22,12 @@ use serenity::{
     prelude::{RwLock, SerenityError, TypeMap},
 };
 use songbird::{tracks::TrackHandle, Event, TrackEvent};
+use std::{
+    cmp::{max, min},
+    ops::Add,
+    sync::Arc,
+    time::Duration,
+};
 
 const EMBED_PAGE_SIZE: usize = 6;
 const EMBED_TIMEOUT: u64 = 3600;
@@ -39,16 +41,12 @@ pub async fn queue(
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;
     let tracks = handler.queue().current_queue();
     drop(handler);
-
-    if tracks.is_empty() {
-        return create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await;
-    }
 
     interaction
         .create_interaction_response(&ctx.http, |response| {
@@ -150,13 +148,21 @@ pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
             get_human_readable_timestamp(metadata.duration)
         )
     } else {
-        String::from("Nothing is playing!")
+        String::from(QUEUE_NOTHING_IS_PLAYING)
     };
 
-    embed.title("Queue");
-    embed.field("🔊  Now playing", description, false);
-    embed.field("⌛  Up next", build_queue_page(tracks, page), false);
-    embed.footer(|f| f.text(format!("Page {}/{}", page + 1, calculate_num_pages(tracks))));
+    embed.field(QUEUE_NOW_PLAYING, description, false);
+    embed.field(QUEUE_UP_NEXT, build_queue_page(tracks, page), false);
+
+    embed.footer(|f| {
+        f.text(format!(
+            "{} {} {} {}",
+            QUEUE_PAGE,
+            page + 1,
+            QUEUE_PAGE_OF,
+            calculate_num_pages(tracks),
+        ))
+    });
 
     embed
 }
@@ -195,7 +201,7 @@ fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
         .collect();
 
     if queue.is_empty() {
-        return String::from("There's no songs up next!");
+        return String::from(QUEUE_NO_SONGS);
     }
 
     let mut description = String::new();

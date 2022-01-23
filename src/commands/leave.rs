@@ -1,9 +1,11 @@
+use crate::{
+    strings::{FAIL_NO_VOICE_CONNECTION, LEAVING},
+    utils::create_response,
+};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,
 };
-
-use crate::{strings::NO_VOICE_CONNECTION, utils::create_response};
 
 pub async fn leave(
     ctx: &Context,
@@ -14,8 +16,8 @@ pub async fn leave(
 
     if manager.get(guild_id).is_some() {
         manager.remove(guild_id).await.unwrap();
-        create_response(&ctx.http, interaction, "See you soon!").await
+        create_response(&ctx.http, interaction, LEAVING).await
     } else {
-        create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await
+        create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await
     }
 }

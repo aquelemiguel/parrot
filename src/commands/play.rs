@@ -1,19 +1,23 @@
-use std::{sync::Arc, time::Duration};
-
 use crate::{
     commands::{summon::summon, EnqueueType, PlayFlag},
     handlers::track_end::update_queue_messages,
-    strings::{MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
-    utils::{create_now_playing_embed, create_queued_embed, create_response},
+    strings::{
+        FAIL_NO_VOICE_CONNECTION, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, TRACK_DURATION,
+        TRACK_TIME_TO_PLAY,
+    },
+    utils::{
+        create_now_playing_embed, create_response, edit_embed_response, edit_response,
+        get_human_readable_timestamp,
+    },
 };
-
 use serenity::{
+    builder::CreateEmbed,
     client::Context,
     model::interactions::application_command::ApplicationCommandInteraction,
     prelude::{Mutex, SerenityError},
 };
-
 use songbird::{input::Restartable, tracks::TrackHandle, Call};
+use std::{sync::Arc, time::Duration};
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
 pub async fn play(
@@ -30,10 +34,14 @@ pub async fn _play(
 ) -> Result<(), SerenityError> {
     let args = interaction.data.options.clone();
 
-    let url = match args.first() {
-        Some(t) if t.value.is_some() => t.value.as_ref().unwrap().as_str().unwrap(),
-        _ => return create_response(&ctx.http, interaction, MISSING_PLAY_QUERY).await,
-    };
+    let url = args
+        .first()
+        .unwrap()
+        .value
+        .as_ref()
+        .unwrap()
+        .as_str()
+        .unwrap();
 
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
@@ -43,11 +51,11 @@ pub async fn _play(
 
     // halt if isn't in a voice channel at this point
     if manager.get(guild_id).is_none() {
-        return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await;
+        return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await;
     }
 
     // reply with a temporary message while we fetch the source
-    create_response(&ctx.http, interaction, "Searching...").await?;
+    create_response(&ctx.http, interaction, SEARCHING).await?;
 
     let call = manager.get(guild_id).unwrap();
 
@@ -76,40 +84,26 @@ pub async fn _play(
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
                 PlayFlag::PLAYTOP => {
                     let track = queue.get(1).unwrap();
-                    let embed = create_queued_embed("Added to top", track, estimated_time).await;
+                    let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
 
-                    interaction
-                        .edit_original_interaction_response(&ctx.http, |r| {
-                            r.content(" ").add_embed(embed)
-                        })
-                        .await?;
+                    edit_embed_response(&ctx.http, interaction, embed).await?;
                 }
                 PlayFlag::DEFAULT => {
                     let track = queue.last().unwrap();
-                    let embed = create_queued_embed("Added to queue", track, estimated_time).await;
+                    let embed = create_queued_embed(PLAY_QUEUE, track, estimated_time).await;
 
-                    interaction
-                        .edit_original_interaction_response(&ctx.http, |r| {
-                            r.content(" ").add_embed(embed)
-                        })
-                        .await?;
+                    edit_embed_response(&ctx.http, interaction, embed).await?;
                 }
             },
             EnqueueType::PLAYLIST => {
-                interaction
-                    .edit_original_interaction_response(&ctx.http, |response| {
-                        response.content("Added playlist to queue!")
-                    })
-                    .await?;
+                edit_response(&ctx.http, interaction, PLAY_PLAYLIST).await?;
             }
         }
     } else {
         let track = queue.first().unwrap();
         let embed = create_now_playing_embed(track).await;
 
-        interaction
-            .edit_original_interaction_response(&ctx.http, |m| m.content(" ").add_embed(embed))
-            .await?;
+        edit_embed_response(&ctx.http, interaction, embed).await?;
     }
 
     update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
@@ -164,6 +158,38 @@ async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str) {
             enqueue_song(call, url, true, &PlayFlag::DEFAULT).await;
         }
     }
+}
+
+async fn create_queued_embed(
+    title: &str,
+    track: &TrackHandle,
+    estimated_time: Duration,
+) -> CreateEmbed {
+    let mut embed = CreateEmbed::default();
+    let metadata = track.metadata().clone();
+
+    embed.thumbnail(metadata.thumbnail.unwrap());
+
+    embed.field(
+        title,
+        format!(
+            "[**{}**]({})",
+            metadata.title.unwrap(),
+            metadata.source_url.unwrap()
+        ),
+        false,
+    );
+
+    let footer_text = format!(
+        "{}{}\n{}{}",
+        TRACK_DURATION,
+        get_human_readable_timestamp(metadata.duration),
+        TRACK_TIME_TO_PLAY,
+        get_human_readable_timestamp(Some(estimated_time))
+    );
+
+    embed.footer(|footer| footer.text(footer_text));
+    embed
 }
 
 async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag: &PlayFlag) {

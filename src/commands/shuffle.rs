@@ -1,10 +1,13 @@
-use crate::handlers::track_end::update_queue_messages;
-use crate::strings::NO_VOICE_CONNECTION;
-use crate::utils::create_response;
+use crate::{
+    handlers::track_end::update_queue_messages,
+    strings::{FAIL_NO_VOICE_CONNECTION, SHUFFLED_SUCCESS},
+    utils::create_response,
+};
 use rand::Rng;
-use serenity::client::Context;
-use serenity::model::interactions::application_command::ApplicationCommandInteraction;
-use serenity::prelude::SerenityError;
+use serenity::{
+    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
+    prelude::SerenityError,
+};
 
 pub async fn shuffle(
     ctx: &Context,
@@ -15,7 +18,7 @@ pub async fn shuffle(
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;
@@ -29,7 +32,7 @@ pub async fn shuffle(
 
     drop(handler);
 
-    create_response(&ctx.http, interaction, "Shuffled successfully!").await?;
+    create_response(&ctx.http, interaction, SHUFFLED_SUCCESS).await?;
     update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
     Ok(())
 }

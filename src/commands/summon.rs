@@ -1,14 +1,15 @@
-use serenity::client::Context;
-use serenity::model::interactions::application_command::ApplicationCommandInteraction;
-use serenity::prelude::Mentionable;
-use serenity::prelude::SerenityError;
-use songbird::Event;
-use songbird::TrackEvent;
+use crate::{
+    handlers::{IdleHandler, TrackEndHandler},
+    strings::{FAIL_AUTHOR_NOT_FOUND, FAIL_HERE, JOINING},
+    utils::create_response,
+};
+use serenity::{
+    client::Context,
+    model::interactions::application_command::ApplicationCommandInteraction,
+    prelude::{Mentionable, SerenityError},
+};
+use songbird::{Event, TrackEvent};
 use std::time::Duration;
-
-use crate::handlers::{IdleHandler, TrackEndHandler};
-use crate::strings::AUTHOR_NOT_FOUND;
-use crate::utils::create_response;
 
 pub async fn summon(
     ctx: &Context,
@@ -28,9 +29,9 @@ pub async fn summon(
     let channel_id = match channel_opt {
         Some(channel_id) => channel_id,
         None if send_reply => {
-            return create_response(&ctx.http, interaction, AUTHOR_NOT_FOUND).await
+            return create_response(&ctx.http, interaction, FAIL_AUTHOR_NOT_FOUND).await
         }
-        _ => return Err(SerenityError::Other("Author not found")),
+        _ => return create_response(&ctx.http, interaction, FAIL_AUTHOR_NOT_FOUND).await,
     };
 
     if let Some(call) = manager.get(guild.id) {
@@ -41,7 +42,7 @@ pub async fn summon(
         // bot is already in the channel
         if has_current_connection {
             if send_reply {
-                return create_response(&ctx.http, interaction, "I'm already here!").await;
+                return create_response(&ctx.http, interaction, FAIL_HERE).await;
             }
             return Ok(());
         }
@@ -81,7 +82,7 @@ pub async fn summon(
     }
 
     if send_reply {
-        let content = format!("Joining **{}**!", channel_id.mention());
+        let content = format!("{} **{}**!", JOINING, channel_id.mention());
         return create_response(&ctx.http, interaction, &content).await;
     }
 
