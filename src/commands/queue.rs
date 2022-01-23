@@ -28,7 +28,7 @@ use serenity::{
 use songbird::{tracks::TrackHandle, Event, TrackEvent};
 
 const EMBED_PAGE_SIZE: usize = 6;
-const COLLECTION_TIMEOUT: u64 = 3600;
+const EMBED_TIMEOUT: u64 = 3600;
 
 pub async fn queue(
     ctx: &Context,
@@ -90,7 +90,7 @@ pub async fn queue(
 
     let mut cib = message
         .await_component_interactions(&ctx)
-        .timeout(Duration::from_secs(COLLECTION_TIMEOUT))
+        .timeout(Duration::from_secs(EMBED_TIMEOUT))
         .await;
 
     while let Some(mci) = cib.next().await {
@@ -162,15 +162,12 @@ pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
 }
 
 fn build_single_nav_btn(label: &str, is_disabled: bool) -> CreateButton {
-    let mut button = CreateButton::default();
-
-    button
+    CreateButton::default()
         .custom_id(label.to_string().to_ascii_lowercase())
         .label(label)
         .style(ButtonStyle::Primary)
-        .disabled(is_disabled);
-
-    button
+        .disabled(is_disabled)
+        .to_owned()
 }
 
 pub fn build_nav_btns(

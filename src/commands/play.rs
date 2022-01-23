@@ -117,32 +117,36 @@ pub async fn _play(
 }
 
 async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Option<Duration> {
-    if !queue.is_empty() {
-        let non_livestreams = queue.iter().filter_map(|track| track.metadata().duration);
+    if queue.is_empty() {
+        return None;
+    }
 
-        if non_livestreams.count() < queue.len() {
-            return Some(Duration::MAX);
+    let top_track = queue.first()?;
+    let top_track_elapsed = top_track.get_info().await.unwrap().position;
+
+    let top_track_duration = match top_track.metadata().duration {
+        Some(duration) => duration,
+        None => return Some(Duration::MAX),
+    };
+
+    match flag {
+        PlayFlag::DEFAULT => {
+            let center = &queue[1..queue.len() - 1];
+            let livestreams =
+                center.len() - center.iter().filter_map(|t| t.metadata().duration).count();
+
+            // if any of the tracks before are livestreams, the new track will never play
+            if livestreams > 0 {
+                return Some(Duration::MAX);
+            }
+
+            let durations = center.iter().fold(Duration::ZERO, |acc, x| {
+                acc + x.metadata().duration.unwrap()
+            });
+
+            Some(durations + top_track_duration - top_track_elapsed)
         }
-
-        let top_track = queue.first()?;
-        let top_track_elapsed = top_track.get_info().await.unwrap().position;
-        let top_track_duration = top_track.metadata().duration?;
-
-        let mut estimated_time = match flag {
-            PlayFlag::DEFAULT => queue[1..queue.len() - 1]
-                .iter()
-                .fold(Duration::ZERO, |acc, x| {
-                    acc + x.metadata().duration.unwrap()
-                }),
-            PlayFlag::PLAYTOP => Duration::ZERO,
-        };
-
-        // Add the remaining top track
-        estimated_time += top_track_duration - top_track_elapsed;
-
-        Some(estimated_time)
-    } else {
-        None
+        PlayFlag::PLAYTOP => Some(top_track_duration - top_track_elapsed),
     }
 }
 
