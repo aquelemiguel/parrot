@@ -1,10 +1,11 @@
-use crate::events::serenity_handler::SerenityHandler;
 use serenity::{
     model::{channel::Message, id::GuildId},
     prelude::{RwLock, TypeMapKey},
 };
 use songbird::SerenityInit;
 use std::{collections::HashMap, env, error::Error, sync::Arc};
+
+use crate::{handlers::SerenityHandler, settings::GuildSettingsMap};
 
 pub struct Client {
     client: serenity::Client,
@@ -34,6 +35,7 @@ impl Client {
 
         let mut data = client.data.write().await;
         data.insert::<GuildQueueInteractions>(HashMap::default());
+        data.insert::<GuildSettingsMap>(HashMap::default());
         drop(data);
 
         Ok(Client { client })

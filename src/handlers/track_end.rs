@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use serenity::{
     async_trait,
     http::Http,
@@ -7,19 +5,48 @@ use serenity::{
     prelude::{Mutex, RwLock, TypeMap},
 };
 use songbird::{Call, Event, EventContext, EventHandler};
+use std::sync::Arc;
 
 use crate::{
     client::GuildQueueInteractions,
     commands::queue::{
         build_nav_btns, calculate_num_pages, create_queue_embed, forget_queue_message,
     },
+    settings::GuildSettingsMap,
 };
+
+pub struct TrackEndHandler {
+    pub guild_id: GuildId,
+    pub call: Arc<Mutex<Call>>,
+    pub ctx_data: Arc<RwLock<TypeMap>>,
+}
 
 pub struct ModifyQueueHandler {
     pub http: Arc<Http>,
     pub ctx_data: Arc<RwLock<TypeMap>>,
     pub call: Arc<Mutex<Call>>,
     pub guild_id: GuildId,
+}
+
+#[async_trait]
+impl EventHandler for TrackEndHandler {
+    async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
+        let data = self.ctx_data.read().await;
+        let settings = data.get::<GuildSettingsMap>().unwrap();
+
+        let autopause = settings
+            .get(&self.guild_id)
+            .map(|guild_settings| guild_settings.autopause)
+            .unwrap_or_default();
+
+        if autopause {
+            let handler = self.call.lock().await;
+            let queue = handler.queue();
+            queue.pause().ok();
+        }
+
+        None
+    }
 }
 
 #[async_trait]

@@ -4,7 +4,7 @@ use serenity::{
 };
 
 use crate::{
-    events::modify_queue_handler::update_queue_messages,
+    handlers::track_end::update_queue_messages,
     strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
     utils::create_response,
 };

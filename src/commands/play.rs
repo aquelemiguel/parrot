@@ -2,7 +2,7 @@ use std::{sync::Arc, time::Duration};
 
 use crate::{
     commands::{summon::summon, EnqueueType, PlayFlag},
-    events::modify_queue_handler::update_queue_messages,
+    handlers::track_end::update_queue_messages,
     strings::{MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
     utils::{create_now_playing_embed, create_queued_embed, create_response},
 };

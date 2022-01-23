@@ -1,4 +1,4 @@
-use crate::events::modify_queue_handler::update_queue_messages;
+use crate::handlers::track_end::update_queue_messages;
 use crate::strings::NO_VOICE_CONNECTION;
 use crate::utils::create_response;
 use rand::Rng;

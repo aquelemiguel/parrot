@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     client::GuildQueueInteractions,
-    events::modify_queue_handler::ModifyQueueHandler,
+    handlers::track_end::ModifyQueueHandler,
     strings::{NO_VOICE_CONNECTION, QUEUE_EXPIRED, QUEUE_IS_EMPTY},
     utils::{create_response, get_human_readable_timestamp},
 };
