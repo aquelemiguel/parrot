@@ -44,9 +44,9 @@ pub async fn edit_response(
     interaction: &mut ApplicationCommandInteraction,
     content: &str,
 ) -> Result<Message, SerenityError> {
-    interaction
-        .edit_original_interaction_response(http, |message| message.content(content))
-        .await
+    let mut embed = CreateEmbed::default();
+    embed.description(content);
+    edit_embed_response(http, interaction, embed).await
 }
 
 pub async fn edit_embed_response(
