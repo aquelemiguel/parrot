@@ -11,7 +11,7 @@ use crate::{
     commands::queue::{
         build_nav_btns, calculate_num_pages, create_queue_embed, forget_queue_message,
     },
-    guild::{GuildCacheMap, GuildSettingsMap},
+    guild::{cache::GuildCacheMap, settings::GuildSettingsMap},
 };
 
 pub struct TrackEndHandler {

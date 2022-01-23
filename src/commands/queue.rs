@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    guild::GuildCacheMap,
+    guild::cache::GuildCacheMap,
     handlers::track_end::ModifyQueueHandler,
     strings::{NO_VOICE_CONNECTION, QUEUE_EXPIRED, QUEUE_IS_EMPTY},
     utils::{create_response, get_human_readable_timestamp},

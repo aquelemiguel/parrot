@@ -2,7 +2,7 @@ use songbird::SerenityInit;
 use std::{collections::HashMap, env, error::Error};
 
 use crate::{
-    guild::{GuildCacheMap, GuildSettingsMap},
+    guild::{cache::GuildCacheMap, settings::GuildSettingsMap},
     handlers::SerenityHandler,
 };
 
