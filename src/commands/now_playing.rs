@@ -1,5 +1,5 @@
 use crate::{
-    strings::{NOTHING_IS_PLAYING, NO_VOICE_CONNECTION},
+    strings::{FAIL_NO_VOICE_CONNECTION, NOTHING_IS_PLAYING},
     utils::{create_embed_response, create_now_playing_embed, create_response},
 };
 use serenity::{
@@ -16,7 +16,7 @@ pub async fn now_playing(
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;

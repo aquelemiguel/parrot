@@ -4,7 +4,7 @@ use serenity::{
 };
 
 use crate::{
-    strings::{NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    strings::{CLEARED, FAIL_NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
     utils::create_response,
 };
 
@@ -17,7 +17,7 @@ pub async fn clear(
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;
@@ -31,5 +31,5 @@ pub async fn clear(
         v.drain(1..);
     });
 
-    create_response(&ctx.http, interaction, "Cleared!").await
+    create_response(&ctx.http, interaction, CLEARED).await
 }

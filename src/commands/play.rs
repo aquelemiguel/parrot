@@ -2,7 +2,10 @@ use std::{sync::Arc, time::Duration};
 
 use crate::{
     commands::{summon::summon, EnqueueType, PlayFlag},
-    strings::{MISSING_PLAY_QUERY, NO_VOICE_CONNECTION},
+    strings::{
+        FAIL_NO_VOICE_CONNECTION, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, TRACK_DURATION,
+        TRACK_TIME_TO_PLAY,
+    },
     utils::{
         create_now_playing_embed, create_response, edit_embed_response, edit_response,
         get_human_readable_timestamp,
@@ -33,10 +36,14 @@ pub async fn _play(
 ) -> Result<(), SerenityError> {
     let args = interaction.data.options.clone();
 
-    let url = match args.first() {
-        Some(t) if t.value.is_some() => t.value.as_ref().unwrap().as_str().unwrap(),
-        _ => return create_response(&ctx.http, interaction, MISSING_PLAY_QUERY).await,
-    };
+    let url = args
+        .first()
+        .unwrap()
+        .value
+        .as_ref()
+        .unwrap()
+        .as_str()
+        .unwrap();
 
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
@@ -46,11 +53,11 @@ pub async fn _play(
 
     // halt if isn't in a voice channel at this point
     if manager.get(guild_id).is_none() {
-        return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await;
+        return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await;
     }
 
     // reply with a temporary message while we fetch the source
-    create_response(&ctx.http, interaction, "🔎  Searching...").await?;
+    create_response(&ctx.http, interaction, SEARCHING).await?;
 
     let call = manager.get(guild_id).unwrap();
 
@@ -79,21 +86,19 @@ pub async fn _play(
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
                 PlayFlag::PLAYTOP => {
                     let track = queue.get(1).unwrap();
-                    let embed =
-                        create_queued_embed("⌛  Added to top", track, estimated_time).await;
+                    let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
 
                     edit_embed_response(&ctx.http, interaction, embed).await?;
                 }
                 PlayFlag::DEFAULT => {
                     let track = queue.last().unwrap();
-                    let embed =
-                        create_queued_embed("⌛  Added to queue", track, estimated_time).await;
+                    let embed = create_queued_embed(PLAY_QUEUE, track, estimated_time).await;
 
                     edit_embed_response(&ctx.http, interaction, embed).await?;
                 }
             },
             EnqueueType::PLAYLIST => {
-                edit_response(&ctx.http, interaction, "⌛  Added {} tracks to queue").await?;
+                edit_response(&ctx.http, interaction, PLAY_PLAYLIST).await?;
             }
         }
     } else {
@@ -167,8 +172,10 @@ async fn create_queued_embed(
     );
 
     let footer_text = format!(
-        "Track duration: {}\nEstimated time until play: {}",
+        "{}{}\n{}{}",
+        TRACK_DURATION,
         get_human_readable_timestamp(metadata.duration.unwrap()),
+        TRACK_TIME_TO_PLAY,
         get_human_readable_timestamp(estimated_time)
     );
 

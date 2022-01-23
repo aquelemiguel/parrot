@@ -1,34 +1,34 @@
-pub const DEFAULT_PREFIX: &str = "-";
-
-pub const IDLE_ALERT: &str =
-    "I've been idle for a while, so I'll leave for now to save resources.\nFeel free to summon me back any time!";
-
-pub const AUTHOR_NOT_FOUND: &str = "Could not find you in any voice channel!";
-
-pub const NO_VOICE_CONNECTION: &str = "I'm not connected to any voice channel!";
-
+pub const CLEARED: &str = "🗑️ Cleared!";
+pub const FAIL_AUTHOR_NOT_FOUND: &str = "⚠️ Could not find you in any voice channel!";
+pub const FAIL_HERE: &str = "I'm already here!";
+pub const FAIL_INVALID_INDEX: &str = "⚠️ Please provide an index >= 1!";
+pub const FAIL_LOOP: &str = "⚠️ Failed to toggle loop!";
+pub const FAIL_NO_SONG_ON_INDEX: &str = "⚠️ There is no queued song on that index!";
+pub const FAIL_NO_VOICE_CONNECTION: &str = "⚠️ I'm not connected to any voice channel!";
+pub const FAIL_TIMESTAMP_PARSING: &str = "⚠️ Invalid parsing formatting!";
+pub const IDLE_ALERT: &str = "I've been idle for a while, so I'll leave for now to save resources.\nFeel free to summon me back any time!";
+pub const JOINING: &str = "Joining";
+pub const VERSION_LATEST: &str = "Find the latest version [here]";
+pub const LEAVING: &str = "👋 See you soon!";
+pub const LOOP_DISABLED: &str = "🔁 Disabled loop!";
+pub const LOOP_ENABLED: &str = "🔁 Enabled loop!";
+pub const NOTHING_IS_PLAYING: &str = "🔈 Nothing is playing!";
+pub const PAUSED: &str = "⏸️ Paused!";
+pub const PLAY_PLAYLIST: &str = "📃 Added playlist to queue!";
+pub const PLAY_QUEUE: &str = "📃 Added to queue!";
+pub const PLAY_TOP: &str = "📃 Added to top!";
 pub const QUEUE_IS_EMPTY: &str = "Queue is empty!";
-
-pub const NOTHING_IS_PLAYING: &str = "🔈  Nothing is playing!";
-
-pub const QUEUE_EXPIRED: &str =
-    "In order to save resources, this command has expired.\nPlease feel free to reinvoke it!";
-
-pub const MISSING_TIMESTAMP: &str = "Include a timestamp!";
-
-pub const TIMESTAMP_PARSING_FAILED: &str = "Invalid parsing formatting!";
-
-pub const MISSING_QUERY: &str = "Missing query for this command!";
-
-pub const MISSING_PLAY_QUERY: &str =
-    "Missing query for this command! Either add a URL or keywords.";
-
-pub const MISSING_INDEX_QUEUE: &str = "Missing an index!";
-
-pub const NO_SONG_ON_INDEX: &str = "There is no queued song on that index!";
-
-pub const PREFIX_UPDATED: &str = "Updated prefix!";
-
-pub const MISSING_PREFIX: &str = "⚠️ Please send a character as an argument.\nExample: `!prefix ~`";
-
-pub const SKIPPED: &str = "⏭️ Skipped!";
+pub const QUEUE_NO_SONGS: &str = "There's no songs up next!";
+pub const QUEUE_NOTHING_IS_PLAYING: &str = "Nothing is playing!";
+pub const QUEUE_NOW_PLAYING: &str = "🔊 Now playing";
+pub const QUEUE_UP_NEXT: &str = "⌛ Up next";
+pub const REMOVED_QUEUE: &str = "❌ Removed from queue";
+pub const RESUMED: &str = "▶️ Resumed!";
+pub const SEARCHING: &str = "🔎 Searching...";
+pub const SEEKED: &str = "⏩ Seeked current track to";
+pub const SHUFFLED_SUCCESS: &str = "🔀 Shuffled successfully!";
+pub const SKIPPED: &str = "⏩ Skipped!";
+pub const STOPPED: &str = "⏹️ Stopped!";
+pub const TRACK_DURATION: &str = "Track duration: ";
+pub const TRACK_TIME_TO_PLAY: &str = "Estimated time until play: ";
+pub const VERSION: &str = "Version";

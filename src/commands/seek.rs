@@ -1,9 +1,12 @@
-use serenity::client::Context;
-use serenity::model::interactions::application_command::ApplicationCommandInteraction;
-use serenity::prelude::SerenityError;
+use serenity::{
+    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
+    prelude::SerenityError,
+};
 use std::time::Duration;
 
-use crate::strings::{NOTHING_IS_PLAYING, NO_VOICE_CONNECTION, TIMESTAMP_PARSING_FAILED};
+use crate::strings::{
+    FAIL_NO_VOICE_CONNECTION, FAIL_TIMESTAMP_PARSING, NOTHING_IS_PLAYING, SEEKED,
+};
 use crate::utils::create_response;
 
 pub async fn seek(
@@ -15,7 +18,7 @@ pub async fn seek(
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
     };
 
     let args = interaction.data.options.clone();
@@ -36,7 +39,7 @@ pub async fn seek(
     );
 
     if minutes.is_none() || seconds.is_none() {
-        return create_response(&ctx.http, interaction, TIMESTAMP_PARSING_FAILED).await;
+        return create_response(&ctx.http, interaction, FAIL_TIMESTAMP_PARSING).await;
     }
 
     let timestamp = minutes.unwrap() * 60 + seconds.unwrap();
@@ -53,7 +56,7 @@ pub async fn seek(
     create_response(
         &ctx.http,
         interaction,
-        &format!("⏭  Seeked current track to **{}**!", seek_time),
+        &format!("{} **{}**!", SEEKED, seek_time),
     )
     .await
 }

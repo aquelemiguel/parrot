@@ -4,7 +4,7 @@ use serenity::{
 };
 
 use crate::{
-    strings::{NOTHING_IS_PLAYING, NO_VOICE_CONNECTION},
+    strings::{FAIL_NO_VOICE_CONNECTION, NOTHING_IS_PLAYING, STOPPED},
     utils::create_response,
 };
 
@@ -17,7 +17,7 @@ pub async fn stop(
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;
@@ -28,5 +28,5 @@ pub async fn stop(
     }
 
     queue.stop();
-    return create_response(&ctx.http, interaction, "⏹️  Stopped!").await;
+    return create_response(&ctx.http, interaction, STOPPED).await;
 }

@@ -1,8 +1,8 @@
-use crate::strings::{NOTHING_IS_PLAYING, NO_VOICE_CONNECTION};
+use crate::strings::{FAIL_NO_VOICE_CONNECTION, NOTHING_IS_PLAYING, SKIPPED};
 use crate::utils::create_response;
-use serenity::prelude::SerenityError;
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
+    prelude::SerenityError,
 };
 
 pub async fn skip(
@@ -14,7 +14,7 @@ pub async fn skip(
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;
@@ -23,7 +23,7 @@ pub async fn skip(
     if queue.is_empty() {
         return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await;
     } else if queue.skip().is_ok() {
-        return create_response(&ctx.http, interaction, "⏭️ Skipped!").await;
+        return create_response(&ctx.http, interaction, SKIPPED).await;
     }
 
     Ok(())

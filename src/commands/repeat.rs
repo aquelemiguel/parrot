@@ -4,7 +4,10 @@ use serenity::{
 };
 use songbird::tracks::{LoopState, TrackHandle};
 
-use crate::{strings::NO_VOICE_CONNECTION, utils::create_response};
+use crate::{
+    strings::{FAIL_LOOP, FAIL_NO_VOICE_CONNECTION, LOOP_DISABLED, LOOP_ENABLED},
+    utils::create_response,
+};
 
 pub async fn repeat(
     ctx: &Context,
@@ -15,7 +18,7 @@ pub async fn repeat(
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
     };
 
     let handler = call.lock().await;
@@ -29,8 +32,8 @@ pub async fn repeat(
     };
 
     match toggler(&track) {
-        Ok(_) if was_looping => create_response(&ctx.http, interaction, "🔁  Disabled loop!").await,
-        Ok(_) if !was_looping => create_response(&ctx.http, interaction, "🔁  Enabled loop!").await,
-        _ => create_response(&ctx.http, interaction, "⚠️  Failed to toggle loop!").await,
+        Ok(_) if was_looping => create_response(&ctx.http, interaction, LOOP_DISABLED).await,
+        Ok(_) if !was_looping => create_response(&ctx.http, interaction, LOOP_ENABLED).await,
+        _ => create_response(&ctx.http, interaction, FAIL_LOOP).await,
     }
 }

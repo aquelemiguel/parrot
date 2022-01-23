@@ -5,7 +5,10 @@ use serenity::{
 };
 
 use crate::{
-    strings::{NO_SONG_ON_INDEX, NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    strings::{
+        FAIL_INVALID_INDEX, FAIL_NO_SONG_ON_INDEX, FAIL_NO_VOICE_CONNECTION, QUEUE_IS_EMPTY,
+        REMOVED_QUEUE,
+    },
     utils::{create_embed_response, create_response},
 };
 
@@ -20,7 +23,7 @@ pub async fn remove(
 
     let call = match manager.get(guild_id) {
         Some(call) => call,
-        None => return create_response(&ctx.http, interaction, NO_VOICE_CONNECTION).await,
+        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
     };
 
     let args = interaction.data.options.clone();
@@ -35,7 +38,7 @@ pub async fn remove(
         .unwrap();
 
     if !signed_remove_index.is_positive() {
-        return create_response(&ctx.http, interaction, "Please provide an index >= 1!").await;
+        return create_response(&ctx.http, interaction, FAIL_INVALID_INDEX).await;
     }
 
     let remove_index = signed_remove_index as usize;
@@ -45,7 +48,7 @@ pub async fn remove(
     if queue.len() <= 1 {
         create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await
     } else if queue.len() < remove_index + 1 {
-        create_response(&ctx.http, interaction, NO_SONG_ON_INDEX).await
+        create_response(&ctx.http, interaction, FAIL_NO_SONG_ON_INDEX).await
     } else {
         let track = queue.get(remove_index).unwrap();
         handler.queue().modify_queue(|v| {
@@ -62,7 +65,7 @@ async fn create_remove_enqueued_embed(track: &TrackHandle) -> CreateEmbed {
     let metadata = track.metadata().clone();
 
     embed.field(
-        "❌  Removed from queue",
+        REMOVED_QUEUE,
         format!(
             "[**{}**]({})",
             metadata.title.unwrap(),
