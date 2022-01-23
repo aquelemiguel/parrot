@@ -65,14 +65,14 @@ pub async fn queue(
         .await?;
 
     let mut message = interaction.get_interaction_response(&ctx.http).await?;
-    let page_lock: Arc<RwLock<usize>> = Arc::new(RwLock::new(0));
+    let page: Arc<RwLock<usize>> = Arc::new(RwLock::new(0));
 
     // store this interaction to context.data for later edits
     let mut data = ctx.data.write().await;
     let gqi_map = data.get_mut::<GuildQueueInteractions>().unwrap();
 
     let entry = gqi_map.entry(guild_id).or_insert_with(Vec::new);
-    entry.push((message.clone(), page_lock.clone()));
+    entry.push((message.clone(), page.clone()));
     drop(data);
 
     // refresh the queue interaction whenever a track ends
@@ -102,12 +102,12 @@ pub async fn queue(
         drop(handler);
 
         let num_pages = calculate_num_pages(&tracks);
-        let mut page = page_lock.write().await;
+        let mut page_wlock = page.write().await;
 
-        *page = match btn_id.as_str() {
+        *page_wlock = match btn_id.as_str() {
             "<<" => 0,
-            "<" => min(page.saturating_sub(1), num_pages - 1),
-            ">" => min(page.add(1), num_pages - 1),
+            "<" => min(page_wlock.saturating_sub(1), num_pages - 1),
+            ">" => min(page_wlock.add(1), num_pages - 1),
             ">>" => num_pages - 1,
             _ => continue,
         };
@@ -115,8 +115,8 @@ pub async fn queue(
         mci.create_interaction_response(&ctx, |r| {
             r.kind(InteractionResponseType::UpdateMessage);
             r.interaction_response_data(|d| {
-                d.add_embed(create_queue_embed(&tracks, *page));
-                d.components(|components| build_nav_btns(components, *page, num_pages))
+                d.add_embed(create_queue_embed(&tracks, *page_wlock));
+                d.components(|components| build_nav_btns(components, *page_wlock, num_pages))
             })
         })
         .await?;

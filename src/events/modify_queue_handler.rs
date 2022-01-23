@@ -24,11 +24,8 @@ pub struct ModifyQueueHandler {
 
 #[async_trait]
 impl EventHandler for ModifyQueueHandler {
-    async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
-        if let EventContext::Track(_) = ctx {
-            update_queue_messages(&self.http, &self.ctx_data, &self.call, self.guild_id).await;
-        };
-
+    async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
+        update_queue_messages(&self.http, &self.ctx_data, &self.call, self.guild_id).await;
         None
     }
 }
@@ -55,7 +52,6 @@ pub async fn update_queue_messages(
 
         // has the page size shrunk?
         let num_pages = calculate_num_pages(&tracks);
-
         let mut page = page_lock.write().await;
         *page = usize::min(*page, num_pages - 1);
 

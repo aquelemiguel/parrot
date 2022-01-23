@@ -1,4 +1,3 @@
-use serenity::model::prelude::User;
 use std::time::Duration;
 
 use crate::utils::get_human_readable_timestamp;
@@ -16,4 +15,10 @@ fn test_get_human_readable_timestamp() {
     let duration = Duration::from_secs(96548);
     let result = get_human_readable_timestamp(Some(duration));
     assert_eq!(result, "26:49:08");
+
+    let result = get_human_readable_timestamp(Some(Duration::MAX));
+    assert_eq!(result, "∞");
+
+    let result = get_human_readable_timestamp(None);
+    assert_eq!(result, "∞");
 }

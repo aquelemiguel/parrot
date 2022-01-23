@@ -33,7 +33,8 @@ pub async fn clear(
     });
 
     drop(handler);
-    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
 
-    create_response(&ctx.http, interaction, "Cleared!").await
+    create_response(&ctx.http, interaction, "Cleared!").await?;
+    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+    Ok(())
 }

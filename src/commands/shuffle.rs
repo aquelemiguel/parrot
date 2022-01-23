@@ -28,9 +28,10 @@ pub async fn shuffle(
     });
 
     drop(handler);
-    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
 
-    create_response(&ctx.http, interaction, "Shuffled successfully!").await
+    create_response(&ctx.http, interaction, "Shuffled successfully!").await?;
+    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+    Ok(())
 }
 
 fn fisher_yates<T, R>(values: &mut [T], mut rng: R)

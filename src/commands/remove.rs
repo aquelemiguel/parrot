@@ -52,13 +52,14 @@ pub async fn remove(
         });
 
         drop(handler);
-        update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
 
         create_response(
             &ctx.http,
             interaction,
             &format!("Removed track #{}!", remove_index),
         )
-        .await
+        .await?;
+        update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+        Ok(())
     }
 }

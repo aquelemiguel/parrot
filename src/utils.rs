@@ -26,22 +26,20 @@ pub async fn create_response(
 }
 
 pub fn get_human_readable_timestamp(duration: Option<Duration>) -> String {
-    if let Some(duration) = duration {
-        if duration == Duration::MAX {
-            return "∞".to_string();
-        }
+    match duration {
+        Some(duration) if duration == Duration::MAX => "∞".to_string(),
+        Some(duration) => {
+            let seconds = duration.as_secs() % 60;
+            let minutes = (duration.as_secs() / 60) % 60;
+            let hours = duration.as_secs() / 3600;
 
-        let seconds = duration.as_secs() % 60;
-        let minutes = (duration.as_secs() / 60) % 60;
-        let hours = duration.as_secs() / 3600;
-
-        if hours < 1 {
-            format!("{:02}:{:02}", minutes, seconds)
-        } else {
-            format!("{}:{:02}:{:02}", hours, minutes, seconds)
+            if hours < 1 {
+                format!("{:02}:{:02}", minutes, seconds)
+            } else {
+                format!("{}:{:02}:{:02}", hours, minutes, seconds)
+            }
         }
-    } else {
-        "∞".to_string()
+        None => "∞".to_string(),
     }
 }
 

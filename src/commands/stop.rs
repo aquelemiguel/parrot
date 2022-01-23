@@ -31,6 +31,7 @@ pub async fn stop(
     queue.stop();
     drop(handler);
 
+    create_response(&ctx.http, interaction, "Stopped!").await?;
     update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
-    create_response(&ctx.http, interaction, "Stopped!").await
+    Ok(())
 }
