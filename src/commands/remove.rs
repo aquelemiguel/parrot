@@ -1,9 +1,6 @@
 use crate::{
     handlers::track_end::update_queue_messages,
-    strings::{
-        FAIL_INVALID_INDEX, FAIL_NO_SONG_ON_INDEX, FAIL_NO_VOICE_CONNECTION, QUEUE_IS_EMPTY,
-        REMOVED_QUEUE,
-    },
+    strings::{FAIL_NO_SONG_ON_INDEX, FAIL_NO_VOICE_CONNECTION, QUEUE_IS_EMPTY, REMOVED_QUEUE},
     utils::create_embed_response,
     utils::create_response,
 };
