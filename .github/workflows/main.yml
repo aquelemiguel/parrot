@@ -32,8 +32,11 @@ jobs:
       - name: Format Rust Code
         run: cargo fmt --all -- --check
 
-      - name: Lint Rust Code
-        run: cargo clippy -- -D clippy::all
+      - name: Run clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --workspace --tests
 
       - name: Run Unit Tests
         run: cargo test
