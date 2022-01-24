@@ -12,6 +12,8 @@ use serenity::{
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
 
+use crate::strings::QUEUE_NOW_PLAYING;
+
 pub async fn create_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
@@ -61,7 +63,7 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
     let metadata = track.metadata().clone();
 
     embed.field(
-        "🔊  Now playing",
+        QUEUE_NOW_PLAYING,
         format!(
             "[**{}**]({})",
             metadata.title.unwrap(),
