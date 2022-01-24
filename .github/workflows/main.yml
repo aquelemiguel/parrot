@@ -17,11 +17,28 @@ jobs:
       - name: Cache
         uses: Swatinem/rust-cache@v1
 
+      - name: Install stable toolchain
+        id: toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+          profile: minimal
+          override: true
+
       - name: Build Binary
-        run: cargo build --release
+        run: cargo build
+
+      - name: Run cargo fmt
+        run: cargo fmt --all -- --check
+
+      - name: Run clippy
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run Unit Tests
-        run: cargo test --release
+        run: cargo test
 
       - name: Check minimal versions
         run: cargo update
