@@ -33,10 +33,10 @@ jobs:
         run: cargo clippy -- -D clippy::all
 
       - name: Build Release Binary
-        run: cargo build --release
+        run: cargo build
 
       - name: Run Unit Tests
         run: cargo test
 
       - name: Check minimal versions
-        run: cargo clean; cargo update -Z minimal-versions; cargo check
+        run: cargo clean; cargo update; cargo check
