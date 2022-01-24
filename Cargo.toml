@@ -20,8 +20,7 @@ scraper = "0.12"
 youtube_dl = "0.6"
 
 [dependencies.songbird]
-git = "https://github.com/serenity-rs/songbird"
-branch = "current"
+version = "0.2.1"
 features = ["builtin-queue", "yt-dlp"]
 
 [dependencies.serenity]
