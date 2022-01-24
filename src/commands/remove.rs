@@ -1,9 +1,6 @@
 use crate::{
     handlers::track_end::update_queue_messages,
-    strings::{
-        FAIL_INVALID_INDEX, FAIL_NO_SONG_ON_INDEX, FAIL_NO_VOICE_CONNECTION, QUEUE_IS_EMPTY,
-        REMOVED_QUEUE,
-    },
+    strings::{FAIL_NO_SONG_ON_INDEX, FAIL_NO_VOICE_CONNECTION, QUEUE_IS_EMPTY, REMOVED_QUEUE},
     utils::create_embed_response,
     utils::create_response,
 };
@@ -28,20 +25,15 @@ pub async fn remove(
 
     let args = interaction.data.options.clone();
 
-    let signed_remove_index = args
+    let remove_index = args
         .first()
         .unwrap()
         .value
         .as_ref()
         .unwrap()
-        .as_i64()
-        .unwrap();
+        .as_u64()
+        .unwrap() as usize;
 
-    if !signed_remove_index.is_positive() {
-        return create_response(&ctx.http, interaction, FAIL_INVALID_INDEX).await;
-    }
-
-    let remove_index = signed_remove_index as usize;
     let handler = call.lock().await;
     let queue = handler.queue().current_queue();
 

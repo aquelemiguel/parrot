@@ -89,6 +89,7 @@ impl EventHandler for SerenityHandler {
                                 .description("Position of the track in the queue (1 is the next track to be played)")
                                 .kind(ApplicationCommandOptionType::Integer)
                                 .required(true)
+                                .min_int_value(1)
                         })
                 })
                 .create_application_command(|command| {
