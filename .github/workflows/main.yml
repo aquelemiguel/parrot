@@ -18,10 +18,15 @@ jobs:
         uses: Swatinem/rust-cache@v1
 
       - name: Build Binary
-        run: cargo build
+        run: cargo build --locked
+
+      - name: Build Release Binary
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: cargo build --release --locked
 
       - name: Run Unit Tests
         run: cargo test
 
-      - name: Check minimal versions
-        run: cargo update
+      - name: Run Release Unit Tests
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: cargo test --release --locked
