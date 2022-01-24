@@ -5,7 +5,6 @@ pub const FAIL_AUTHOR_NOT_FOUND: &str = "⚠️ Could not find you in any voic
 pub const FAIL_HERE: &str = "I'm already here!";
 pub const FAIL_INVALID_INDEX: &str = "⚠️ Please provide an index >= 1!";
 pub const FAIL_LOOP: &str = "⚠️ Failed to toggle loop!";
-pub const FAIL_MAIN: &str = "💀 Fatality! Parrot crashed because";
 pub const FAIL_NO_SONG_ON_INDEX: &str = "⚠️ There is no queued song on that index!";
 pub const FAIL_NO_VOICE_CONNECTION: &str = "⚠️ I'm not connected to any voice channel!";
 pub const FAIL_TIMESTAMP_PARSING: &str = "⚠️ Invalid parsing formatting!";

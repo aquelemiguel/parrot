@@ -1,4 +1,4 @@
-use parrot::{client::Client, strings::FAIL_MAIN};
+use parrot::client::Client;
 use std::error::Error;
 
 #[tokio::main]
@@ -7,7 +7,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let mut parrot = Client::default().await?;
     if let Err(why) = parrot.start().await {
-        println!("{}: {:?}", FAIL_MAIN, why);
+        println!("Fatality! Parrot crashed because: {:?}", why);
     };
 
     Ok(())
