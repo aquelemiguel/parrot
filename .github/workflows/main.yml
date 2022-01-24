@@ -26,14 +26,14 @@ jobs:
       - name: Cache
         uses: Swatinem/rust-cache@v1
 
+      - name: Build Binary
+        run: cargo build
+
       - name: Format Rust Code
         run: cargo fmt --all -- --check
 
       - name: Lint Rust Code
         run: cargo clippy -- -D clippy::all
-
-      - name: Build Release Binary
-        run: cargo build
 
       - name: Run Unit Tests
         run: cargo test
