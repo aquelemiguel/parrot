@@ -1,5 +1,7 @@
-use crate::strings::{FAIL_NO_VOICE_CONNECTION, NOTHING_IS_PLAYING, SKIPPED};
-use crate::utils::create_response;
+use crate::{
+    strings::{FAIL_NO_VOICE_CONNECTION, NOTHING_IS_PLAYING, SKIPPED},
+    utils::create_response,
+};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,

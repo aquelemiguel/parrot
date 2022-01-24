@@ -1,17 +1,15 @@
+use crate::{
+    handlers::{IdleHandler, TrackEndHandler},
+    strings::{FAIL_AUTHOR_NOT_FOUND, FAIL_HERE, JOINING},
+    utils::create_response,
+};
 use serenity::{
     client::Context,
     model::interactions::application_command::ApplicationCommandInteraction,
     prelude::{Mentionable, SerenityError},
 };
-
-use songbird::Event;
-use songbird::TrackEvent;
+use songbird::{Event, TrackEvent};
 use std::time::Duration;
-
-use crate::handlers::{IdleHandler, TrackEndHandler};
-use crate::strings::{FAIL_AUTHOR_NOT_FOUND, FAIL_HERE, JOINING};
-
-use crate::utils::create_response;
 
 pub async fn summon(
     ctx: &Context,

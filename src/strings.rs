@@ -18,13 +18,14 @@ pub const PAUSED: &str = "⏸️ Paused!";
 pub const PLAY_PLAYLIST: &str = "📃 Added playlist to queue!";
 pub const PLAY_QUEUE: &str = "📃 Added to queue!";
 pub const PLAY_TOP: &str = "📃 Added to top!";
+pub const QUEUE_EXPIRED: &str =
+    "In order to save resources, this command has expired.\nPlease feel free to reinvoke it!";
 pub const QUEUE_IS_EMPTY: &str = "Queue is empty!";
 pub const QUEUE_NO_SONGS: &str = "There's no songs up next!";
 pub const QUEUE_NOTHING_IS_PLAYING: &str = "Nothing is playing!";
 pub const QUEUE_NOW_PLAYING: &str = "🔊 Now playing";
 pub const QUEUE_PAGE_OF: &str = "of";
 pub const QUEUE_PAGE: &str = "Page";
-pub const QUEUE_REQUEST_BY: &str = "Requested by";
 pub const QUEUE_UP_NEXT: &str = "⌛ Up next";
 pub const REMOVED_QUEUE: &str = "❌ Removed from queue";
 pub const RESUMED: &str = "▶️ Resumed!";

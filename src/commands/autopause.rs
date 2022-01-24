@@ -1,5 +1,5 @@
 use crate::{
-    settings::GuildSettingsMap,
+    guild::settings::GuildSettingsMap,
     strings::{AUTOPAUSE_OFF, AUTOPAUSE_ON},
     utils::create_response,
 };

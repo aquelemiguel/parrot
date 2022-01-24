@@ -1,5 +1,6 @@
-use serenity::{model::id::GuildId, prelude::TypeMapKey};
 use std::collections::HashMap;
+
+use serenity::{model::id::GuildId, prelude::TypeMapKey};
 
 #[derive(Default)]
 pub struct GuildSettings {

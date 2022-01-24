@@ -1,11 +1,10 @@
-use serenity::{
-    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
-    prelude::SerenityError,
-};
-
 use crate::{
     strings::{FAIL_NO_VOICE_CONNECTION, LEAVING},
     utils::create_response,
+};
+use serenity::{
+    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
+    prelude::SerenityError,
 };
 
 pub async fn leave(

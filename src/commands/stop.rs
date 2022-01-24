@@ -1,11 +1,11 @@
+use crate::{
+    handlers::track_end::update_queue_messages,
+    strings::{FAIL_NO_VOICE_CONNECTION, NOTHING_IS_PLAYING, STOPPED},
+    utils::create_response,
+};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,
-};
-
-use crate::{
-    strings::{FAIL_NO_VOICE_CONNECTION, NOTHING_IS_PLAYING, STOPPED},
-    utils::create_response,
 };
 
 pub async fn stop(
@@ -28,5 +28,9 @@ pub async fn stop(
     }
 
     queue.stop();
-    return create_response(&ctx.http, interaction, STOPPED).await;
+    drop(handler);
+
+    create_response(&ctx.http, interaction, STOPPED).await?;
+    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+    Ok(())
 }

@@ -1,7 +1,6 @@
-use std::{sync::Arc, time::Duration};
-
 use crate::{
     commands::{summon::summon, EnqueueType, PlayFlag},
+    handlers::track_end::update_queue_messages,
     strings::{
         FAIL_NO_VOICE_CONNECTION, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, TRACK_DURATION,
         TRACK_TIME_TO_PLAY,
@@ -11,15 +10,14 @@ use crate::{
         get_human_readable_timestamp,
     },
 };
-
 use serenity::{
     builder::CreateEmbed,
     client::Context,
     model::interactions::application_command::ApplicationCommandInteraction,
     prelude::{Mutex, SerenityError},
 };
-
 use songbird::{input::Restartable, tracks::TrackHandle, Call};
+use std::{sync::Arc, time::Duration};
 use youtube_dl::{YoutubeDl, YoutubeDlOutput};
 
 pub async fn play(
@@ -108,30 +106,41 @@ pub async fn _play(
         edit_embed_response(&ctx.http, interaction, embed).await?;
     }
 
+    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
     Ok(())
 }
 
 async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Option<Duration> {
-    if !queue.is_empty() {
-        let top_track = queue.first()?;
-        let top_track_elapsed = top_track.get_info().await.unwrap().position;
-        let top_track_duration = top_track.metadata().duration?;
+    if queue.is_empty() {
+        return None;
+    }
 
-        let mut estimated_time = match flag {
-            PlayFlag::DEFAULT => queue[1..queue.len() - 1]
-                .iter()
-                .fold(Duration::ZERO, |acc, x| {
-                    acc + x.metadata().duration.unwrap()
-                }),
-            PlayFlag::PLAYTOP => Duration::ZERO,
-        };
+    let top_track = queue.first()?;
+    let top_track_elapsed = top_track.get_info().await.unwrap().position;
 
-        // Add the remaining top track
-        estimated_time += top_track_duration - top_track_elapsed;
+    let top_track_duration = match top_track.metadata().duration {
+        Some(duration) => duration,
+        None => return Some(Duration::MAX),
+    };
 
-        Some(estimated_time)
-    } else {
-        None
+    match flag {
+        PlayFlag::DEFAULT => {
+            let center = &queue[1..queue.len() - 1];
+            let livestreams =
+                center.len() - center.iter().filter_map(|t| t.metadata().duration).count();
+
+            // if any of the tracks before are livestreams, the new track will never play
+            if livestreams > 0 {
+                return Some(Duration::MAX);
+            }
+
+            let durations = center.iter().fold(Duration::ZERO, |acc, x| {
+                acc + x.metadata().duration.unwrap()
+            });
+
+            Some(durations + top_track_duration - top_track_elapsed)
+        }
+        PlayFlag::PLAYTOP => Some(top_track_duration - top_track_elapsed),
     }
 }
 
@@ -174,9 +183,9 @@ async fn create_queued_embed(
     let footer_text = format!(
         "{}{}\n{}{}",
         TRACK_DURATION,
-        get_human_readable_timestamp(metadata.duration.unwrap()),
+        get_human_readable_timestamp(metadata.duration),
         TRACK_TIME_TO_PLAY,
-        get_human_readable_timestamp(estimated_time)
+        get_human_readable_timestamp(Some(estimated_time))
     );
 
     embed.footer(|footer| footer.text(footer_text));

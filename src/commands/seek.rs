@@ -1,13 +1,12 @@
+use crate::{
+    strings::{FAIL_NO_VOICE_CONNECTION, FAIL_TIMESTAMP_PARSING, NOTHING_IS_PLAYING, SEEKED},
+    utils::create_response,
+};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,
 };
 use std::time::Duration;
-
-use crate::strings::{
-    FAIL_NO_VOICE_CONNECTION, FAIL_TIMESTAMP_PARSING, NOTHING_IS_PLAYING, SEEKED,
-};
-use crate::utils::create_response;
 
 pub async fn seek(
     ctx: &Context,

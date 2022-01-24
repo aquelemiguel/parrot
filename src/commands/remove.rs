@@ -1,17 +1,17 @@
+use crate::{
+    handlers::track_end::update_queue_messages,
+    strings::{
+        FAIL_INVALID_INDEX, FAIL_NO_SONG_ON_INDEX, FAIL_NO_VOICE_CONNECTION, QUEUE_IS_EMPTY,
+        REMOVED_QUEUE,
+    },
+    utils::create_embed_response,
+    utils::create_response,
+};
 use serenity::{
     builder::CreateEmbed, client::Context,
     model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,
 };
-
-use crate::{
-    strings::{
-        FAIL_INVALID_INDEX, FAIL_NO_SONG_ON_INDEX, FAIL_NO_VOICE_CONNECTION, QUEUE_IS_EMPTY,
-        REMOVED_QUEUE,
-    },
-    utils::{create_embed_response, create_response},
-};
-
 use songbird::tracks::TrackHandle;
 
 pub async fn remove(
@@ -55,8 +55,13 @@ pub async fn remove(
             v.remove(remove_index);
         });
 
+        drop(handler);
+
         let embed = create_remove_enqueued_embed(track).await;
-        create_embed_response(&ctx.http, interaction, embed).await
+        create_embed_response(&ctx.http, interaction, embed).await?;
+        update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+
+        Ok(())
     }
 }
 

@@ -1,5 +1,8 @@
-use crate::strings::{FAIL_NO_VOICE_CONNECTION, SHUFFLED_SUCCESS};
-use crate::utils::create_response;
+use crate::{
+    handlers::track_end::update_queue_messages,
+    strings::{FAIL_NO_VOICE_CONNECTION, SHUFFLED_SUCCESS},
+    utils::create_response,
+};
 use rand::Rng;
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
@@ -27,7 +30,11 @@ pub async fn shuffle(
         )
     });
 
-    create_response(&ctx.http, interaction, SHUFFLED_SUCCESS).await
+    drop(handler);
+
+    create_response(&ctx.http, interaction, SHUFFLED_SUCCESS).await?;
+    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+    Ok(())
 }
 
 fn fisher_yates<T, R>(values: &mut [T], mut rng: R)

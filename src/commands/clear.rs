@@ -1,11 +1,11 @@
+use crate::{
+    handlers::track_end::update_queue_messages,
+    strings::{CLEARED, FAIL_NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
+    utils::create_response,
+};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,
-};
-
-use crate::{
-    strings::{CLEARED, FAIL_NO_VOICE_CONNECTION, QUEUE_IS_EMPTY},
-    utils::create_response,
 };
 
 pub async fn clear(
@@ -31,5 +31,9 @@ pub async fn clear(
         v.drain(1..);
     });
 
-    create_response(&ctx.http, interaction, CLEARED).await
+    drop(handler);
+
+    create_response(&ctx.http, interaction, CLEARED).await?;
+    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+    Ok(())
 }

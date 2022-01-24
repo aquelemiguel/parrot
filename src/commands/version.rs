@@ -1,12 +1,11 @@
-use serenity::{
-    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
-};
-
 use crate::{
     strings::{VERSION, VERSION_LATEST},
     utils::create_response,
 };
-use serenity::prelude::SerenityError;
+use serenity::{
+    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
+    prelude::SerenityError,
+};
 
 const RELEASES_LINK: &str = "https://github.com/aquelemiguel/parrot/releases";
 
