@@ -27,7 +27,7 @@ jobs:
         uses: Swatinem/rust-cache@v1
 
       - name: Build Binary
-        run: cargo build
+        run: cargo build --release
 
       - name: Format Rust Code
         run: cargo fmt --all -- --check
