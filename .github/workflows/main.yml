@@ -36,10 +36,9 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace --tests
 
       - name: Run Unit Tests
         run: cargo test
 
       - name: Check minimal versions
-        run: cargo update; cargo check
+        run: cargo update
