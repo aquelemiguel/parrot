@@ -1,11 +1,10 @@
 name: Main Workflow
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+
+on: [push, pull_request]
+
 jobs:
   build:
+    name: Build
     strategy:
       matrix:
         rust-version: ["1.54", "1.55", "1.56", "1.57"]
@@ -15,18 +14,25 @@ jobs:
       - name: Repository Checkout
         uses: actions/checkout@v2
 
+      - name: Install toolchain
+        id: tc
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
       - name: Format Rust Code
-        run: |
-          rustup component add rustfmt
-          cargo fmt --all -- --check
+        run: cargo fmt --all -- --check
 
       - name: Lint Rust Code
-        run: |
-          rustup component add clippy
-          cargo clippy -- -D clippy::all
+        run: cargo clippy -- -D clippy::all
 
       - name: Build Release Binary
         run: cargo build --release
 
       - name: Run Unit Tests
         run: cargo test
+
+      - name: Check minimal versions
+        run: cargo clean; cargo update -Z minimal-versions; cargo check
