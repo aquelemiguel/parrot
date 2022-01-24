@@ -42,4 +42,4 @@ jobs:
         run: cargo test
 
       - name: Check minimal versions
-        run: cargo clean; cargo update; cargo check
+        run: cargo update; cargo check
