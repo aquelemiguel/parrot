@@ -836,7 +836,7 @@ dependencies = [
 
 [[package]]
 name = "parrot"
-version = "1.0.1"
+version = "1.1.0"
 dependencies = [
  "dotenv",
  "rand 0.8.4",
