@@ -22,8 +22,6 @@ use crate::commands::{
     remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
 };
 
-const ROLE: &str = "Parrot DJ";
-
 pub struct SerenityHandler;
 
 #[async_trait]
@@ -212,14 +210,19 @@ impl SerenityHandler {
         .unwrap()
     }
 
-    async fn ensure_role(&self, ctx: &Context, guild: GuildId) -> Result<Role, SerenityError> {
+    async fn ensure_role(
+        &self,
+        ctx: &Context,
+        guild: GuildId,
+        role_name: &str,
+    ) -> Result<Role, SerenityError> {
         let roles = guild.roles(&ctx.http).await.unwrap();
-        let role = roles.iter().find(|(_, role)| role.name == ROLE);
+        let role = roles.iter().find(|(_, role)| role.name == role_name);
         match role {
             Some((_, role)) => Ok(role.to_owned()),
             None => {
                 guild
-                    .create_role(&ctx.http, |r| r.name(ROLE).mentionable(true))
+                    .create_role(&ctx.http, |r| r.name(role_name).mentionable(true))
                     .await
             }
         }
@@ -261,17 +264,18 @@ impl SerenityHandler {
 
     async fn set_commands(&self, ctx: &Context, ready: Ready) {
         let commands = self.create_commands(ctx).await;
+        let role_name = ready.user.name + " DJ";
         for guild in ready.guilds {
             let guild_id = guild.id();
 
             // ensures the role exists, creating it if does not
             // if it fails to create the role (e.g. no permissions)
             // it does nothing but output a debug log
-            match self.ensure_role(ctx, guild_id).await {
+            match self.ensure_role(ctx, guild_id, &role_name).await {
                 Ok(role) => self.apply_role(ctx, role, guild_id, &commands).await,
                 Err(err) => println!(
                     "Could not create '{}' role for guild {} because {:?}",
-                    ROLE, guild_id, err
+                    role_name, guild_id, err
                 ),
             };
         }
