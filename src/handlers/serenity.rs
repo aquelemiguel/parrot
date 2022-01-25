@@ -262,8 +262,8 @@ impl SerenityHandler {
         for guild in ready.guilds {
             let guild_id = guild.id();
 
-            // ensures the role exists by creating it if not
-            // if it fails to create (e.g. no permissions)
+            // ensures the role exists, creating it if does not
+            // if it fails to create the role (e.g. no permissions)
             // it does nothing but output a debug log
             match self.ensure_role(ctx, guild_id).await {
                 Ok(role) => self.apply_role(ctx, role, guild_id, &commands).await,
