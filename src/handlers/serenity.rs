@@ -264,7 +264,7 @@ impl SerenityHandler {
 
     async fn set_commands(&self, ctx: &Context, ready: Ready) {
         let commands = self.create_commands(ctx).await;
-        let role_name = ready.user.name + " DJ";
+        let role_name = ready.user.name + "'s DJ";
         for guild in ready.guilds {
             let guild_id = guild.id();
 
