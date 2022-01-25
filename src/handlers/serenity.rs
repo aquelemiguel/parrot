@@ -115,7 +115,7 @@ impl SerenityHandler {
                     command
                         .name("play")
                         .description("Adds a track to the queue")
-                        .default_permission(false)
+                        .default_permission(true)
                         .create_option(|option| {
                             option
                                 .name("query")
@@ -197,7 +197,7 @@ impl SerenityHandler {
                     command
                         .name("summon")
                         .description("Summons the bot in your voice channel")
-                        .default_permission(false)
+                        .default_permission(true)
                 })
                 .create_application_command(|command| {
                     command
