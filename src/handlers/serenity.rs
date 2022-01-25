@@ -22,7 +22,7 @@ use crate::commands::{
     remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
 };
 
-const PARROT_ROLE: &str = "Parrot DJ";
+const ROLE: &str = "Parrot DJ";
 
 pub struct SerenityHandler;
 
@@ -212,12 +212,12 @@ impl SerenityHandler {
 
     async fn ensure_role(&self, ctx: &Context, guild: GuildId) -> Result<Role, SerenityError> {
         let roles = guild.roles(&ctx.http).await.unwrap();
-        let role = roles.iter().find(|(_, role)| role.name == PARROT_ROLE);
+        let role = roles.iter().find(|(_, role)| role.name == ROLE);
         match role {
             Some((_, role)) => Ok(role.to_owned()),
             None => {
                 guild
-                    .create_role(&ctx.http, |r| r.name(PARROT_ROLE).mentionable(true))
+                    .create_role(&ctx.http, |r| r.name(ROLE).mentionable(true))
                     .await
             }
         }
@@ -269,7 +269,7 @@ impl SerenityHandler {
                 Ok(role) => self.apply_role(ctx, role, guild_id, &commands).await,
                 Err(err) => println!(
                     "Could not create '{}' role for guild {} because {:?}",
-                    PARROT_ROLE, guild_id, err
+                    ROLE, guild_id, err
                 ),
             };
         }
