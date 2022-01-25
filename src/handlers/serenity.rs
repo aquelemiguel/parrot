@@ -105,6 +105,7 @@ impl SerenityHandler {
                     command
                         .name("np")
                         .description("Displays information about the current track")
+                        .default_permission(true)
                 })
                 .create_application_command(|command| {
                     command
@@ -139,7 +140,7 @@ impl SerenityHandler {
                         })
                 })
                 .create_application_command(|command| {
-                    command.name("queue").description("Shows the queue")
+                    command.name("queue").description("Shows the queue").default_permission(true)
                 })
                 .create_application_command(|command| {
                     command
@@ -204,6 +205,7 @@ impl SerenityHandler {
                     command
                         .name("version")
                         .description("Displays the current version")
+                        .default_permission(true)
                 })
         })
         .await
