@@ -65,6 +65,9 @@ impl SerenityHandler {
         guild: GuildId,
         commands: &[ApplicationCommand],
     ) {
+        let commands = commands
+            .iter()
+            .filter(|command| !command.default_permission);
         for command in commands {
             guild
                 .create_application_command_permission(&ctx.http, command.id, |p| {
@@ -102,7 +105,6 @@ impl SerenityHandler {
                     command
                         .name("np")
                         .description("Displays information about the current track")
-                        .default_permission(false)
                 })
                 .create_application_command(|command| {
                     command
@@ -138,7 +140,6 @@ impl SerenityHandler {
                 })
                 .create_application_command(|command| {
                     command.name("queue").description("Shows the queue")
-                    .default_permission(false)
                 })
                 .create_application_command(|command| {
                     command
@@ -203,7 +204,6 @@ impl SerenityHandler {
                     command
                         .name("version")
                         .description("Displays the current version")
-                        .default_permission(false)
                 })
         })
         .await
