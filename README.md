@@ -22,11 +22,20 @@ docker run -d --env-file .env ghcr.io/aquelemiguel/parrot:latest
 Make sure you've installed Rust. You can install Rust and its package manager, `cargo` by following the instructions on https://rustup.rs/.
 After installing the requirements below, simply run `cargo run`.
 
-### Linux / MacOS
-The command below installs a C compiler, GNU autotools, Opus (Discord's audio codec), FFmpeg and the SSL library for development, as well as [yt-dlp](https://github.com/yt-dlp/yt-dlp) through Python's package manager, pip.
+### Linux/MacOS
+The commands below installs a C compiler, GNU autotools and FFmpeg, as well as [yt-dlp](https://github.com/yt-dlp/yt-dlp) through Python's package manager, pip.
+
+#### Linux
 
 ```shell
-apt install build-essential autoconf automake libtool m4 libopus-dev ffmpeg libssl-dev
+apt install build-essential autoconf automake libtool ffmpeg
+pip install -U yt-dlp
+```
+
+#### MacOS
+
+```shell
+brew install autoconf automake libtool ffmpeg
 pip install -U yt-dlp
 ```
 
