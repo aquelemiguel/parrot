@@ -1,32 +1,32 @@
 name: Main Workflow
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+
+on: [push, pull_request]
+
 jobs:
   build:
+    name: Build
     strategy:
       matrix:
-        rust-version: ["1.54", "1.55", "1.56", "1.57"]
+        rust-version: ["1.55", "1.56", "1.57"]
     runs-on: ubuntu-latest
     container: rust:${{ matrix.rust-version }}
     steps:
       - name: Repository Checkout
         uses: actions/checkout@v2
 
-      - name: Format Rust Code
-        run: |
-          rustup component add rustfmt
-          cargo fmt --all -- --check
+      - name: Cache
+        uses: Swatinem/rust-cache@v1
 
-      - name: Lint Rust Code
-        run: |
-          rustup component add clippy
-          cargo clippy -- -D clippy::all
+      - name: Build Binary
+        run: cargo build --locked
 
       - name: Build Release Binary
-        run: cargo build --release
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: cargo build --release --locked
 
       - name: Run Unit Tests
         run: cargo test
+
+      - name: Run Release Unit Tests
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        run: cargo test --release --locked
