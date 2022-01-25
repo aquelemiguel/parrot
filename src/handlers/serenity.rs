@@ -261,8 +261,17 @@ impl SerenityHandler {
         let commands = self.create_commands(ctx).await;
         for guild in ready.guilds {
             let guild_id = guild.id();
-            let role = self.ensure_role(ctx, guild_id).await.unwrap();
-            self.apply_role(ctx, role, guild_id, &commands).await;
+
+            // ensures the role exists by creating it if not
+            // if it fails to create (e.g. no permissions)
+            // it does nothing but output a debug log
+            match self.ensure_role(ctx, guild_id).await {
+                Ok(role) => self.apply_role(ctx, role, guild_id, &commands).await,
+                Err(err) => println!(
+                    "Could not create '{}' role for guild {} because {:?}",
+                    PARROT_ROLE, guild_id, err
+                ),
+            };
         }
     }
 }
