@@ -1,7 +1,7 @@
 use crate::{
     handlers::{IdleHandler, TrackEndHandler},
     strings::{FAIL_AUTHOR_NOT_FOUND, FAIL_HERE, JOINING},
-    utils::create_response,
+    utils::{create_response, get_voice_channel_for_user},
 };
 use serenity::{
     client::Context,
@@ -20,11 +20,7 @@ pub async fn summon(
     let guild = ctx.cache.guild(guild_id).await.unwrap();
 
     let manager = songbird::get(ctx).await.unwrap();
-
-    let channel_opt = guild
-        .voice_states
-        .get(&interaction.user.id)
-        .and_then(|voice_state| voice_state.channel_id);
+    let channel_opt = get_voice_channel_for_user(&guild, &interaction.user);
 
     let channel_id = match channel_opt {
         Some(channel_id) => channel_id,
