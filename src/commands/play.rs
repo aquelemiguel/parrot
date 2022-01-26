@@ -2,12 +2,12 @@ use crate::{
     commands::{summon::summon, EnqueueType, PlayFlag},
     handlers::track_end::update_queue_messages,
     strings::{
-        FAIL_NO_VOICE_CONNECTION, FAIL_WRONG_CHANNEL, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP,
-        SEARCHING, TRACK_DURATION, TRACK_TIME_TO_PLAY,
+        FAIL_NO_VOICE_CONNECTION, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, TRACK_DURATION,
+        TRACK_TIME_TO_PLAY,
     },
     utils::{
         create_now_playing_embed, create_response, edit_embed_response, edit_response,
-        get_human_readable_timestamp, is_user_listening_to_bot,
+        get_human_readable_timestamp,
     },
 };
 use serde_json::Value;
@@ -59,17 +59,6 @@ pub async fn _play(
         return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await;
     }
 
-    let guild = ctx.cache.guild(guild_id).await.unwrap();
-
-    let call = manager.get(guild_id).unwrap();
-    let handler = call.lock().await;
-
-    // do the author and bot share the same voice channel
-    if !is_user_listening_to_bot(&guild, &interaction.user, &handler) {
-        return create_response(&ctx.http, interaction, FAIL_WRONG_CHANNEL).await;
-    }
-    drop(handler);
-
     // reply with a temporary message while we fetch the source
     // needed because interactions must be replied within 3s and queueing takes longer
     create_response(&ctx.http, interaction, SEARCHING).await?;
@@ -81,6 +70,8 @@ pub async fn _play(
     } else {
         EnqueueType::SEARCH
     };
+
+    let call = manager.get(guild_id).unwrap();
 
     match enqueue_type {
         EnqueueType::URI => enqueue_song(&call, url.to_string(), true, flag).await,
