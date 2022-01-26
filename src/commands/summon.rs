@@ -27,7 +27,7 @@ pub async fn summon(
         None if send_reply => {
             return create_response(&ctx.http, interaction, FAIL_AUTHOR_NOT_FOUND).await
         }
-        _ => return create_response(&ctx.http, interaction, FAIL_AUTHOR_NOT_FOUND).await,
+        None => return Ok(()),
     };
 
     if let Some(call) = manager.get(guild.id) {
