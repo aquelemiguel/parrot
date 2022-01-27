@@ -1,7 +1,7 @@
 use crate::{
     handlers::{IdleHandler, TrackEndHandler},
-    strings::{FAIL_ALREADY_HERE, FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_NOT_FOUND, JOINING},
-    utils::{create_response, get_voice_channel_for_user, is_user_listening_to_bot},
+    strings::{FAIL_ANOTHER_CHANNEL, JOINING},
+    utils::{create_response, get_voice_channel_for_user},
 };
 use serenity::{
     client::Context,
@@ -22,28 +22,17 @@ pub async fn summon(
     let manager = songbird::get(ctx).await.unwrap();
     let channel_opt = get_voice_channel_for_user(&guild, &interaction.user);
 
-    let channel_id = match channel_opt {
-        Some(channel_id) => channel_id,
-        None if send_reply => {
-            return create_response(&ctx.http, interaction, FAIL_AUTHOR_NOT_FOUND).await
-        }
-        None => return Ok(()),
-    };
+    let channel_id = channel_opt.unwrap();
 
     if let Some(call) = manager.get(guild.id) {
         let handler = call.lock().await;
         let has_current_connection = handler.current_connection().is_some();
 
         if has_current_connection && send_reply {
-            if is_user_listening_to_bot(&guild, &interaction.user, &handler) {
-                // bot is already in the current channel
-                return create_response(&ctx.http, interaction, FAIL_ALREADY_HERE).await;
-            } else {
-                // bot is in another channel
-                let bot_channel_id: ChannelId = handler.current_channel().unwrap().0.into();
-                let message = format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_channel_id.mention());
-                return create_response(&ctx.http, interaction, &message).await;
-            }
+            // bot is in another channel
+            let bot_channel_id: ChannelId = handler.current_channel().unwrap().0.into();
+            let message = format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_channel_id.mention());
+            return create_response(&ctx.http, interaction, &message).await;
         }
     }
 

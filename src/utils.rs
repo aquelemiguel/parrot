@@ -12,7 +12,7 @@ use serenity::{
     },
     prelude::SerenityError,
 };
-use songbird::{tracks::TrackHandle, Call};
+use songbird::{id::ChannelId as SongbirdChannelId, tracks::TrackHandle, Call};
 use std::{sync::Arc, time::Duration};
 use tokio::sync::MutexGuard;
 
@@ -111,10 +111,10 @@ pub fn get_voice_channel_for_user(guild: &Guild, user: &User) -> Option<ChannelI
 }
 
 pub enum Connection {
-    User,
-    Bot,
-    Mutual,
-    Separate,
+    User(ChannelId),
+    Bot(SongbirdChannelId),
+    Mutual(SongbirdChannelId, ChannelId),
+    Separate(SongbirdChannelId, ChannelId),
     Neither,
 }
 
@@ -128,14 +128,14 @@ pub fn check_voice_connections(
 
     if bot_channel.is_some() && user_channel.is_some() {
         if bot_channel.unwrap().0 == user_channel.unwrap().0 {
-            Connection::Mutual
+            Connection::Mutual(bot_channel.unwrap(), user_channel.unwrap())
         } else {
-            Connection::Separate
+            Connection::Separate(bot_channel.unwrap(), user_channel.unwrap())
         }
     } else if bot_channel.is_some() && user_channel.is_none() {
-        Connection::Bot
+        Connection::Bot(bot_channel.unwrap())
     } else if bot_channel.is_none() && user_channel.is_some() {
-        Connection::User
+        Connection::User(user_channel.unwrap())
     } else {
         Connection::Neither
     }

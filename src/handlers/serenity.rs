@@ -5,12 +5,11 @@ use crate::{
         version::*,
     },
     strings::{
-        FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND, FAIL_NO_VOICE_CONNECTION,
-        FAIL_WRONG_CHANNEL,
+        FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
+        FAIL_NO_VOICE_CONNECTION, FAIL_WRONG_CHANNEL,
     },
     utils::{check_voice_connections, create_response, Connection},
 };
-use serenity::prelude::SerenityError;
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
@@ -27,6 +26,7 @@ use serenity::{
         },
         prelude::{Activity, VoiceState},
     },
+    prelude::{Mentionable, SerenityError},
 };
 
 pub struct SerenityHandler;
@@ -260,18 +260,24 @@ impl SerenityHandler {
                 "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume"
                 | "seek" | "shuffle" | "skip" | "stop" => {
                     match check_voice_connections(&guild, &command.user, &handler) {
-                        Connection::User | Connection::Neither => Err(FAIL_NO_VOICE_CONNECTION),
-                        Connection::Bot => Err(FAIL_AUTHOR_DISCONNECTED),
-                        Connection::Separate => Err(FAIL_WRONG_CHANNEL),
-                        Connection::Mutual => Ok(()),
+                        Connection::User(_) | Connection::Neither => Err(FAIL_NO_VOICE_CONNECTION),
+                        Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED),
+                        Connection::Separate(_, _) => Err(FAIL_WRONG_CHANNEL),
+                        Connection::Mutual(_, _) => Ok(()),
                     }
-                } // "play" | "playtop" | "summon" => {
-                  //     match check_voice_connections(&guild, &command.user, &handler) {
-                  //         Some(r) if r => Ok(()),
-                  //         Some(r) if !r => Err(FAIL_WRONG_CHANNEL),
-                  //         _ => Err(FAIL_AUTHOR_NOT_FOUND),
-                  //     }
-                  // }
+                }
+                "play" | "playtop" | "summon" => {
+                    match check_voice_connections(&guild, &command.user, &handler) {
+                        Connection::User(_) => Ok(()),
+                        Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED),
+                        Connection::Mutual(_, _) => Ok(()),
+                        Connection::Separate(u_id, bot_id) => {
+                            return Err(format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_id.mention()));
+                        }
+                        Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND),
+                    }
+                }
+                _ => unimplemented!(),
             };
 
             if let Err(message) = message {
