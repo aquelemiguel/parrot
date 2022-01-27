@@ -1,5 +1,5 @@
 use crate::{
-    strings::{FAIL_LOOP, FAIL_NO_VOICE_CONNECTION, LOOP_DISABLED, LOOP_ENABLED},
+    strings::{FAIL_LOOP, LOOP_DISABLED, LOOP_ENABLED},
     utils::create_response,
 };
 use serenity::{
@@ -14,11 +14,7 @@ pub async fn repeat(
 ) -> Result<(), SerenityError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
-
-    let call = match manager.get(guild_id) {
-        Some(call) => call,
-        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
-    };
+    let call = manager.get(guild_id).unwrap();
 
     let handler = call.lock().await;
     let track = handler.queue().current().unwrap();

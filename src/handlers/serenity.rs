@@ -268,7 +268,11 @@ impl SerenityHandler {
                     Connection::User(_) | Connection::Neither => {
                         Err(FAIL_NO_VOICE_CONNECTION.to_owned())
                     }
-                    Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED.to_owned()),
+                    Connection::Bot(bot_channel_id) => Err(format!(
+                        "{} {}!",
+                        FAIL_AUTHOR_DISCONNECTED,
+                        bot_channel_id.mention()
+                    )),
                     Connection::Separate(_, _) => Err(FAIL_WRONG_CHANNEL.to_owned()),
                     _ => Ok(()),
                 }
@@ -276,10 +280,17 @@ impl SerenityHandler {
             "play" | "playtop" | "summon" => {
                 match check_voice_connections(&guild, &user_id, &bot_id) {
                     Connection::User(_) => Ok(()),
-                    Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED.to_owned()),
-                    Connection::Separate(_, bot_id) => {
-                        Err(format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_id.mention()))
+                    Connection::Bot(_) if command_name == "summon" => {
+                        Err(FAIL_AUTHOR_NOT_FOUND.to_owned())
                     }
+                    Connection::Bot(_) if command_name != "summon" => {
+                        Err(FAIL_WRONG_CHANNEL.to_owned())
+                    }
+                    Connection::Separate(bot_channel_id, _) => Err(format!(
+                        "{} {}!",
+                        FAIL_ANOTHER_CHANNEL,
+                        bot_channel_id.mention()
+                    )),
                     Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND.to_owned()),
                     _ => Ok(()),
                 }
