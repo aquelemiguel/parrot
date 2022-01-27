@@ -260,30 +260,40 @@ impl SerenityHandler {
                 "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume"
                 | "seek" | "shuffle" | "skip" | "stop" => {
                     match check_voice_connections(&guild, &command.user, &handler) {
-                        Connection::User(_) | Connection::Neither => Err(FAIL_NO_VOICE_CONNECTION),
-                        Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED),
-                        Connection::Separate(_, _) => Err(FAIL_WRONG_CHANNEL),
-                        Connection::Mutual(_, _) => Ok(()),
+                        Connection::User(_) => Err(FAIL_NO_VOICE_CONNECTION.to_owned()),
+                        Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED.to_owned()),
+                        Connection::Separate(_, _) => Err(FAIL_WRONG_CHANNEL.to_owned()),
+                        _ => Ok(()),
                     }
                 }
                 "play" | "playtop" | "summon" => {
                     match check_voice_connections(&guild, &command.user, &handler) {
                         Connection::User(_) => Ok(()),
-                        Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED),
-                        Connection::Mutual(_, _) => Ok(()),
-                        Connection::Separate(u_id, bot_id) => {
-                            return Err(format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_id.mention()));
+                        Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED.to_owned()),
+                        Connection::Separate(_, bot_id) => {
+                            Err(format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_id.mention()))
                         }
-                        Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND),
+                        _ => Ok(()),
                     }
                 }
-                _ => unimplemented!(),
+                _ => Ok(()),
+            };
+
+            if let Err(message) = message {
+                return create_response(&ctx.http, command, &message).await;
+            }
+        } else {
+            let message = match command_name {
+                "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume"
+                | "seek" | "shuffle" | "skip" | "stop" => Err(FAIL_NO_VOICE_CONNECTION),
+                "play" | "playtop" | "summon" => Err(FAIL_AUTHOR_NOT_FOUND),
+                _ => Ok(()),
             };
 
             if let Err(message) = message {
                 return create_response(&ctx.http, command, message).await;
             }
-        }
+        };
 
         match command_name {
             "autopause" => autopause(ctx, command).await,
@@ -303,7 +313,7 @@ impl SerenityHandler {
             "stop" => stop(ctx, command).await,
             "summon" => summon(ctx, command, true).await,
             "version" => version(ctx, command).await,
-            _ => unimplemented!(),
+            _ => unreachable!(),
         }
         .unwrap();
 

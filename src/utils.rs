@@ -126,16 +126,16 @@ pub fn check_voice_connections(
     let bot_channel = handler.current_channel();
     let user_channel = get_voice_channel_for_user(guild, user);
 
-    if bot_channel.is_some() && user_channel.is_some() {
-        if bot_channel.unwrap().0 == user_channel.unwrap().0 {
-            Connection::Mutual(bot_channel.unwrap(), user_channel.unwrap())
+    if let (Some(bot_id), Some(user_id)) = (bot_channel, user_channel) {
+        if bot_id.0 == user_id.0 {
+            Connection::Mutual(bot_id, user_id)
         } else {
-            Connection::Separate(bot_channel.unwrap(), user_channel.unwrap())
+            Connection::Separate(bot_id, user_id)
         }
-    } else if bot_channel.is_some() && user_channel.is_none() {
-        Connection::Bot(bot_channel.unwrap())
-    } else if bot_channel.is_none() && user_channel.is_some() {
-        Connection::User(user_channel.unwrap())
+    } else if let (Some(bot_id), None) = (bot_channel, user_channel) {
+        Connection::Bot(bot_id)
+    } else if let (None, Some(user_id)) = (bot_channel, user_channel) {
+        Connection::User(user_id)
     } else {
         Connection::Neither
     }
