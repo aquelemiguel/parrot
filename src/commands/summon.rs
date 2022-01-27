@@ -34,20 +34,16 @@ pub async fn summon(
         let handler = call.lock().await;
         let has_current_connection = handler.current_connection().is_some();
 
-        // bot is already in the channel
-        if has_current_connection {
-            if send_reply {
-                if is_user_listening_to_bot(&guild, &interaction.user, &handler) {
-                    return create_response(&ctx.http, interaction, FAIL_ALREADY_HERE).await;
-                } else {
-                    let bot_channel_id: ChannelId = handler.current_channel().unwrap().0.into();
-                    let message = format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_channel_id.mention());
-                    return create_response(&ctx.http, interaction, &message).await;
-                }
+        if has_current_connection && send_reply {
+            if is_user_listening_to_bot(&guild, &interaction.user, &handler) {
+                // bot is already in the current channel
+                return create_response(&ctx.http, interaction, FAIL_ALREADY_HERE).await;
+            } else {
+                // bot is in another channel
+                let bot_channel_id: ChannelId = handler.current_channel().unwrap().0.into();
+                let message = format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_channel_id.mention());
+                return create_response(&ctx.http, interaction, &message).await;
             }
-        } else {
-            // bot might have been disconnected manually
-            manager.remove(guild.id).await.unwrap();
         }
     }
 

@@ -111,7 +111,10 @@ pub fn get_voice_channel_for_user(guild: &Guild, user: &User) -> Option<ChannelI
 }
 
 pub fn is_user_listening_to_bot(guild: &Guild, user: &User, handler: &MutexGuard<Call>) -> bool {
-    let bot_channel = handler.current_channel().unwrap();
+    let bot_channel = match handler.current_channel() {
+        Some(channel) => channel,
+        None => return false,
+    };
 
     match get_voice_channel_for_user(guild, user) {
         Some(user_channel) => user_channel.0 == bot_channel.0,

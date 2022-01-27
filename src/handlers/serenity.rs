@@ -246,15 +246,20 @@ impl SerenityHandler {
         let manager = songbird::get(ctx).await.unwrap();
 
         if let Some(call) = manager.get(guild.id) {
-            let handler = call.lock().await;
+            let mut handler = call.lock().await;
 
             // valid commands even if the author isn't in the same channel as the bot
             let allowed = vec!["np", "queue", "summon", "version"];
 
-            if !is_user_listening_to_bot(&guild, &command.user, &handler)
-                && !allowed.contains(&command_name)
-            {
-                return create_response(&ctx.http, command, FAIL_WRONG_CHANNEL).await;
+            if handler.current_connection().is_some() {
+                if !allowed.contains(&command_name)
+                    && !is_user_listening_to_bot(&guild, &command.user, &handler)
+                {
+                    return create_response(&ctx.http, command, FAIL_WRONG_CHANNEL).await;
+                }
+            } else {
+                // parrot might have been disconnected manually
+                handler.leave().await.unwrap();
             }
         }
 
