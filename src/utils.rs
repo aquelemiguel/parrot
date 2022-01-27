@@ -110,14 +110,33 @@ pub fn get_voice_channel_for_user(guild: &Guild, user: &User) -> Option<ChannelI
         .and_then(|voice_state| voice_state.channel_id)
 }
 
-pub fn is_user_listening_to_bot(guild: &Guild, user: &User, handler: &MutexGuard<Call>) -> bool {
-    let bot_channel = match handler.current_channel() {
-        Some(channel) => channel,
-        None => return false,
-    };
+pub enum Connection {
+    User,
+    Bot,
+    Mutual,
+    Separate,
+    Neither,
+}
 
-    match get_voice_channel_for_user(guild, user) {
-        Some(user_channel) => user_channel.0 == bot_channel.0,
-        None => false,
+pub fn check_voice_connections(
+    guild: &Guild,
+    user: &User,
+    handler: &MutexGuard<Call>,
+) -> Connection {
+    let bot_channel = handler.current_channel();
+    let user_channel = get_voice_channel_for_user(guild, user);
+
+    if bot_channel.is_some() && user_channel.is_some() {
+        if bot_channel.unwrap().0 == user_channel.unwrap().0 {
+            Connection::Mutual
+        } else {
+            Connection::Separate
+        }
+    } else if bot_channel.is_some() && user_channel.is_none() {
+        Connection::Bot
+    } else if bot_channel.is_none() && user_channel.is_some() {
+        Connection::User
+    } else {
+        Connection::Neither
     }
 }

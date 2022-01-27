@@ -4,8 +4,11 @@ use crate::{
         remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
         version::*,
     },
-    strings::FAIL_WRONG_CHANNEL,
-    utils::{create_response, is_user_listening_to_bot},
+    strings::{
+        FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND, FAIL_NO_VOICE_CONNECTION,
+        FAIL_WRONG_CHANNEL,
+    },
+    utils::{check_voice_connections, create_response, Connection},
 };
 use serenity::prelude::SerenityError;
 use serenity::{
@@ -248,18 +251,31 @@ impl SerenityHandler {
         if let Some(call) = manager.get(guild.id) {
             let mut handler = call.lock().await;
 
-            // valid commands even if the author isn't in the same channel as the bot
-            let allowed = vec!["np", "queue", "summon", "version"];
-
-            if handler.current_connection().is_some() {
-                if !allowed.contains(&command_name)
-                    && !is_user_listening_to_bot(&guild, &command.user, &handler)
-                {
-                    return create_response(&ctx.http, command, FAIL_WRONG_CHANNEL).await;
-                }
-            } else {
+            if handler.current_connection().is_none() {
                 // parrot might have been disconnected manually
                 handler.leave().await.unwrap();
+            }
+
+            let message = match command_name {
+                "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume"
+                | "seek" | "shuffle" | "skip" | "stop" => {
+                    match check_voice_connections(&guild, &command.user, &handler) {
+                        Connection::User | Connection::Neither => Err(FAIL_NO_VOICE_CONNECTION),
+                        Connection::Bot => Err(FAIL_AUTHOR_DISCONNECTED),
+                        Connection::Separate => Err(FAIL_WRONG_CHANNEL),
+                        Connection::Mutual => Ok(()),
+                    }
+                } // "play" | "playtop" | "summon" => {
+                  //     match check_voice_connections(&guild, &command.user, &handler) {
+                  //         Some(r) if r => Ok(()),
+                  //         Some(r) if !r => Err(FAIL_WRONG_CHANNEL),
+                  //         _ => Err(FAIL_AUTHOR_NOT_FOUND),
+                  //     }
+                  // }
+            };
+
+            if let Err(message) = message {
+                return create_response(&ctx.http, command, message).await;
             }
         }
 
