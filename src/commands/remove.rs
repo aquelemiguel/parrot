@@ -1,6 +1,6 @@
 use crate::{
     handlers::track_end::update_queue_messages,
-    strings::{FAIL_NO_SONG_ON_INDEX, FAIL_NO_VOICE_CONNECTION, QUEUE_IS_EMPTY, REMOVED_QUEUE},
+    strings::{FAIL_NO_SONG_ON_INDEX, QUEUE_IS_EMPTY, REMOVED_QUEUE},
     utils::create_embed_response,
     utils::create_response,
 };
@@ -17,11 +17,7 @@ pub async fn remove(
 ) -> Result<(), SerenityError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
-
-    let call = match manager.get(guild_id) {
-        Some(call) => call,
-        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
-    };
+    let call = manager.get(guild_id).unwrap();
 
     let args = interaction.data.options.clone();
 

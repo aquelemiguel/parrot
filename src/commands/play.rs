@@ -1,10 +1,7 @@
 use crate::{
     commands::{summon::summon, EnqueueType, PlayFlag},
     handlers::track_end::update_queue_messages,
-    strings::{
-        FAIL_NO_VOICE_CONNECTION, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, TRACK_DURATION,
-        TRACK_TIME_TO_PLAY,
-    },
+    strings::{PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, TRACK_DURATION, TRACK_TIME_TO_PLAY},
     utils::{
         create_now_playing_embed, create_response, edit_embed_response, edit_response,
         get_human_readable_timestamp,
@@ -53,11 +50,6 @@ pub async fn _play(
 
     // try to join a voice channel if not in one just yet
     summon(ctx, interaction, false).await?;
-
-    // halt if isn't in a voice channel at this point
-    if manager.get(guild_id).is_none() {
-        return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await;
-    }
 
     // reply with a temporary message while we fetch the source
     // needed because interactions must be replied within 3s and queueing takes longer

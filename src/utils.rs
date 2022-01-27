@@ -4,17 +4,15 @@ use serenity::{
     model::{
         channel::Message,
         guild::Guild,
-        id::ChannelId,
+        id::{ChannelId, UserId},
         interactions::{
             application_command::ApplicationCommandInteraction, InteractionResponseType,
         },
-        prelude::User,
     },
     prelude::SerenityError,
 };
-use songbird::{tracks::TrackHandle, Call};
+use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
-use tokio::sync::MutexGuard;
 
 use crate::strings::QUEUE_NOW_PLAYING;
 
@@ -103,18 +101,36 @@ pub fn get_human_readable_timestamp(duration: Option<Duration>) -> String {
     }
 }
 
-pub fn get_voice_channel_for_user(guild: &Guild, user: &User) -> Option<ChannelId> {
+pub fn get_voice_channel_for_user(guild: &Guild, user_id: &UserId) -> Option<ChannelId> {
     guild
         .voice_states
-        .get(&user.id)
+        .get(user_id)
         .and_then(|voice_state| voice_state.channel_id)
 }
 
-pub fn is_user_listening_to_bot(guild: &Guild, user: &User, handler: &MutexGuard<Call>) -> bool {
-    let bot_channel = handler.current_channel().unwrap();
+pub enum Connection {
+    User(ChannelId),
+    Bot(ChannelId),
+    Mutual(ChannelId, ChannelId),
+    Separate(ChannelId, ChannelId),
+    Neither,
+}
 
-    match get_voice_channel_for_user(guild, user) {
-        Some(user_channel) => user_channel.0 == bot_channel.0,
-        None => false,
+pub fn check_voice_connections(guild: &Guild, user_id: &UserId, bot_id: &UserId) -> Connection {
+    let user_channel = get_voice_channel_for_user(guild, user_id);
+    let bot_channel = get_voice_channel_for_user(guild, bot_id);
+
+    if let (Some(bot_id), Some(user_id)) = (bot_channel, user_channel) {
+        if bot_id.0 == user_id.0 {
+            Connection::Mutual(bot_id, user_id)
+        } else {
+            Connection::Separate(bot_id, user_id)
+        }
+    } else if let (Some(bot_id), None) = (bot_channel, user_channel) {
+        Connection::Bot(bot_id)
+    } else if let (None, Some(user_id)) = (bot_channel, user_channel) {
+        Connection::User(user_id)
+    } else {
+        Connection::Neither
     }
 }
