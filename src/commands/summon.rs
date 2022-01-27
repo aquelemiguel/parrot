@@ -1,11 +1,11 @@
 use crate::{
     handlers::{IdleHandler, TrackEndHandler},
-    strings::{FAIL_AUTHOR_NOT_FOUND, FAIL_HERE, JOINING},
-    utils::{create_response, get_voice_channel_for_user},
+    strings::{FAIL_ALREADY_HERE, FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_NOT_FOUND, JOINING},
+    utils::{create_response, get_voice_channel_for_user, is_user_listening_to_bot},
 };
 use serenity::{
     client::Context,
-    model::interactions::application_command::ApplicationCommandInteraction,
+    model::{id::ChannelId, interactions::application_command::ApplicationCommandInteraction},
     prelude::{Mentionable, SerenityError},
 };
 use songbird::{Event, TrackEvent};
@@ -33,18 +33,22 @@ pub async fn summon(
     if let Some(call) = manager.get(guild.id) {
         let handler = call.lock().await;
         let has_current_connection = handler.current_connection().is_some();
-        drop(handler);
 
         // bot is already in the channel
         if has_current_connection {
             if send_reply {
-                return create_response(&ctx.http, interaction, FAIL_HERE).await;
+                if is_user_listening_to_bot(&guild, &interaction.user, &handler) {
+                    return create_response(&ctx.http, interaction, FAIL_ALREADY_HERE).await;
+                } else {
+                    let bot_channel_id: ChannelId = handler.current_channel().unwrap().0.into();
+                    let message = format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_channel_id.mention());
+                    return create_response(&ctx.http, interaction, &message).await;
+                }
             }
-            return Ok(());
+        } else {
+            // bot might have been disconnected manually
+            manager.remove(guild.id).await.unwrap();
         }
-
-        // bot might have been disconnected manually
-        manager.remove(guild.id).await.unwrap();
     }
 
     // join the channel
