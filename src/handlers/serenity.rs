@@ -1,3 +1,12 @@
+use crate::{
+    commands::{
+        autopause::*, clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*,
+        remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
+        version::*,
+    },
+    strings::FAIL_WRONG_CHANNEL,
+    utils::{create_response, is_user_listening_to_bot},
+};
 use serenity::prelude::SerenityError;
 use serenity::{
     async_trait,
@@ -15,11 +24,6 @@ use serenity::{
         },
         prelude::{Activity, VoiceState},
     },
-};
-
-use crate::commands::{
-    autopause::*, clear::*, leave::*, now_playing::*, pause::*, play::*, playtop::*, queue::*,
-    remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
 };
 
 pub struct SerenityHandler;
@@ -40,7 +44,7 @@ impl EventHandler for SerenityHandler {
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(mut command) = interaction {
-            self.run_command(&ctx, &mut command).await;
+            self.run_command(&ctx, &mut command).await.unwrap();
         }
     }
 
@@ -228,8 +232,33 @@ impl SerenityHandler {
         }
     }
 
-    async fn run_command(&self, ctx: &Context, command: &mut ApplicationCommandInteraction) {
-        match command.data.name.as_str() {
+    async fn run_command(
+        &self,
+        ctx: &Context,
+        command: &mut ApplicationCommandInteraction,
+    ) -> Result<(), SerenityError> {
+        let command_name = command.data.name.as_str();
+
+        let guild_id = command.guild_id.unwrap();
+        let guild = ctx.cache.guild(guild_id).await.unwrap();
+
+        // get songbird voice client
+        let manager = songbird::get(ctx).await.unwrap();
+
+        if let Some(call) = manager.get(guild.id) {
+            let handler = call.lock().await;
+
+            // valid commands even if the author isn't in the same channel as the bot
+            let allowed = vec!["np", "queue", "summon", "version"];
+
+            if !is_user_listening_to_bot(&guild, &command.user, &handler)
+                && !allowed.contains(&command_name)
+            {
+                return create_response(&ctx.http, command, FAIL_WRONG_CHANNEL).await;
+            }
+        }
+
+        match command_name {
             "autopause" => autopause(ctx, command).await,
             "clear" => clear(ctx, command).await,
             "leave" => leave(ctx, command).await,
@@ -250,6 +279,8 @@ impl SerenityHandler {
             _ => unimplemented!(),
         }
         .unwrap();
+
+        Ok(())
     }
 
     async fn self_deafen(&self, ctx: &Context, guild: Option<GuildId>, new: VoiceState) {

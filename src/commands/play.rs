@@ -60,9 +60,8 @@ pub async fn _play(
     }
 
     // reply with a temporary message while we fetch the source
+    // needed because interactions must be replied within 3s and queueing takes longer
     create_response(&ctx.http, interaction, SEARCHING).await?;
-
-    let call = manager.get(guild_id).unwrap();
 
     let enqueue_type = if url.contains("youtube.com/playlist?list=") {
         EnqueueType::PLAYLIST
@@ -71,6 +70,8 @@ pub async fn _play(
     } else {
         EnqueueType::SEARCH
     };
+
+    let call = manager.get(guild_id).unwrap();
 
     match enqueue_type {
         EnqueueType::URI => enqueue_song(&call, url.to_string(), true, flag).await,

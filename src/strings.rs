@@ -7,6 +7,7 @@ pub const FAIL_LOOP: &str = "⚠️ Failed to toggle loop!";
 pub const FAIL_NO_SONG_ON_INDEX: &str = "⚠️ There is no queued song on that index!";
 pub const FAIL_NO_VOICE_CONNECTION: &str = "⚠️ I'm not connected to any voice channel!";
 pub const FAIL_TIMESTAMP_PARSING: &str = "⚠️ Invalid parsing formatting!";
+pub const FAIL_WRONG_CHANNEL: &str = "⚠️ We are not in the same voice channel!";
 pub const IDLE_ALERT: &str = "I've been idle for a while, so I'll leave for now to save resources.\nFeel free to summon me back any time!";
 pub const JOINING: &str = "Joining";
 pub const LEAVING: &str = "👋 See you soon!";

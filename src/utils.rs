@@ -3,14 +3,18 @@ use serenity::{
     http::Http,
     model::{
         channel::Message,
+        guild::Guild,
+        id::ChannelId,
         interactions::{
             application_command::ApplicationCommandInteraction, InteractionResponseType,
         },
+        prelude::User,
     },
     prelude::SerenityError,
 };
-use songbird::tracks::TrackHandle;
+use songbird::{tracks::TrackHandle, Call};
 use std::{sync::Arc, time::Duration};
+use tokio::sync::MutexGuard;
 
 use crate::strings::QUEUE_NOW_PLAYING;
 
@@ -96,5 +100,21 @@ pub fn get_human_readable_timestamp(duration: Option<Duration>) -> String {
             }
         }
         None => "∞".to_string(),
+    }
+}
+
+pub fn get_voice_channel_for_user(guild: &Guild, user: &User) -> Option<ChannelId> {
+    guild
+        .voice_states
+        .get(&user.id)
+        .and_then(|voice_state| voice_state.channel_id)
+}
+
+pub fn is_user_listening_to_bot(guild: &Guild, user: &User, handler: &MutexGuard<Call>) -> bool {
+    let bot_channel = handler.current_channel().unwrap();
+
+    match get_voice_channel_for_user(guild, user) {
+        Some(user_channel) => user_channel.0 == bot_channel.0,
+        None => false,
     }
 }
