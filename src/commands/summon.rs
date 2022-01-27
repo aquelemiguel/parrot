@@ -20,8 +20,7 @@ pub async fn summon(
     let guild = ctx.cache.guild(guild_id).await.unwrap();
 
     let manager = songbird::get(ctx).await.unwrap();
-    let channel_opt = get_voice_channel_for_user(&guild, &interaction.user);
-
+    let channel_opt = get_voice_channel_for_user(&guild, &interaction.user.id);
     let channel_id = channel_opt.unwrap();
 
     if let Some(call) = manager.get(guild.id) {

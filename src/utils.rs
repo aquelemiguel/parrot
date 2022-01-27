@@ -4,17 +4,15 @@ use serenity::{
     model::{
         channel::Message,
         guild::Guild,
-        id::ChannelId,
+        id::{ChannelId, UserId},
         interactions::{
             application_command::ApplicationCommandInteraction, InteractionResponseType,
         },
-        prelude::User,
     },
     prelude::SerenityError,
 };
-use songbird::{id::ChannelId as SongbirdChannelId, tracks::TrackHandle, Call};
+use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
-use tokio::sync::MutexGuard;
 
 use crate::strings::QUEUE_NOW_PLAYING;
 
@@ -103,28 +101,24 @@ pub fn get_human_readable_timestamp(duration: Option<Duration>) -> String {
     }
 }
 
-pub fn get_voice_channel_for_user(guild: &Guild, user: &User) -> Option<ChannelId> {
+pub fn get_voice_channel_for_user(guild: &Guild, user_id: &UserId) -> Option<ChannelId> {
     guild
         .voice_states
-        .get(&user.id)
+        .get(user_id)
         .and_then(|voice_state| voice_state.channel_id)
 }
 
 pub enum Connection {
     User(ChannelId),
-    Bot(SongbirdChannelId),
-    Mutual(SongbirdChannelId, ChannelId),
-    Separate(SongbirdChannelId, ChannelId),
+    Bot(ChannelId),
+    Mutual(ChannelId, ChannelId),
+    Separate(ChannelId, ChannelId),
     Neither,
 }
 
-pub fn check_voice_connections(
-    guild: &Guild,
-    user: &User,
-    handler: &MutexGuard<Call>,
-) -> Connection {
-    let bot_channel = handler.current_channel();
-    let user_channel = get_voice_channel_for_user(guild, user);
+pub fn check_voice_connections(guild: &Guild, user_id: &UserId, bot_id: &UserId) -> Connection {
+    let user_channel = get_voice_channel_for_user(guild, user_id);
+    let bot_channel = get_voice_channel_for_user(guild, bot_id);
 
     if let (Some(bot_id), Some(user_id)) = (bot_channel, user_channel) {
         if bot_id.0 == user_id.0 {

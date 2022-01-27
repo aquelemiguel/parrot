@@ -248,52 +248,48 @@ impl SerenityHandler {
         // get songbird voice client
         let manager = songbird::get(ctx).await.unwrap();
 
+        // parrot might have been disconnected manually
         if let Some(call) = manager.get(guild.id) {
             let mut handler = call.lock().await;
 
             if handler.current_connection().is_none() {
-                // parrot might have been disconnected manually
                 handler.leave().await.unwrap();
             }
+        }
 
-            let message = match command_name {
-                "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume"
-                | "seek" | "shuffle" | "skip" | "stop" => {
-                    match check_voice_connections(&guild, &command.user, &handler) {
-                        Connection::User(_) => Err(FAIL_NO_VOICE_CONNECTION.to_owned()),
-                        Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED.to_owned()),
-                        Connection::Separate(_, _) => Err(FAIL_WRONG_CHANNEL.to_owned()),
-                        _ => Ok(()),
+        // fetch the user and the bot's user IDs
+        let user_id = command.user.id;
+        let bot_id = ctx.cache.current_user_id().await;
+
+        let message = match command_name {
+            "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume" | "seek"
+            | "shuffle" | "skip" | "stop" => {
+                match check_voice_connections(&guild, &user_id, &bot_id) {
+                    Connection::User(_) | Connection::Neither => {
+                        Err(FAIL_NO_VOICE_CONNECTION.to_owned())
                     }
+                    Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED.to_owned()),
+                    Connection::Separate(_, _) => Err(FAIL_WRONG_CHANNEL.to_owned()),
+                    _ => Ok(()),
                 }
-                "play" | "playtop" | "summon" => {
-                    match check_voice_connections(&guild, &command.user, &handler) {
-                        Connection::User(_) => Ok(()),
-                        Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED.to_owned()),
-                        Connection::Separate(_, bot_id) => {
-                            Err(format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_id.mention()))
-                        }
-                        _ => Ok(()),
+            }
+            "play" | "playtop" | "summon" => {
+                match check_voice_connections(&guild, &user_id, &bot_id) {
+                    Connection::User(_) => Ok(()),
+                    Connection::Bot(_) => Err(FAIL_AUTHOR_DISCONNECTED.to_owned()),
+                    Connection::Separate(_, bot_id) => {
+                        Err(format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_id.mention()))
                     }
+                    Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND.to_owned()),
+                    _ => Ok(()),
                 }
-                _ => Ok(()),
-            };
-
-            if let Err(message) = message {
-                return create_response(&ctx.http, command, &message).await;
             }
-        } else {
-            let message = match command_name {
-                "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume"
-                | "seek" | "shuffle" | "skip" | "stop" => Err(FAIL_NO_VOICE_CONNECTION),
-                "play" | "playtop" | "summon" => Err(FAIL_AUTHOR_NOT_FOUND),
-                _ => Ok(()),
-            };
-
-            if let Err(message) = message {
-                return create_response(&ctx.http, command, message).await;
-            }
+            _ => Ok(()),
         };
+
+        if let Err(message) = message {
+            return create_response(&ctx.http, command, &message).await;
+        }
 
         match command_name {
             "autopause" => autopause(ctx, command).await,
