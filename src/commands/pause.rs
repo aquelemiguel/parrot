@@ -1,5 +1,5 @@
 use crate::{
-    strings::{FAIL_NO_VOICE_CONNECTION, NOTHING_IS_PLAYING, PAUSED},
+    strings::{NOTHING_IS_PLAYING, PAUSED},
     utils::create_response,
 };
 use serenity::{
@@ -12,12 +12,8 @@ pub async fn pause(
     interaction: &mut ApplicationCommandInteraction,
 ) -> Result<(), SerenityError> {
     let guild_id = interaction.guild_id.unwrap();
-    let manager = songbird::get(ctx).await.unwrap().clone();
-
-    let call = match manager.get(guild_id) {
-        Some(call) => call,
-        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
-    };
+    let manager = songbird::get(ctx).await.unwrap();
+    let call = manager.get(guild_id).unwrap();
 
     let handler = call.lock().await;
     let queue = handler.queue();

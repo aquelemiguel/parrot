@@ -4,10 +4,12 @@ use crate::{
         remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
         version::*,
     },
-    strings::FAIL_WRONG_CHANNEL,
-    utils::{create_response, is_user_listening_to_bot},
+    strings::{
+        FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
+        FAIL_NO_VOICE_CONNECTION, FAIL_WRONG_CHANNEL,
+    },
+    utils::{check_voice_connections, create_response, Connection},
 };
-use serenity::prelude::SerenityError;
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
@@ -24,6 +26,7 @@ use serenity::{
         },
         prelude::{Activity, VoiceState},
     },
+    prelude::{Mentionable, SerenityError},
 };
 
 pub struct SerenityHandler;
@@ -245,17 +248,58 @@ impl SerenityHandler {
         // get songbird voice client
         let manager = songbird::get(ctx).await.unwrap();
 
+        // parrot might have been disconnected manually
         if let Some(call) = manager.get(guild.id) {
-            let handler = call.lock().await;
+            let mut handler = call.lock().await;
 
-            // valid commands even if the author isn't in the same channel as the bot
-            let allowed = vec!["np", "queue", "summon", "version"];
-
-            if !is_user_listening_to_bot(&guild, &command.user, &handler)
-                && !allowed.contains(&command_name)
-            {
-                return create_response(&ctx.http, command, FAIL_WRONG_CHANNEL).await;
+            if handler.current_connection().is_none() {
+                handler.leave().await.unwrap();
             }
+        }
+
+        // fetch the user and the bot's user IDs
+        let user_id = command.user.id;
+        let bot_id = ctx.cache.current_user_id().await;
+
+        let message = match command_name {
+            "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume" | "seek"
+            | "shuffle" | "skip" | "stop" => {
+                match check_voice_connections(&guild, &user_id, &bot_id) {
+                    Connection::User(_) | Connection::Neither => {
+                        Err(FAIL_NO_VOICE_CONNECTION.to_owned())
+                    }
+                    Connection::Bot(bot_channel_id) => Err(format!(
+                        "{} {}!",
+                        FAIL_AUTHOR_DISCONNECTED,
+                        bot_channel_id.mention()
+                    )),
+                    Connection::Separate(_, _) => Err(FAIL_WRONG_CHANNEL.to_owned()),
+                    _ => Ok(()),
+                }
+            }
+            "play" | "playtop" | "summon" => {
+                match check_voice_connections(&guild, &user_id, &bot_id) {
+                    Connection::User(_) => Ok(()),
+                    Connection::Bot(_) if command_name == "summon" => {
+                        Err(FAIL_AUTHOR_NOT_FOUND.to_owned())
+                    }
+                    Connection::Bot(_) if command_name != "summon" => {
+                        Err(FAIL_WRONG_CHANNEL.to_owned())
+                    }
+                    Connection::Separate(bot_channel_id, _) => Err(format!(
+                        "{} {}!",
+                        FAIL_ANOTHER_CHANNEL,
+                        bot_channel_id.mention()
+                    )),
+                    Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND.to_owned()),
+                    _ => Ok(()),
+                }
+            }
+            _ => Ok(()),
+        };
+
+        if let Err(message) = message {
+            return create_response(&ctx.http, command, &message).await;
         }
 
         match command_name {
@@ -276,7 +320,7 @@ impl SerenityHandler {
             "stop" => stop(ctx, command).await,
             "summon" => summon(ctx, command, true).await,
             "version" => version(ctx, command).await,
-            _ => unimplemented!(),
+            _ => unreachable!(),
         }
         .unwrap();
 

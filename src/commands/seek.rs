@@ -1,5 +1,5 @@
 use crate::{
-    strings::{FAIL_NO_VOICE_CONNECTION, FAIL_TIMESTAMP_PARSING, NOTHING_IS_PLAYING, SEEKED},
+    strings::{FAIL_TIMESTAMP_PARSING, NOTHING_IS_PLAYING, SEEKED},
     utils::create_response,
 };
 use serenity::{
@@ -14,11 +14,7 @@ pub async fn seek(
 ) -> Result<(), SerenityError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
-
-    let call = match manager.get(guild_id) {
-        Some(call) => call,
-        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
-    };
+    let call = manager.get(guild_id).unwrap();
 
     let args = interaction.data.options.clone();
     let seek_time = args.first().unwrap().value.as_ref().unwrap();

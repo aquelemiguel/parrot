@@ -1,11 +1,11 @@
 use crate::{
     handlers::{IdleHandler, TrackEndHandler},
-    strings::{FAIL_AUTHOR_NOT_FOUND, FAIL_HERE, JOINING},
+    strings::{FAIL_ANOTHER_CHANNEL, JOINING},
     utils::{create_response, get_voice_channel_for_user},
 };
 use serenity::{
     client::Context,
-    model::interactions::application_command::ApplicationCommandInteraction,
+    model::{id::ChannelId, interactions::application_command::ApplicationCommandInteraction},
     prelude::{Mentionable, SerenityError},
 };
 use songbird::{Event, TrackEvent};
@@ -20,31 +20,19 @@ pub async fn summon(
     let guild = ctx.cache.guild(guild_id).await.unwrap();
 
     let manager = songbird::get(ctx).await.unwrap();
-    let channel_opt = get_voice_channel_for_user(&guild, &interaction.user);
-
-    let channel_id = match channel_opt {
-        Some(channel_id) => channel_id,
-        None if send_reply => {
-            return create_response(&ctx.http, interaction, FAIL_AUTHOR_NOT_FOUND).await
-        }
-        None => return Ok(()),
-    };
+    let channel_opt = get_voice_channel_for_user(&guild, &interaction.user.id);
+    let channel_id = channel_opt.unwrap();
 
     if let Some(call) = manager.get(guild.id) {
         let handler = call.lock().await;
         let has_current_connection = handler.current_connection().is_some();
-        drop(handler);
 
-        // bot is already in the channel
-        if has_current_connection {
-            if send_reply {
-                return create_response(&ctx.http, interaction, FAIL_HERE).await;
-            }
-            return Ok(());
+        if has_current_connection && send_reply {
+            // bot is in another channel
+            let bot_channel_id: ChannelId = handler.current_channel().unwrap().0.into();
+            let message = format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_channel_id.mention());
+            return create_response(&ctx.http, interaction, &message).await;
         }
-
-        // bot might have been disconnected manually
-        manager.remove(guild.id).await.unwrap();
     }
 
     // join the channel

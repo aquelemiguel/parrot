@@ -2,10 +2,10 @@ use crate::{
     guild::cache::GuildCacheMap,
     handlers::track_end::ModifyQueueHandler,
     strings::{
-        FAIL_NO_VOICE_CONNECTION, QUEUE_EXPIRED, QUEUE_NOTHING_IS_PLAYING, QUEUE_NOW_PLAYING,
-        QUEUE_NO_SONGS, QUEUE_PAGE, QUEUE_PAGE_OF, QUEUE_UP_NEXT,
+        QUEUE_EXPIRED, QUEUE_NOTHING_IS_PLAYING, QUEUE_NOW_PLAYING, QUEUE_NO_SONGS, QUEUE_PAGE,
+        QUEUE_PAGE_OF, QUEUE_UP_NEXT,
     },
-    utils::{create_response, get_human_readable_timestamp},
+    utils::get_human_readable_timestamp,
 };
 use serenity::{
     builder::{CreateButton, CreateComponents, CreateEmbed},
@@ -38,11 +38,7 @@ pub async fn queue(
 ) -> Result<(), SerenityError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
-
-    let call = match manager.get(guild_id) {
-        Some(call) => call,
-        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
-    };
+    let call = manager.get(guild_id).unwrap();
 
     let handler = call.lock().await;
     let tracks = handler.queue().current_queue();

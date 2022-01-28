@@ -1,7 +1,5 @@
 use crate::{
-    handlers::track_end::update_queue_messages,
-    strings::{FAIL_NO_VOICE_CONNECTION, SHUFFLED_SUCCESS},
-    utils::create_response,
+    handlers::track_end::update_queue_messages, strings::SHUFFLED_SUCCESS, utils::create_response,
 };
 use rand::Rng;
 use serenity::{
@@ -15,11 +13,7 @@ pub async fn shuffle(
 ) -> Result<(), SerenityError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
-
-    let call = match manager.get(guild_id) {
-        Some(call) => call,
-        None => return create_response(&ctx.http, interaction, FAIL_NO_VOICE_CONNECTION).await,
-    };
+    let call = manager.get(guild_id).unwrap();
 
     let handler = call.lock().await;
     handler.queue().modify_queue(|queue| {
