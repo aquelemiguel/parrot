@@ -1,9 +1,10 @@
+use crate::sources::ffmpeg::ffmpeg_yt;
 use serde_json::Value;
 use serenity::async_trait;
 use songbird::input::{
     error::{Error as SongbirdError, Result as SongbirdResult},
     restartable::Restart,
-    Codec, Container, Input, Metadata, Reader, Restartable,
+    Codec, Container, Input, Metadata, Restartable,
 };
 use std::{
     io::{BufRead, BufReader, Read},
@@ -73,9 +74,9 @@ where
 
         if let Some(time) = time {
             let ts = format!("{:.3}", time.as_secs_f64());
-            ffmpeg(yt, metadata, &["-ss", &ts]).await
+            ffmpeg_yt(yt, metadata, &["-ss", &ts]).await
         } else {
-            ffmpeg(yt, metadata, &[]).await
+            ffmpeg_yt(yt, metadata, &[]).await
         }
     }
 
@@ -135,44 +136,6 @@ async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
     yt.stderr = Some(returned_stderr);
 
     Ok((yt, metadata))
-}
-
-async fn ffmpeg(mut yt: Child, metadata: Metadata, pre_args: &[&str]) -> SongbirdResult<Input> {
-    let ffmpeg_args = [
-        "-f",
-        "s16le",
-        "-ac",
-        "2",
-        "-ar",
-        "48000",
-        "-acodec",
-        "pcm_f32le",
-        "-",
-    ];
-
-    let taken_stdout = yt.stdout.take().ok_or(SongbirdError::Stdout)?;
-
-    let ffmpeg = Command::new("ffmpeg")
-        .args(pre_args)
-        .arg("-i")
-        .arg("-")
-        .args(&ffmpeg_args)
-        .stdin(taken_stdout)
-        .stderr(Stdio::null())
-        .stdout(Stdio::piped())
-        .spawn()?;
-
-    let reader = Reader::from(vec![yt, ffmpeg]);
-
-    let input = Input::new(
-        true,
-        reader,
-        Codec::FloatPcm,
-        Container::Raw,
-        Some(metadata),
-    );
-
-    Ok(input)
 }
 
 async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
