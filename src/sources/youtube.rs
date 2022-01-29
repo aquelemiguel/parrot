@@ -1,14 +1,14 @@
 use serde_json::Value;
 use serenity::async_trait;
 use songbird::input::{
-    error::{Error, Result},
+    error::{Error as SongbirdError, Result as SongbirdResult},
     restartable::Restart,
     Codec, Container, Input, Metadata, Reader, Restartable,
 };
 use std::{
     io::{BufRead, BufReader, Read},
     process::Command,
-    process::Stdio,
+    process::{Child, Stdio},
     time::Duration,
 };
 use tokio::{process::Command as TokioCommand, task};
@@ -20,7 +20,7 @@ impl YouTubeRestartable {
         uri: P,
         lazy: bool,
         sponsorblock: bool,
-    ) -> Result<Restartable> {
+    ) -> SongbirdResult<Restartable> {
         Restartable::new(YouTubeRestarter { uri, sponsorblock }, lazy).await
     }
 
@@ -28,7 +28,7 @@ impl YouTubeRestartable {
         uri: P,
         lazy: bool,
         sponsorblock: bool,
-    ) -> Result<Restartable> {
+    ) -> SongbirdResult<Restartable> {
         let uri = format!("ytsearch1:{}", uri.as_ref());
         Restartable::new(YouTubeRestarter { uri, sponsorblock }, lazy).await
     }
@@ -60,7 +60,7 @@ where
     P: AsRef<str> + Send + Sync,
 {
     uri: P,
-    sponsorblock: bool,
+    sponsorblock: bool, // --sponsorblock-remove music_offtopic
 }
 
 #[async_trait]
@@ -68,25 +68,25 @@ impl<P> Restart for YouTubeRestarter<P>
 where
     P: AsRef<str> + Send + Clone + Sync,
 {
-    async fn call_restart(&mut self, time: Option<Duration>) -> Result<Input> {
-        // --sponsorblock-remove music_offtopic
+    async fn call_restart(&mut self, time: Option<Duration>) -> SongbirdResult<Input> {
+        let (yt, metadata) = ytdl(self.uri.as_ref()).await?;
 
         if let Some(time) = time {
             let ts = format!("{:.3}", time.as_secs_f64());
-            ytdl(self.uri.as_ref(), &["-ss", &ts]).await
+            ffmpeg(yt, metadata, &["-ss", &ts]).await
         } else {
-            ytdl(self.uri.as_ref(), &[]).await
+            ffmpeg(yt, metadata, &[]).await
         }
     }
 
-    async fn lazy_init(&mut self) -> Result<(Option<Metadata>, Codec, Container)> {
+    async fn lazy_init(&mut self) -> SongbirdResult<(Option<Metadata>, Codec, Container)> {
         _ytdl_metadata(self.uri.as_ref())
             .await
             .map(|m| (Some(m), Codec::FloatPcm, Container::Raw))
     }
 }
 
-async fn ytdl(uri: &str, pre_args: &[&str]) -> Result<Input> {
+async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
     let ytdl_args = [
         "--print-json",
         "-f",
@@ -101,6 +101,43 @@ async fn ytdl(uri: &str, pre_args: &[&str]) -> Result<Input> {
         "-",
     ];
 
+    let mut yt = Command::new("yt-dlp")
+        .args(&ytdl_args)
+        .stdin(Stdio::null())
+        .stderr(Stdio::piped())
+        .stdout(Stdio::piped())
+        .spawn()?;
+
+    // This rigmarole is required due to the inner synchronous reading context.
+    let stderr = yt.stderr.take();
+    let (returned_stderr, value) = task::spawn_blocking(move || {
+        let mut s = stderr.unwrap();
+        let out: SongbirdResult<Value> = {
+            let mut o_vec = vec![];
+            let mut serde_read = BufReader::new(s.by_ref());
+            // Newline...
+            if let Ok(len) = serde_read.read_until(0xA, &mut o_vec) {
+                serde_json::from_slice(&o_vec[..len]).map_err(|err| SongbirdError::Json {
+                    error: err,
+                    parsed_text: std::str::from_utf8(&o_vec).unwrap_or_default().to_string(),
+                })
+            } else {
+                Result::Err(SongbirdError::Metadata)
+            }
+        };
+
+        (s, out)
+    })
+    .await
+    .map_err(|_| SongbirdError::Metadata)?;
+
+    let metadata = Metadata::from_ytdl_output(value?);
+    yt.stderr = Some(returned_stderr);
+
+    Ok((yt, metadata))
+}
+
+async fn ffmpeg(mut yt: Child, metadata: Metadata, pre_args: &[&str]) -> SongbirdResult<Input> {
     let ffmpeg_args = [
         "-f",
         "s16le",
@@ -113,39 +150,7 @@ async fn ytdl(uri: &str, pre_args: &[&str]) -> Result<Input> {
         "-",
     ];
 
-    let mut youtube_dl = Command::new("yt-dlp")
-        .args(&ytdl_args)
-        .stdin(Stdio::null())
-        .stderr(Stdio::piped())
-        .stdout(Stdio::piped())
-        .spawn()?;
-
-    // This rigmarole is required due to the inner synchronous reading context.
-    let stderr = youtube_dl.stderr.take();
-    let (returned_stderr, value) = task::spawn_blocking(move || {
-        let mut s = stderr.unwrap();
-        let out: Result<Value> = {
-            let mut o_vec = vec![];
-            let mut serde_read = BufReader::new(s.by_ref());
-            // Newline...
-            if let Ok(len) = serde_read.read_until(0xA, &mut o_vec) {
-                serde_json::from_slice(&o_vec[..len]).map_err(|err| Error::Json {
-                    error: err,
-                    parsed_text: std::str::from_utf8(&o_vec).unwrap_or_default().to_string(),
-                })
-            } else {
-                Result::Err(Error::Metadata)
-            }
-        };
-
-        (s, out)
-    })
-    .await
-    .map_err(|_| Error::Metadata)?;
-
-    youtube_dl.stderr = Some(returned_stderr);
-
-    let taken_stdout = youtube_dl.stdout.take().ok_or(Error::Stdout)?;
+    let taken_stdout = yt.stdout.take().ok_or(SongbirdError::Stdout)?;
 
     let ffmpeg = Command::new("ffmpeg")
         .args(pre_args)
@@ -157,18 +162,20 @@ async fn ytdl(uri: &str, pre_args: &[&str]) -> Result<Input> {
         .stdout(Stdio::piped())
         .spawn()?;
 
-    let metadata = Metadata::from_ytdl_output(value?);
+    let reader = Reader::from(vec![yt, ffmpeg]);
 
-    Ok(Input::new(
+    let input = Input::new(
         true,
-        Reader::from(vec![youtube_dl, ffmpeg]),
+        reader,
         Codec::FloatPcm,
         Container::Raw,
         Some(metadata),
-    ))
+    );
+
+    Ok(input)
 }
 
-async fn _ytdl_metadata(uri: &str) -> Result<Metadata> {
+async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
     let ytdl_args = [
         "-j",
         "-f",
@@ -196,7 +203,7 @@ async fn _ytdl_metadata(uri: &str) -> Result<Metadata> {
         .position(|el| *el == 0xA)
         .unwrap_or_else(|| o_vec.len());
 
-    let value = serde_json::from_slice(&o_vec[..end]).map_err(|err| Error::Json {
+    let value = serde_json::from_slice(&o_vec[..end]).map_err(|err| SongbirdError::Json {
         error: err,
         parsed_text: std::str::from_utf8(&o_vec).unwrap_or_default().to_string(),
     })?;
