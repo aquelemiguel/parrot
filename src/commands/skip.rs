@@ -8,7 +8,7 @@ use serenity::{
     model::{id::GuildId, interactions::application_command::ApplicationCommandInteraction},
     prelude::{Mentionable, RwLock, SerenityError, TypeMap},
 };
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 pub async fn skip(
     ctx: &Context,
@@ -29,10 +29,7 @@ pub async fn skip(
     let cache_map = data.get_mut::<GuildCacheMap>().unwrap();
 
     let cache = cache_map.entry(guild_id).or_default();
-
-    if !cache.current_skip_votes.contains(&interaction.user.id) {
-        cache.current_skip_votes.push(interaction.user.id);
-    }
+    cache.current_skip_votes.insert(interaction.user.id);
 
     let guild = ctx.cache.guild(guild_id).await.unwrap();
     let skip_threshold = guild.voice_states.len() / 2;
@@ -61,5 +58,5 @@ pub async fn forget_skip_votes(data: &Arc<RwLock<TypeMap>>, guild_id: GuildId) {
     let cache_map = data.get_mut::<GuildCacheMap>().unwrap();
 
     let cache = cache_map.get_mut(&guild_id).unwrap();
-    cache.current_skip_votes = Vec::new();
+    cache.current_skip_votes = HashSet::new();
 }
