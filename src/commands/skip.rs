@@ -51,7 +51,7 @@ pub async fn skip(
                 SKIP_VOTE_MISSING
             ),
         )
-        .await?;
+        .await?
     };
 
     Ok(())
