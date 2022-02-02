@@ -36,7 +36,7 @@ pub async fn skip(
 
     if cache.current_skip_votes.len() >= skip_threshold {
         if queue.skip().is_ok() {
-            create_response(&ctx.http, interaction, &SKIPPED.to_string()).await?
+            create_response(&ctx.http, interaction, SKIPPED).await?
         }
     } else {
         create_response(
