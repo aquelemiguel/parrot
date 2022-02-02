@@ -15,8 +15,6 @@ pub async fn skip(
     interaction: &mut ApplicationCommandInteraction,
 ) -> Result<(), SerenityError> {
     let guild_id = interaction.guild_id.unwrap();
-    let guild = ctx.cache.guild(guild_id).await.unwrap();
-
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
 
@@ -36,6 +34,7 @@ pub async fn skip(
         cache.current_skip_votes.push(interaction.user.id);
     }
 
+    let guild = ctx.cache.guild(guild_id).await.unwrap();
     let skip_threshold = guild.voice_states.len() / 2;
 
     let message = if cache.current_skip_votes.len() >= skip_threshold && queue.skip().is_ok() {
