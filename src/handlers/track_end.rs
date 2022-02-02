@@ -8,8 +8,9 @@ use songbird::{Call, Event, EventContext, EventHandler};
 use std::sync::Arc;
 
 use crate::{
-    commands::queue::{
-        build_nav_btns, calculate_num_pages, create_queue_embed, forget_queue_message,
+    commands::{
+        queue::{build_nav_btns, calculate_num_pages, create_queue_embed, forget_queue_message},
+        skip::forget_skip_votes,
     },
     guild::{cache::GuildCacheMap, settings::GuildSettingsMap},
 };
@@ -43,6 +44,10 @@ impl EventHandler for TrackEndHandler {
             let queue = handler.queue();
             queue.pause().ok();
         }
+
+        drop(data);
+
+        forget_skip_votes(&self.ctx_data, self.guild_id).await;
 
         None
     }
