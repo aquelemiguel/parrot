@@ -262,8 +262,8 @@ impl SerenityHandler {
         let bot_id = ctx.cache.current_user_id().await;
 
         let message = match command_name {
-            "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume" | "seek"
-            | "shuffle" | "skip" | "stop" => {
+            "autopause" | "clear" | "leave" | "np" | "pause" | "remove" | "repeat" | "resume"
+            | "seek" | "shuffle" | "skip" | "stop" => {
                 match check_voice_connections(&guild, &user_id, &bot_id) {
                     Connection::User(_) | Connection::Neither => {
                         Err(FAIL_NO_VOICE_CONNECTION.to_owned())
