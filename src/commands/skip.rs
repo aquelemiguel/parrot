@@ -34,21 +34,25 @@ pub async fn skip(
     let guild = ctx.cache.guild(guild_id).await.unwrap();
     let skip_threshold = guild.voice_states.len() / 2;
 
-    let message = if cache.current_skip_votes.len() >= skip_threshold && queue.skip().is_ok() {
-        SKIPPED.to_string()
+    if cache.current_skip_votes.len() >= skip_threshold {
+        if queue.skip().is_ok() {
+            create_response(&ctx.http, interaction, &SKIPPED.to_string()).await?
+        }
     } else {
-        format!(
-            "{}{} {} {} {}",
-            SKIP_VOTE_EMOJI,
-            interaction.user.id.mention(),
-            SKIP_VOTE_USER,
-            skip_threshold - cache.current_skip_votes.len(),
-            SKIP_VOTE_MISSING
+        create_response(
+            &ctx.http,
+            interaction,
+            &format!(
+                "{}{} {} {} {}",
+                SKIP_VOTE_EMOJI,
+                interaction.user.id.mention(),
+                SKIP_VOTE_USER,
+                skip_threshold - cache.current_skip_votes.len(),
+                SKIP_VOTE_MISSING
+            ),
         )
+        .await?;
     };
-
-    create_response(&ctx.http, interaction, &message).await?;
-    drop(data);
 
     Ok(())
 }
