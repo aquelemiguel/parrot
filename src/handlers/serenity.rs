@@ -299,7 +299,7 @@ impl SerenityHandler {
                     _ => Ok(()),
                 }
             }
-            "queue" | "np" => match check_voice_connections(&guild, &user_id, &bot_id) {
+            "np" | "queue" => match check_voice_connections(&guild, &user_id, &bot_id) {
                 Connection::User(_) | Connection::Neither => {
                     Err(FAIL_NO_VOICE_CONNECTION.to_owned())
                 }
