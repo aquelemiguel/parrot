@@ -57,10 +57,12 @@ pub async fn skip(
     Ok(())
 }
 
-pub async fn forget_skip_votes(data: &Arc<RwLock<TypeMap>>, guild_id: GuildId) {
+pub async fn forget_skip_votes(data: &Arc<RwLock<TypeMap>>, guild_id: GuildId) -> Result<(), ()> {
     let mut data = data.write().await;
-    let cache_map = data.get_mut::<GuildCacheMap>().unwrap();
 
-    let cache = cache_map.get_mut(&guild_id).unwrap();
+    let cache_map = data.get_mut::<GuildCacheMap>().ok_or(())?;
+    let cache = cache_map.get_mut(&guild_id).ok_or(())?;
     cache.current_skip_votes = HashSet::new();
+
+    Ok(())
 }
