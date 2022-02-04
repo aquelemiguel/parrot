@@ -12,12 +12,14 @@ pub struct Client {
 
 impl Client {
     pub async fn default() -> Result<Client, Box<dyn Error>> {
-        let token = env::var("DISCORD_TOKEN")?;
+        let token = env::var("DISCORD_TOKEN").expect("Fatality! DISCORD_TOKEN not set!");
         Client::new(token).await
     }
 
     pub async fn new(token: String) -> Result<Client, Box<dyn Error>> {
-        let application_id = env::var("DISCORD_APPID")?.parse()?;
+        let application_id = env::var("DISCORD_APPID")
+            .expect("Fatality! DISCORD_APPID not set!")
+            .parse()?;
 
         let client = serenity::Client::builder(token)
             .event_handler(SerenityHandler)
