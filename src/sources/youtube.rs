@@ -20,18 +20,16 @@ impl YouTubeRestartable {
     pub async fn ytdl<P: AsRef<str> + Send + Clone + Sync + 'static>(
         uri: P,
         lazy: bool,
-        sponsorblock: bool,
     ) -> SongbirdResult<Restartable> {
-        Restartable::new(YouTubeRestarter { uri, sponsorblock }, lazy).await
+        Restartable::new(YouTubeRestarter { uri }, lazy).await
     }
 
     pub async fn ytdl_search<P: AsRef<str> + Send + Clone + Sync + 'static>(
         uri: P,
         lazy: bool,
-        sponsorblock: bool,
     ) -> SongbirdResult<Restartable> {
         let uri = format!("ytsearch1:{}", uri.as_ref());
-        Restartable::new(YouTubeRestarter { uri, sponsorblock }, lazy).await
+        Restartable::new(YouTubeRestarter { uri }, lazy).await
     }
 
     pub async fn ytdl_playlist(uri: &str) -> Option<Vec<String>> {
@@ -61,7 +59,6 @@ where
     P: AsRef<str> + Send + Sync,
 {
     uri: P,
-    sponsorblock: bool, // --sponsorblock-remove music_offtopic
 }
 
 #[async_trait]

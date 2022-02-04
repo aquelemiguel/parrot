@@ -179,11 +179,9 @@ async fn create_queued_embed(
 
 async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag: &PlayFlag) {
     let source = if is_url {
-        YouTubeRestartable::ytdl(query, true, false).await.unwrap()
+        YouTubeRestartable::ytdl(query, true).await.unwrap()
     } else {
-        YouTubeRestartable::ytdl_search(query, false, true)
-            .await
-            .unwrap()
+        YouTubeRestartable::ytdl_search(query, false).await.unwrap()
     };
 
     let mut handler = call.lock().await;
