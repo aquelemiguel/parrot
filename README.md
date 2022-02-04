@@ -9,7 +9,7 @@
 ## Deployment
 
 ### Usage
-Just [create a bot account](https://github.com/aquelemiguel/parrot/wiki/Create-Your-Discord-Bot), copy its token into the `DISCORD_TOKEN` environment variable within `.env`.
+Just [create a bot account](https://github.com/aquelemiguel/parrot/wiki/Create-Your-Discord-Bot), and copy its **token** and **application id** to a `.env` with the `DISCORD_TOKEN` and `DISCORD_APPID` environment variables respectively.
 
 ### Docker
 
