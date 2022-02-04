@@ -95,7 +95,7 @@ pub async fn update_queue_messages(
             .await;
 
         if edit_message.is_err() {
-            forget_queue_message(ctx_data, message, guild_id).await;
+            forget_queue_message(ctx_data, message, guild_id).await.ok();
         };
     }
 }
