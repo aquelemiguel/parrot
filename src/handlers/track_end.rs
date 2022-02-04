@@ -8,8 +8,9 @@ use songbird::{Call, Event, EventContext, EventHandler};
 use std::sync::Arc;
 
 use crate::{
-    commands::queue::{
-        build_nav_btns, calculate_num_pages, create_queue_embed, forget_queue_message,
+    commands::{
+        queue::{build_nav_btns, calculate_num_pages, create_queue_embed, forget_queue_message},
+        skip::forget_skip_votes,
     },
     guild::{cache::GuildCacheMap, settings::GuildSettingsMap},
 };
@@ -30,8 +31,8 @@ pub struct ModifyQueueHandler {
 #[async_trait]
 impl EventHandler for TrackEndHandler {
     async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
-        let data = self.ctx_data.read().await;
-        let settings = data.get::<GuildSettingsMap>().unwrap();
+        let data_rlock = self.ctx_data.read().await;
+        let settings = data_rlock.get::<GuildSettingsMap>().unwrap();
 
         let autopause = settings
             .get(&self.guild_id)
@@ -43,6 +44,9 @@ impl EventHandler for TrackEndHandler {
             let queue = handler.queue();
             queue.pause().ok();
         }
+
+        drop(data_rlock);
+        forget_skip_votes(&self.ctx_data, self.guild_id).await.ok();
 
         None
     }
@@ -91,7 +95,7 @@ pub async fn update_queue_messages(
             .await;
 
         if edit_message.is_err() {
-            forget_queue_message(ctx_data, message, guild_id).await;
+            forget_queue_message(ctx_data, message, guild_id).await.ok();
         };
     }
 }
