@@ -5,10 +5,7 @@ use crate::{
 };
 use serenity::{
     client::Context,
-    model::{
-        id::GuildId, interactions::application_command::ApplicationCommandInteraction,
-        prelude::VoiceState,
-    },
+    model::{id::GuildId, interactions::application_command::ApplicationCommandInteraction},
     prelude::{Mentionable, RwLock, SerenityError, TypeMap},
 };
 use std::{collections::HashSet, sync::Arc};
@@ -40,11 +37,10 @@ pub async fn skip(
     cache.current_skip_votes.insert(interaction.user.id);
 
     let guild_users = ctx.cache.guild(guild_id).await.unwrap().voice_states;
-    let channel_guild_users: Vec<VoiceState> = guild_users
+    let channel_guild_users = guild_users
         .into_values()
-        .filter(|v| v.channel_id.unwrap() == bot_channel_id)
-        .collect();
-    let skip_threshold = channel_guild_users.len() / 2;
+        .filter(|v| v.channel_id.unwrap() == bot_channel_id);
+    let skip_threshold = channel_guild_users.count() / 2;
 
     if cache.current_skip_votes.len() >= skip_threshold {
         if queue.skip().is_ok() {
