@@ -12,7 +12,7 @@ use std::{
     process::{Child, Stdio},
     time::Duration,
 };
-use tokio::{process::Command as TokioCommand, task};
+use tokio::task;
 
 pub struct YouTubeRestartable {}
 
@@ -150,11 +150,10 @@ async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
         "-",
     ];
 
-    let youtube_dl_output = TokioCommand::new("yt-dlp")
+    let youtube_dl_output = Command::new("yt-dlp")
         .args(&ytdl_args)
         .stdin(Stdio::null())
-        .output()
-        .await?;
+        .output()?;
 
     let o_vec = youtube_dl_output.stderr;
 
