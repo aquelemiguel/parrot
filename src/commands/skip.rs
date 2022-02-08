@@ -1,7 +1,7 @@
 use crate::{
     guild::cache::GuildCacheMap,
     strings::{NOTHING_IS_PLAYING, SKIPPED, SKIP_VOTE_EMOJI, SKIP_VOTE_MISSING, SKIP_VOTE_USER},
-    utils::create_response,
+    utils::{create_response, get_voice_channel_for_user},
 };
 use serenity::{
     client::Context,
@@ -15,6 +15,11 @@ pub async fn skip(
     interaction: &mut ApplicationCommandInteraction,
 ) -> Result<(), SerenityError> {
     let guild_id = interaction.guild_id.unwrap();
+    let bot_channel_id = get_voice_channel_for_user(
+        &ctx.cache.guild(guild_id).await.unwrap(),
+        &ctx.cache.current_user_id().await,
+    )
+    .unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
 
@@ -31,8 +36,11 @@ pub async fn skip(
     let cache = cache_map.entry(guild_id).or_default();
     cache.current_skip_votes.insert(interaction.user.id);
 
-    let guild = ctx.cache.guild(guild_id).await.unwrap();
-    let skip_threshold = guild.voice_states.len() / 2;
+    let guild_users = ctx.cache.guild(guild_id).await.unwrap().voice_states;
+    let channel_guild_users = guild_users
+        .into_values()
+        .filter(|v| v.channel_id.unwrap() == bot_channel_id);
+    let skip_threshold = channel_guild_users.count() / 2;
 
     if cache.current_skip_votes.len() >= skip_threshold {
         if queue.skip().is_ok() {
