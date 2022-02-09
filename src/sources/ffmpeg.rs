@@ -6,14 +6,16 @@ use std::process::{Child, Command, Stdio};
 
 pub async fn ffmpeg_yt(mut yt: Child, metadata: Metadata, pre_args: &[&str]) -> Result<Input> {
     let ffmpeg_args = [
+        "-i",
+        "-", // read from stdout
         "-f",
-        "s16le",
+        "s16le", // use PCM signed 16-bit little-endian format
         "-ac",
-        "2",
+        "2", // set two audio channels
         "-ar",
-        "48000",
+        "48000", // set audio sample rate of 48000Hz
         "-acodec",
-        "pcm_f32le",
+        "pcm_f32le", // set pcm_f32le codec
         "-",
     ];
 
@@ -21,8 +23,6 @@ pub async fn ffmpeg_yt(mut yt: Child, metadata: Metadata, pre_args: &[&str]) -> 
 
     let ffmpeg = Command::new("ffmpeg")
         .args(pre_args)
-        .arg("-i")
-        .arg("-")
         .args(&ffmpeg_args)
         .stdin(taken_stdout)
         .stderr(Stdio::null())

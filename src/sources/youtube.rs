@@ -34,7 +34,7 @@ impl YouTubeRestartable {
 
     pub async fn ytdl_playlist(uri: &str) -> Option<Vec<String>> {
         let mut child = Command::new("yt-dlp")
-            .args([uri, "--flat-playlist", "--print-json"])
+            .args([uri, "--flat-playlist", "-j"])
             .stdout(Stdio::piped())
             .spawn()
             .unwrap();
@@ -86,17 +86,17 @@ where
 
 async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
     let ytdl_args = [
-        "--print-json",
+        "-j",            // print JSON information for video for metadata
+        "--no-simulate", // ensure video is downloaded regardless of printing
         "-f",
-        "bestaudio",
+        "bestaudio", // select best quality audio-only
         "-R",
-        "infinite",
-        "--no-playlist",
-        "--ignore-config",
-        "--no-warnings",
+        "infinite",        // infinite number of download retries
+        "--no-playlist",   // only download the video if URL also has playlist info
+        "--ignore-config", // disable all configuration files for a yt-dlp run
         uri,
         "-o",
-        "-",
+        "-", // stream data to terminal
     ];
 
     let mut yt = Command::new("yt-dlp")
@@ -106,14 +106,14 @@ async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
         .stdout(Stdio::piped())
         .spawn()?;
 
-    // This rigmarole is required due to the inner synchronous reading context.
+    // this rigmarole is required due to the inner synchronous reading context
     let stderr = yt.stderr.take();
     let (returned_stderr, value) = task::spawn_blocking(move || {
         let mut s = stderr.unwrap();
         let out: SongbirdResult<Value> = {
             let mut o_vec = vec![];
             let mut serde_read = BufReader::new(s.by_ref());
-            // Newline...
+
             if let Ok(len) = serde_read.read_until(0xA, &mut o_vec) {
                 serde_json::from_slice(&o_vec[..len]).map_err(|err| SongbirdError::Json {
                     error: err,
@@ -137,17 +137,14 @@ async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
 
 async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
     let ytdl_args = [
-        "-j",
-        "-f",
-        "bestaudio",
+        "-j", // print JSON information for video for metadata
         "-R",
-        "infinite",
-        "--no-playlist",
-        "--ignore-config",
-        "--no-warnings",
+        "infinite",        // infinite number of download retries
+        "--no-playlist",   // only download the video if URL also has playlist info
+        "--ignore-config", // disable all configuration files for a yt-dlp run
         uri,
         "-o",
-        "-",
+        "-", // stream data to terminal
     ];
 
     let youtube_dl_output = Command::new("yt-dlp")
@@ -157,6 +154,7 @@ async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
 
     let o_vec = youtube_dl_output.stderr;
 
+    // read until newline 0xA byte
     let end = (&o_vec)
         .iter()
         .position(|el| *el == 0xA)

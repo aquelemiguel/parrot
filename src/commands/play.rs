@@ -181,7 +181,7 @@ async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag
     let source = if is_url {
         YouTubeRestartable::ytdl(query, true).await.unwrap()
     } else {
-        YouTubeRestartable::ytdl_search(query, false).await.unwrap()
+        YouTubeRestartable::ytdl_search(query, true).await.unwrap()
     };
 
     let mut handler = call.lock().await;
