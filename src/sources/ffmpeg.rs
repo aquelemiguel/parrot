@@ -13,7 +13,7 @@ pub async fn ffmpeg_yt(mut yt: Child, metadata: Metadata, pre_args: &[&str]) -> 
         "-ac",
         "2", // set two audio channels
         "-ar",
-        "48000",
+        "48000", // set audio sample rate of 48000Hz
         "-acodec",
         "pcm_f32le",
         "-",
