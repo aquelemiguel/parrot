@@ -1,4 +1,4 @@
-use crate::sources::ffmpeg::ffmpeg_yt;
+use crate::sources::ffmpeg::ffmpeg;
 use serde_json::Value;
 use serenity::async_trait;
 use songbird::input::{
@@ -73,9 +73,9 @@ where
 
         if let Some(time) = time {
             let ts = format!("{:.3}", time.as_secs_f64());
-            ffmpeg_yt(yt, metadata, &["-ss", &ts]).await
+            ffmpeg(yt, metadata, &["-ss", &ts]).await
         } else {
-            ffmpeg_yt(yt, metadata, &[]).await
+            ffmpeg(yt, metadata, &[]).await
         }
     }
 

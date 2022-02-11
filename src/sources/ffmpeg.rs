@@ -4,7 +4,7 @@ use songbird::input::{
 };
 use std::process::{Child, Command, Stdio};
 
-pub async fn ffmpeg_yt(mut yt: Child, metadata: Metadata, pre_args: &[&str]) -> Result<Input> {
+pub async fn ffmpeg(mut source: Child, metadata: Metadata, pre_args: &[&str]) -> Result<Input> {
     let ffmpeg_args = [
         "-i",
         "-", // read from stdout
@@ -19,7 +19,7 @@ pub async fn ffmpeg_yt(mut yt: Child, metadata: Metadata, pre_args: &[&str]) -> 
         "-",
     ];
 
-    let taken_stdout = yt.stdout.take().ok_or(Error::Stdout)?;
+    let taken_stdout = source.stdout.take().ok_or(Error::Stdout)?;
 
     let ffmpeg = Command::new("ffmpeg")
         .args(pre_args)
@@ -29,7 +29,7 @@ pub async fn ffmpeg_yt(mut yt: Child, metadata: Metadata, pre_args: &[&str]) -> 
         .stdout(Stdio::piped())
         .spawn()?;
 
-    let reader = Reader::from(vec![yt, ffmpeg]);
+    let reader = Reader::from(vec![source, ffmpeg]);
 
     let input = Input::new(
         true,
