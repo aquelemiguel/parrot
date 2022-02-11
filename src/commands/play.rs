@@ -1,26 +1,21 @@
 use crate::{
     commands::{summon::summon, EnqueueType, PlayFlag},
     handlers::track_end::update_queue_messages,
+    sources::youtube::YouTubeRestartable,
     strings::{PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, TRACK_DURATION, TRACK_TIME_TO_PLAY},
     utils::{
         create_now_playing_embed, create_response, edit_embed_response, edit_response,
         get_human_readable_timestamp,
     },
 };
-use serde_json::Value;
 use serenity::{
     builder::CreateEmbed,
     client::Context,
     model::interactions::application_command::ApplicationCommandInteraction,
     prelude::{Mutex, SerenityError},
 };
-use songbird::{input::Restartable, tracks::TrackHandle, Call};
-use std::{
-    io::{BufRead, BufReader},
-    process::{Command, Stdio},
-    sync::Arc,
-    time::Duration,
-};
+use songbird::{tracks::TrackHandle, Call};
+use std::{sync::Arc, time::Duration};
 
 pub async fn play(
     ctx: &Context,
@@ -143,20 +138,9 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
 }
 
 async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str) {
-    let mut child = Command::new("yt-dlp")
-        .args([uri, "--flat-playlist", "--print-json"])
-        .stdout(Stdio::piped())
-        .spawn()
-        .unwrap();
-
-    if let Some(stdout) = &mut child.stdout {
-        let reader = BufReader::new(stdout);
-        let lines: Vec<String> = reader.lines().flatten().collect();
-
-        for line in lines.iter() {
-            let entry: Value = serde_json::from_str(line).unwrap();
-            let url = entry.get("url").unwrap().as_str().unwrap().to_string();
-            enqueue_song(call, url, true, &PlayFlag::DEFAULT).await;
+    if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri).await {
+        for url in urls.iter() {
+            enqueue_song(call, url.to_string(), true, &PlayFlag::DEFAULT).await;
         }
     }
 }
@@ -195,9 +179,9 @@ async fn create_queued_embed(
 
 async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag: &PlayFlag) {
     let source = if is_url {
-        Restartable::ytdl(query, true).await.unwrap()
+        YouTubeRestartable::ytdl(query, true).await.unwrap()
     } else {
-        Restartable::ytdl_search(query, false).await.unwrap()
+        YouTubeRestartable::ytdl_search(query, true).await.unwrap()
     };
 
     let mut handler = call.lock().await;
