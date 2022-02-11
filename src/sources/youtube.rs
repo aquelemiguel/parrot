@@ -14,7 +14,7 @@ use std::{
 };
 use tokio::{process::Command as TokioCommand, task};
 
-const NEW_LINE_CHAR: u8 = 0xA;
+const NEWLINE_BYTE: u8 = 0xA;
 
 pub struct YouTubeRestartable {}
 
@@ -117,7 +117,7 @@ async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
             let mut o_vec = vec![];
             let mut serde_read = BufReader::new(s.by_ref());
 
-            if let Ok(len) = serde_read.read_until(NEW_LINE_CHAR, &mut o_vec) {
+            if let Ok(len) = serde_read.read_until(NEWLINE_BYTE, &mut o_vec) {
                 serde_json::from_slice(&o_vec[..len]).map_err(|err| SongbirdError::Json {
                     error: err,
                     parsed_text: std::str::from_utf8(&o_vec).unwrap_or_default().to_string(),
@@ -158,10 +158,10 @@ async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
 
     let o_vec = youtube_dl_output.stderr;
 
-    // read until newline NEW_LINE_CHAR byte
+    // read until newline byte
     let end = (&o_vec)
         .iter()
-        .position(|el| *el == NEW_LINE_CHAR)
+        .position(|el| *el == NEWLINE_BYTE)
         .unwrap_or_else(|| o_vec.len());
 
     let value = serde_json::from_slice(&o_vec[..end]).map_err(|err| SongbirdError::Json {
