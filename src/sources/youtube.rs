@@ -12,7 +12,9 @@ use std::{
     process::{Child, Stdio},
     time::Duration,
 };
-use tokio::task;
+use tokio::{process::Command as TokioCommand, task};
+
+const NEW_LINE_CHAR: u8 = 0xA;
 
 pub struct YouTubeRestartable {}
 
@@ -96,7 +98,7 @@ async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
         "--ignore-config", // disable all configuration files for a yt-dlp run
         uri,
         "-o",
-        "-", // stream data to terminal
+        "-", // stream data to stdout
     ];
 
     let mut yt = Command::new("yt-dlp")
@@ -106,7 +108,8 @@ async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
         .stdout(Stdio::piped())
         .spawn()?;
 
-    // this rigmarole is required due to the inner synchronous reading context
+    // track info json (for metadata) is piped to stderr by design choice of yt-dlp
+    // the actual track is streamed to stdout
     let stderr = yt.stderr.take();
     let (returned_stderr, value) = task::spawn_blocking(move || {
         let mut s = stderr.unwrap();
@@ -114,7 +117,7 @@ async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
             let mut o_vec = vec![];
             let mut serde_read = BufReader::new(s.by_ref());
 
-            if let Ok(len) = serde_read.read_until(0xA, &mut o_vec) {
+            if let Ok(len) = serde_read.read_until(NEW_LINE_CHAR, &mut o_vec) {
                 serde_json::from_slice(&o_vec[..len]).map_err(|err| SongbirdError::Json {
                     error: err,
                     parsed_text: std::str::from_utf8(&o_vec).unwrap_or_default().to_string(),
@@ -144,20 +147,21 @@ async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
         "--ignore-config", // disable all configuration files for a yt-dlp run
         uri,
         "-o",
-        "-", // stream data to terminal
+        "-", // stream data to stdout
     ];
 
-    let youtube_dl_output = Command::new("yt-dlp")
+    let youtube_dl_output = TokioCommand::new("yt-dlp")
         .args(&ytdl_args)
         .stdin(Stdio::null())
-        .output()?;
+        .output()
+        .await?;
 
     let o_vec = youtube_dl_output.stderr;
 
-    // read until newline 0xA byte
+    // read until newline NEW_LINE_CHAR byte
     let end = (&o_vec)
         .iter()
-        .position(|el| *el == 0xA)
+        .position(|el| *el == NEW_LINE_CHAR)
         .unwrap_or_else(|| o_vec.len());
 
     let value = serde_json::from_slice(&o_vec[..end]).map_err(|err| SongbirdError::Json {
