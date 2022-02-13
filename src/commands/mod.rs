@@ -18,8 +18,8 @@ pub mod version;
 
 pub enum PlayFlag {
     DEFAULT,
-    PLAYTOP,
-    PLAYALL,
+    NEXT,
+    PLAYLIST,
 }
 
 pub enum EnqueueType {

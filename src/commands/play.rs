@@ -29,9 +29,13 @@ pub async fn _play(
     interaction: &mut ApplicationCommandInteraction,
     flag: &PlayFlag,
 ) -> Result<(), SerenityError> {
-    let args = interaction.data.options.clone();
+    let subcommand_args = interaction.data.options
+        .first()
+        .unwrap();
 
-    let url = args.iter().find(|arg| arg.name == "query")
+    let args = subcommand_args.options.clone();
+
+    let url = args.first()
         .unwrap()
         .value
         .as_ref()
@@ -39,12 +43,9 @@ pub async fn _play(
         .as_str()
         .unwrap();
 
-    let flag = match args.iter().find(|arg| arg.name == "flag") {
-        Some(arg) => match arg.value.as_ref().unwrap().as_str().unwrap() {
-            "top" => &PlayFlag::PLAYTOP,
-            "all" => &PlayFlag::PLAYALL,
-            _ => &PlayFlag::DEFAULT,
-        },
+    let flag = match subcommand_args.name.as_str() {
+        "next" => &PlayFlag::NEXT,
+        "playlist" => &PlayFlag::PLAYLIST,
         _ => flag,
     };
 
@@ -59,7 +60,7 @@ pub async fn _play(
     create_response(&ctx.http, interaction, SEARCHING).await?;
 
     let enqueue_type = match flag {
-        PlayFlag::PLAYALL => EnqueueType::PLAYLIST,
+        PlayFlag::PLAYLIST => EnqueueType::PLAYLIST,
         _ => {
             if url.contains("youtube.com/playlist?list=") {
                 EnqueueType::PLAYLIST
@@ -88,7 +89,7 @@ pub async fn _play(
 
         match enqueue_type {
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
-                PlayFlag::PLAYTOP => {
+                PlayFlag::NEXT => {
                     let track = queue.get(1).unwrap();
                     let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
 
@@ -130,7 +131,7 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
     };
 
     match flag {
-        PlayFlag::PLAYTOP => Some(top_track_duration - top_track_elapsed),
+        PlayFlag::NEXT => Some(top_track_duration - top_track_elapsed),
         _ => {
             let center = &queue[1..queue.len() - 1];
             let livestreams =
@@ -202,7 +203,7 @@ async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag
     let queue_snapshot = handler.queue().current_queue();
     drop(handler);
 
-    if let PlayFlag::PLAYTOP = flag {
+    if let PlayFlag::NEXT = flag {
         if queue_snapshot.len() > 2 {
             let handler = call.lock().await;
 

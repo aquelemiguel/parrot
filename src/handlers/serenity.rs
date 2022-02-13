@@ -125,23 +125,46 @@ impl SerenityHandler {
                 .create_application_command(|command| {
                     command
                         .name("play")
-                        .description("Adds a track to the queue")
+                        .description("Add a track to the queue")
                         .default_permission(true)
                         .create_option(|option| {
                             option
-                                .name("query")
-                                .description("The media to play")
-                                .kind(ApplicationCommandOptionType::String)
-                                .required(true)
+                                .name("default")
+                                .description("Place this song at the bottom of the queue")
+                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .create_sub_option(|option| {
+                                    option
+                                        .name("query")
+                                        .description("The media to play")
+                                        .kind(ApplicationCommandOptionType::String)
+                                        .required(true)
+                                })
                         })
                         .create_option(|option| {
                             option
-                                .name("flag")
-                                .description("Play command flag")
-                                .kind(ApplicationCommandOptionType::String)
-                                .add_string_choice("Place this song at the top of the queue", "top")
-                                .add_string_choice("Place all songs in the playlist in the queue", "all")
-                                .required(false)
+                                .name("next")
+                                .description("Place this song at the top of the queue")
+                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .create_sub_option(|option| {
+                                    option
+                                        .name("query")
+                                        .description("The media to play")
+                                        .kind(ApplicationCommandOptionType::String)
+                                        .required(true)
+                                })
+                        })
+                        .create_option(|option| {
+                            option
+                                .name("playlist")
+                                .description("Place all songs in the playlist in the queue")
+                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .create_sub_option(|option| {
+                                    option
+                                        .name("query")
+                                        .description("The media to play")
+                                        .kind(ApplicationCommandOptionType::String)
+                                        .required(true)
+                                })
                         })
                 })
                 .create_application_command(|command| {
