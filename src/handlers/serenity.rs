@@ -1,7 +1,7 @@
 use crate::{
     commands::{
         autopause::*, clear::*, forceskip::*, leave::*, now_playing::*, pause::*, play::*,
-        playtop::*, queue::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*,
+        queue::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*,
         stop::*, summon::*, version::*,
     },
     strings::{
@@ -134,18 +134,14 @@ impl SerenityHandler {
                                 .kind(ApplicationCommandOptionType::String)
                                 .required(true)
                         })
-                })
-                .create_application_command(|command| {
-                    command
-                        .name("playtop")
-                        .description("Places a track on the top of the queue")
-                        .default_permission(false)
                         .create_option(|option| {
                             option
-                                .name("query")
-                                .description("The media to play")
+                                .name("flag")
+                                .description("Play command flag")
                                 .kind(ApplicationCommandOptionType::String)
-                                .required(true)
+                                .add_string_choice("Place this song at the top of the queue", "top")
+                                .add_string_choice("Place all songs in the playlist in the queue", "all")
+                                .required(false)
                         })
                 })
                 .create_application_command(|command| {
@@ -281,7 +277,7 @@ impl SerenityHandler {
                     _ => Ok(()),
                 }
             }
-            "play" | "playtop" | "summon" => {
+            "play" | "summon" => {
                 match check_voice_connections(&guild, &user_id, &bot_id) {
                     Connection::User(_) => Ok(()),
                     Connection::Bot(_) if command_name == "summon" => {
@@ -320,7 +316,6 @@ impl SerenityHandler {
             "np" => now_playing(ctx, command).await,
             "pause" => pause(ctx, command).await,
             "play" => play(ctx, command).await,
-            "playtop" => playtop(ctx, command).await,
             "queue" => queue(ctx, command).await,
             "remove" => remove(ctx, command).await,
             "repeat" => repeat(ctx, command).await,

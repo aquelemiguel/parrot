@@ -31,14 +31,22 @@ pub async fn _play(
 ) -> Result<(), SerenityError> {
     let args = interaction.data.options.clone();
 
-    let url = args
-        .first()
+    let url = args.iter().find(|arg| arg.name == "query")
         .unwrap()
         .value
         .as_ref()
         .unwrap()
         .as_str()
         .unwrap();
+
+    let flag = match args.iter().find(|arg| arg.name == "flag") {
+        Some(arg) => match arg.value.as_ref().unwrap().as_str().unwrap() {
+            "top" => &PlayFlag::PLAYTOP,
+            "all" => &PlayFlag::PLAYALL,
+            _ => &PlayFlag::DEFAULT,
+        },
+        _ => flag,
+    };
 
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
@@ -50,12 +58,17 @@ pub async fn _play(
     // needed because interactions must be replied within 3s and queueing takes longer
     create_response(&ctx.http, interaction, SEARCHING).await?;
 
-    let enqueue_type = if url.contains("youtube.com/playlist?list=") {
-        EnqueueType::PLAYLIST
-    } else if url.starts_with("http") {
-        EnqueueType::URI
-    } else {
-        EnqueueType::SEARCH
+    let enqueue_type = match flag {
+        PlayFlag::PLAYALL => EnqueueType::PLAYLIST,
+        _ => {
+            if url.contains("youtube.com/playlist?list=") {
+                EnqueueType::PLAYLIST
+            } else if url.starts_with("http") {
+                EnqueueType::URI
+            } else {
+                EnqueueType::SEARCH
+            }
+        },
     };
 
     let call = manager.get(guild_id).unwrap();
@@ -81,7 +94,7 @@ pub async fn _play(
 
                     edit_embed_response(&ctx.http, interaction, embed).await?;
                 }
-                PlayFlag::DEFAULT => {
+                _ => {
                     let track = queue.last().unwrap();
                     let embed = create_queued_embed(PLAY_QUEUE, track, estimated_time).await;
 
@@ -117,7 +130,8 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
     };
 
     match flag {
-        PlayFlag::DEFAULT => {
+        PlayFlag::PLAYTOP => Some(top_track_duration - top_track_elapsed),
+        _ => {
             let center = &queue[1..queue.len() - 1];
             let livestreams =
                 center.len() - center.iter().filter_map(|t| t.metadata().duration).count();
@@ -133,7 +147,6 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
 
             Some(durations + top_track_duration - top_track_elapsed)
         }
-        PlayFlag::PLAYTOP => Some(top_track_duration - top_track_elapsed),
     }
 }
 

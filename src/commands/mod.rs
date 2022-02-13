@@ -5,7 +5,6 @@ pub mod leave;
 pub mod now_playing;
 pub mod pause;
 pub mod play;
-pub mod playtop;
 pub mod queue;
 pub mod remove;
 pub mod repeat;
@@ -20,6 +19,7 @@ pub mod version;
 pub enum PlayFlag {
     DEFAULT,
     PLAYTOP,
+    PLAYALL,
 }
 
 pub enum EnqueueType {
