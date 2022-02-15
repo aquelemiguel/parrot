@@ -45,7 +45,7 @@ pub async fn _play(
 
     let flag = match subcommand_args.name.as_str() {
         "next" => &PlayFlag::NEXT,
-        "playlist" => &PlayFlag::PLAYLIST,
+        "all" => &PlayFlag::ALL,
         _ => flag,
     };
 
@@ -60,7 +60,7 @@ pub async fn _play(
     create_response(&ctx.http, interaction, SEARCHING).await?;
 
     let enqueue_type = match flag {
-        PlayFlag::PLAYLIST => EnqueueType::PLAYLIST,
+        PlayFlag::ALL => EnqueueType::PLAYLIST,
         _ => {
             if url.contains("youtube.com/playlist?list=") {
                 EnqueueType::PLAYLIST

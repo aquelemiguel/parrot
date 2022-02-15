@@ -19,7 +19,7 @@ pub mod version;
 pub enum PlayFlag {
     DEFAULT,
     NEXT,
-    PLAYLIST,
+    ALL,
 }
 
 pub enum EnqueueType {

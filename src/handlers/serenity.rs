@@ -155,8 +155,8 @@ impl SerenityHandler {
                         })
                         .create_option(|option| {
                             option
-                                .name("playlist")
-                                .description("Place all songs in the playlist in the queue")
+                                .name("all")
+                                .description("Add all tracks if the URL refers to a video and a playlist")
                                 .kind(ApplicationCommandOptionType::SubCommand)
                                 .create_sub_option(|option| {
                                     option
