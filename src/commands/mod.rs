@@ -16,10 +16,12 @@ pub mod stop;
 pub mod summon;
 pub mod version;
 
-pub enum PlayFlag {
+pub enum PlayMode {
     END,
     NEXT,
     ALL,
+    REVERSE,
+    SHUFFLE,
 }
 
 pub enum EnqueueType {

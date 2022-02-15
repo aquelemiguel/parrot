@@ -1,5 +1,5 @@
 use crate::{
-    commands::{summon::summon, EnqueueType, PlayFlag},
+    commands::{summon::summon, EnqueueType, PlayMode},
     handlers::track_end::update_queue_messages,
     sources::youtube::YouTubeRestartable,
     strings::{PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, TRACK_DURATION, TRACK_TIME_TO_PLAY},
@@ -8,6 +8,7 @@ use crate::{
         get_human_readable_timestamp,
     },
 };
+use rand::{seq::SliceRandom, thread_rng};
 use serenity::{
     builder::CreateEmbed,
     client::Context,
@@ -20,14 +21,6 @@ use std::{sync::Arc, time::Duration};
 pub async fn play(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), SerenityError> {
-    _play(ctx, interaction, &PlayFlag::END).await
-}
-
-pub async fn _play(
-    ctx: &Context,
-    interaction: &mut ApplicationCommandInteraction,
-    flag: &PlayFlag,
 ) -> Result<(), SerenityError> {
     let subcommand_args = interaction.data.options.first().unwrap();
 
@@ -43,9 +36,11 @@ pub async fn _play(
         .unwrap();
 
     let flag = match subcommand_args.name.as_str() {
-        "next" => &PlayFlag::NEXT,
-        "all" => &PlayFlag::ALL,
-        _ => flag,
+        "next" => PlayMode::NEXT,
+        "all" => PlayMode::ALL,
+        "reverse" => PlayMode::REVERSE,
+        "shuffle" => PlayMode::SHUFFLE,
+        _ => PlayMode::END,
     };
 
     let guild_id = interaction.guild_id.unwrap();
@@ -59,24 +54,18 @@ pub async fn _play(
     create_response(&ctx.http, interaction, SEARCHING).await?;
 
     let enqueue_type = match flag {
-        PlayFlag::ALL => EnqueueType::PLAYLIST,
-        _ => {
-            if url.contains("youtube.com/playlist?list=") {
-                EnqueueType::PLAYLIST
-            } else if url.starts_with("http") {
-                EnqueueType::URI
-            } else {
-                EnqueueType::SEARCH
-            }
-        }
+        PlayMode::ALL | PlayMode::REVERSE | PlayMode::SHUFFLE => EnqueueType::PLAYLIST,
+        _ if url.contains("youtube.com/playlist?list=") => EnqueueType::PLAYLIST,
+        _ if url.starts_with("http") => EnqueueType::URI,
+        _ => EnqueueType::SEARCH,
     };
 
     let call = manager.get(guild_id).unwrap();
 
     match enqueue_type {
-        EnqueueType::URI => enqueue_song(&call, url.to_string(), true, flag).await,
-        EnqueueType::SEARCH => enqueue_song(&call, url.to_string(), false, flag).await,
-        EnqueueType::PLAYLIST => enqueue_playlist(&call, url).await,
+        EnqueueType::URI => enqueue_song(&call, url.to_string(), true, &flag).await,
+        EnqueueType::SEARCH => enqueue_song(&call, url.to_string(), false, &flag).await,
+        EnqueueType::PLAYLIST => enqueue_playlist(&call, url, &flag).await,
     };
 
     let handler = call.lock().await;
@@ -84,22 +73,23 @@ pub async fn _play(
     drop(handler);
 
     if queue.len() > 1 {
-        let estimated_time = calculate_time_until_play(&queue, flag).await.unwrap();
+        let estimated_time = calculate_time_until_play(&queue, &flag).await.unwrap();
 
         match enqueue_type {
             EnqueueType::URI | EnqueueType::SEARCH => match flag {
-                PlayFlag::NEXT => {
+                PlayMode::NEXT => {
                     let track = queue.get(1).unwrap();
                     let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
 
                     edit_embed_response(&ctx.http, interaction, embed).await?;
                 }
-                _ => {
+                PlayMode::END => {
                     let track = queue.last().unwrap();
                     let embed = create_queued_embed(PLAY_QUEUE, track, estimated_time).await;
 
                     edit_embed_response(&ctx.http, interaction, embed).await?;
                 }
+                _ => {}
             },
             EnqueueType::PLAYLIST => {
                 edit_response(&ctx.http, interaction, PLAY_PLAYLIST).await?;
@@ -116,7 +106,7 @@ pub async fn _play(
     Ok(())
 }
 
-async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Option<Duration> {
+async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayMode) -> Option<Duration> {
     if queue.is_empty() {
         return None;
     }
@@ -130,7 +120,7 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
     };
 
     match flag {
-        PlayFlag::NEXT => Some(top_track_duration - top_track_elapsed),
+        PlayMode::NEXT => Some(top_track_duration - top_track_elapsed),
         _ => {
             let center = &queue[1..queue.len() - 1];
             let livestreams =
@@ -150,10 +140,20 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
     }
 }
 
-async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str) {
+async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str, flag: &PlayMode) {
     if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri).await {
-        for url in urls.iter() {
-            enqueue_song(call, url.to_string(), true, &PlayFlag::END).await;
+        let ordered_urls = match flag {
+            PlayMode::REVERSE => urls.iter().rev().cloned().collect(),
+            PlayMode::SHUFFLE => {
+                let mut urls_copy = urls.clone();
+                let mut rng = thread_rng();
+                urls_copy.shuffle(&mut rng);
+                urls_copy
+            }
+            _ => urls,
+        };
+        for url in ordered_urls {
+            enqueue_song(call, url.to_string(), true, flag).await;
         }
     }
 }
@@ -190,11 +190,20 @@ async fn create_queued_embed(
     embed
 }
 
-async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag: &PlayFlag) {
-    let source = if is_url {
-        YouTubeRestartable::ytdl(query, true).await.unwrap()
+async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag: &PlayMode) {
+    let source_return = if is_url {
+        YouTubeRestartable::ytdl(query, true).await
     } else {
-        YouTubeRestartable::ytdl_search(query, true).await.unwrap()
+        YouTubeRestartable::ytdl_search(query, true).await
+    };
+
+    // safeguard against ytdl dying on a private / deleted video and killing the playlist
+    let source = match source_return {
+        Ok(source) => source,
+        Err(error) => {
+            println!("{}", error);
+            return;
+        }
     };
 
     let mut handler = call.lock().await;
@@ -202,7 +211,7 @@ async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag
     let queue_snapshot = handler.queue().current_queue();
     drop(handler);
 
-    if let PlayFlag::NEXT = flag {
+    if let PlayMode::NEXT = flag {
         if queue_snapshot.len() > 2 {
             let handler = call.lock().await;
 

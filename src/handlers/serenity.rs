@@ -166,6 +166,32 @@ impl SerenityHandler {
                                         .required(true)
                                 })
                         })
+                        .create_option(|option| {
+                            option
+                                .name("reverse")
+                                .description("Add all tracks in reverse if the URL refers to a video and a playlist")
+                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .create_sub_option(|option| {
+                                    option
+                                        .name("query")
+                                        .description("The media to play")
+                                        .kind(ApplicationCommandOptionType::String)
+                                        .required(true)
+                                })
+                        })
+                        .create_option(|option| {
+                            option
+                                .name("shuffle")
+                                .description("Add all tracks in random order if the URL refers to a video and a playlist")
+                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .create_sub_option(|option| {
+                                    option
+                                        .name("query")
+                                        .description("The media to play")
+                                        .kind(ApplicationCommandOptionType::String)
+                                        .required(true)
+                                })
+                        })
                 })
                 .create_application_command(|command| {
                     command.name("queue").description("Shows the queue").default_permission(true)
