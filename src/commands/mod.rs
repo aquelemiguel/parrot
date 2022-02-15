@@ -17,15 +17,15 @@ pub mod summon;
 pub mod version;
 
 pub enum PlayMode {
-    END,
-    NEXT,
-    ALL,
-    REVERSE,
-    SHUFFLE,
+    End,
+    Next,
+    All,
+    Reverse,
+    Shuffle,
 }
 
 pub enum EnqueueType {
-    URI,
-    SEARCH,
-    PLAYLIST,
+    Link,
+    Search,
+    Playlist,
 }
