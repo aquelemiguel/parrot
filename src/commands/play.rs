@@ -40,6 +40,7 @@ pub async fn play(
         "all" => PlayMode::All,
         "reverse" => PlayMode::Reverse,
         "shuffle" => PlayMode::Shuffle,
+        "end" => PlayMode::End,
         _ => PlayMode::End,
     };
 
