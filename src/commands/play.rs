@@ -35,7 +35,7 @@ pub async fn play(
         .as_str()
         .unwrap();
 
-    let flag = match subcommand_args.name.as_str() {
+    let mode = match subcommand_args.name.as_str() {
         "next" => PlayMode::Next,
         "all" => PlayMode::All,
         "reverse" => PlayMode::Reverse,
@@ -54,7 +54,7 @@ pub async fn play(
     // needed because interactions must be replied within 3s and queueing takes longer
     create_response(&ctx.http, interaction, SEARCHING).await?;
 
-    let enqueue_type = match flag {
+    let enqueue_type = match mode {
         PlayMode::All | PlayMode::Reverse | PlayMode::Shuffle => EnqueueType::Playlist,
         _ if url.contains("youtube.com/playlist?list=") => EnqueueType::Playlist,
         _ if url.starts_with("http") => EnqueueType::Link,
@@ -64,9 +64,9 @@ pub async fn play(
     let call = manager.get(guild_id).unwrap();
 
     match enqueue_type {
-        EnqueueType::Link => enqueue_song(&call, url.to_string(), true, &flag).await,
-        EnqueueType::Search => enqueue_song(&call, url.to_string(), false, &flag).await,
-        EnqueueType::Playlist => enqueue_playlist(&call, url, &flag).await,
+        EnqueueType::Link => enqueue_song(&call, url.to_string(), true, &mode).await,
+        EnqueueType::Search => enqueue_song(&call, url.to_string(), false, &mode).await,
+        EnqueueType::Playlist => enqueue_playlist(&call, url, &mode).await,
     };
 
     let handler = call.lock().await;
@@ -74,10 +74,10 @@ pub async fn play(
     drop(handler);
 
     if queue.len() > 1 {
-        let estimated_time = calculate_time_until_play(&queue, &flag).await.unwrap();
+        let estimated_time = calculate_time_until_play(&queue, &mode).await.unwrap();
 
         match enqueue_type {
-            EnqueueType::Link | EnqueueType::Search => match flag {
+            EnqueueType::Link | EnqueueType::Search => match mode {
                 PlayMode::Next => {
                     let track = queue.get(1).unwrap();
                     let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
@@ -107,7 +107,7 @@ pub async fn play(
     Ok(())
 }
 
-async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayMode) -> Option<Duration> {
+async fn calculate_time_until_play(queue: &[TrackHandle], mode: &PlayMode) -> Option<Duration> {
     if queue.is_empty() {
         return None;
     }
@@ -120,7 +120,7 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayMode) -> Op
         None => return Some(Duration::MAX),
     };
 
-    match flag {
+    match mode {
         PlayMode::Next => Some(top_track_duration - top_track_elapsed),
         _ => {
             let center = &queue[1..queue.len() - 1];
@@ -141,9 +141,9 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayMode) -> Op
     }
 }
 
-async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str, flag: &PlayMode) {
+async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str, mode: &PlayMode) {
     if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri).await {
-        let ordered_urls = match flag {
+        let ordered_urls = match mode {
             PlayMode::Reverse => urls.iter().rev().cloned().collect(),
             PlayMode::Shuffle => {
                 let mut urls_copy = urls.clone();
@@ -154,7 +154,7 @@ async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str, flag: &PlayMode) {
             _ => urls,
         };
         for url in ordered_urls {
-            enqueue_song(call, url.to_string(), true, flag).await;
+            enqueue_song(call, url.to_string(), true, mode).await;
         }
     }
 }
@@ -191,7 +191,7 @@ async fn create_queued_embed(
     embed
 }
 
-async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag: &PlayMode) {
+async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, mode: &PlayMode) {
     let source_return = if is_url {
         YouTubeRestartable::ytdl(query, true).await
     } else {
@@ -212,7 +212,7 @@ async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, flag
     let queue_snapshot = handler.queue().current_queue();
     drop(handler);
 
-    if let PlayMode::Next = flag {
+    if let PlayMode::Next = mode {
         if queue_snapshot.len() > 2 {
             let handler = call.lock().await;
 
