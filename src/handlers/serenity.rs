@@ -143,7 +143,7 @@ impl SerenityHandler {
                         .create_option(|option| {
                             option
                                 .name("next")
-                                .description("Place this song at the top of the queue")
+                                .description("Add a track to be played up next")
                                 .kind(ApplicationCommandOptionType::SubCommand)
                                 .create_sub_option(|option| {
                                     option
