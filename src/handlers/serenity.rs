@@ -169,7 +169,7 @@ impl SerenityHandler {
                         .create_option(|option| {
                             option
                                 .name("reverse")
-                                .description("Add all tracks in reverse if the URL refers to a video and a playlist")
+                                .description("Add a playlist to the queue in reverse order")
                                 .kind(ApplicationCommandOptionType::SubCommand)
                                 .create_sub_option(|option| {
                                     option
@@ -182,7 +182,7 @@ impl SerenityHandler {
                         .create_option(|option| {
                             option
                                 .name("shuffle")
-                                .description("Add all tracks in random order if the URL refers to a video and a playlist")
+                                .description("Add a playlist to the queue in random order")
                                 .kind(ApplicationCommandOptionType::SubCommand)
                                 .create_sub_option(|option| {
                                     option
