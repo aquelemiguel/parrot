@@ -29,13 +29,12 @@ pub async fn _play(
     interaction: &mut ApplicationCommandInteraction,
     flag: &PlayFlag,
 ) -> Result<(), SerenityError> {
-    let subcommand_args = interaction.data.options
-        .first()
-        .unwrap();
+    let subcommand_args = interaction.data.options.first().unwrap();
 
     let args = subcommand_args.options.clone();
 
-    let url = args.first()
+    let url = args
+        .first()
         .unwrap()
         .value
         .as_ref()
@@ -69,7 +68,7 @@ pub async fn _play(
             } else {
                 EnqueueType::SEARCH
             }
-        },
+        }
     };
 
     let call = manager.get(guild_id).unwrap();

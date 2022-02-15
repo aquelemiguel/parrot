@@ -1,8 +1,8 @@
 use crate::{
     commands::{
         autopause::*, clear::*, forceskip::*, leave::*, now_playing::*, pause::*, play::*,
-        queue::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*,
-        stop::*, summon::*, version::*,
+        queue::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*,
+        summon::*, version::*,
     },
     strings::{
         FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
@@ -300,24 +300,22 @@ impl SerenityHandler {
                     _ => Ok(()),
                 }
             }
-            "play" | "summon" => {
-                match check_voice_connections(&guild, &user_id, &bot_id) {
-                    Connection::User(_) => Ok(()),
-                    Connection::Bot(_) if command_name == "summon" => {
-                        Err(FAIL_AUTHOR_NOT_FOUND.to_owned())
-                    }
-                    Connection::Bot(_) if command_name != "summon" => {
-                        Err(FAIL_WRONG_CHANNEL.to_owned())
-                    }
-                    Connection::Separate(bot_channel_id, _) => Err(format!(
-                        "{} {}!",
-                        FAIL_ANOTHER_CHANNEL,
-                        bot_channel_id.mention()
-                    )),
-                    Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND.to_owned()),
-                    _ => Ok(()),
+            "play" | "summon" => match check_voice_connections(&guild, &user_id, &bot_id) {
+                Connection::User(_) => Ok(()),
+                Connection::Bot(_) if command_name == "summon" => {
+                    Err(FAIL_AUTHOR_NOT_FOUND.to_owned())
                 }
-            }
+                Connection::Bot(_) if command_name != "summon" => {
+                    Err(FAIL_WRONG_CHANNEL.to_owned())
+                }
+                Connection::Separate(bot_channel_id, _) => Err(format!(
+                    "{} {}!",
+                    FAIL_ANOTHER_CHANNEL,
+                    bot_channel_id.mention()
+                )),
+                Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND.to_owned()),
+                _ => Ok(()),
+            },
             "np" | "queue" => match check_voice_connections(&guild, &user_id, &bot_id) {
                 Connection::User(_) | Connection::Neither => {
                     Err(FAIL_NO_VOICE_CONNECTION.to_owned())
