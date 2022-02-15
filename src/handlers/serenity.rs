@@ -129,8 +129,8 @@ impl SerenityHandler {
                         .default_permission(true)
                         .create_option(|option| {
                             option
-                                .name("default")
-                                .description("Place this song at the bottom of the queue")
+                                .name("end")
+                                .description("Add a track to the end of the queue")
                                 .kind(ApplicationCommandOptionType::SubCommand)
                                 .create_sub_option(|option| {
                                     option

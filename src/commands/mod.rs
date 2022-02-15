@@ -17,7 +17,7 @@ pub mod summon;
 pub mod version;
 
 pub enum PlayFlag {
-    DEFAULT,
+    END,
     NEXT,
     ALL,
 }

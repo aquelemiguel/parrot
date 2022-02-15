@@ -21,7 +21,7 @@ pub async fn play(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
 ) -> Result<(), SerenityError> {
-    _play(ctx, interaction, &PlayFlag::DEFAULT).await
+    _play(ctx, interaction, &PlayFlag::END).await
 }
 
 pub async fn _play(
@@ -153,7 +153,7 @@ async fn calculate_time_until_play(queue: &[TrackHandle], flag: &PlayFlag) -> Op
 async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str) {
     if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri).await {
         for url in urls.iter() {
-            enqueue_song(call, url.to_string(), true, &PlayFlag::DEFAULT).await;
+            enqueue_song(call, url.to_string(), true, &PlayFlag::END).await;
         }
     }
 }
