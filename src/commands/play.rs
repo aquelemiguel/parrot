@@ -8,7 +8,6 @@ use crate::{
         get_human_readable_timestamp,
     },
 };
-use rand::{seq::SliceRandom, thread_rng};
 use serenity::{
     builder::CreateEmbed,
     client::Context,
@@ -142,18 +141,8 @@ async fn calculate_time_until_play(queue: &[TrackHandle], mode: &PlayMode) -> Op
 }
 
 async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str, mode: &PlayMode) {
-    if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri).await {
-        let ordered_urls = match mode {
-            PlayMode::Reverse => urls.iter().rev().cloned().collect(),
-            PlayMode::Shuffle => {
-                let mut urls_copy = urls.clone();
-                let mut rng = thread_rng();
-                urls_copy.shuffle(&mut rng);
-                urls_copy
-            }
-            _ => urls,
-        };
-        for url in ordered_urls {
+    if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri, mode).await {
+        for url in urls {
             enqueue_song(call, url.to_string(), true, mode).await;
         }
     }
@@ -201,10 +190,7 @@ async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, mode
     // safeguard against ytdl dying on a private / deleted video and killing the playlist
     let source = match source_return {
         Ok(source) => source,
-        Err(error) => {
-            println!("{}", error);
-            return;
-        }
+        Err(_) => return,
     };
 
     let mut handler = call.lock().await;
