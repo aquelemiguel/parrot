@@ -11,7 +11,7 @@ use crate::{
 use serenity::{
     builder::CreateEmbed,
     client::Context,
-    model::interactions::application_command::ApplicationCommandInteraction,
+    model::{id::GuildId, interactions::application_command::ApplicationCommandInteraction},
     prelude::{Mutex, SerenityError},
 };
 use songbird::{tracks::TrackHandle, Call};
@@ -63,9 +63,11 @@ pub async fn play(
     let call = manager.get(guild_id).unwrap();
 
     match enqueue_type {
-        EnqueueType::Link => enqueue_song(&call, url.to_string(), true, mode).await,
-        EnqueueType::Search => enqueue_song(&call, url.to_string(), false, mode).await,
-        EnqueueType::Playlist => enqueue_playlist(&call, url, mode).await,
+        EnqueueType::Link => enqueue_song(ctx, &call, guild_id, url.to_string(), true, mode).await,
+        EnqueueType::Search => {
+            enqueue_song(ctx, &call, guild_id, url.to_string(), false, mode).await
+        }
+        EnqueueType::Playlist => enqueue_playlist(ctx, &call, guild_id, url, mode).await,
     };
 
     let handler = call.lock().await;
@@ -100,7 +102,6 @@ pub async fn play(
         edit_embed_response(&ctx.http, interaction, embed).await?;
     }
 
-    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
     Ok(())
 }
 
@@ -138,10 +139,16 @@ async fn calculate_time_until_play(queue: &[TrackHandle], mode: PlayMode) -> Opt
     }
 }
 
-async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str, mode: PlayMode) {
+async fn enqueue_playlist(
+    ctx: &Context,
+    call: &Arc<Mutex<Call>>,
+    guild_id: GuildId,
+    uri: &str,
+    mode: PlayMode,
+) {
     if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri, mode).await {
         for url in urls {
-            enqueue_song(call, url.to_string(), true, mode).await;
+            enqueue_song(ctx, call, guild_id, url.to_string(), true, mode).await;
         }
     }
 }
@@ -178,14 +185,21 @@ async fn create_queued_embed(
     embed
 }
 
-async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, mode: PlayMode) {
+async fn enqueue_song(
+    ctx: &Context,
+    call: &Arc<Mutex<Call>>,
+    guild_id: GuildId,
+    query: String,
+    is_url: bool,
+    mode: PlayMode,
+) {
     let source_return = if is_url {
         YouTubeRestartable::ytdl(query, true).await
     } else {
         YouTubeRestartable::ytdl_search(query, true).await
     };
 
-    // safeguard against ytdl dying on a private / deleted video and killing the playlist
+    // safeguard against ytdl dying on a private/deleted video and killing the playlist
     let source = match source_return {
         Ok(source) => source,
         Err(_) => return,
@@ -207,4 +221,6 @@ async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, mode
             });
         }
     }
+
+    update_queue_messages(&ctx.http, &ctx.data, call, guild_id).await;
 }
