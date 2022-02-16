@@ -67,6 +67,10 @@ pub async fn play(
 
     let call = manager.get(guild_id).unwrap();
 
+    let handler = call.lock().await;
+    let queue_was_empty = handler.queue().is_empty();
+    drop(handler);
+
     match mode {
         PlayMode::End => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
@@ -90,13 +94,18 @@ pub async fn play(
         PlayMode::Jump => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
                 enqueue_song(&call, url.to_string(), query_type).await;
-                rotate_tracks(&call, 1).await;
-                force_skip_top_track(&call).await;
+
+                if !queue_was_empty {
+                    rotate_tracks(&call, 1).await;
+                    force_skip_top_track(&call).await;
+                }
             }
             QueryType::PlaylistLink => {
                 if let Some(playlist) = enqueue_playlist(&call, url, mode).await {
-                    rotate_tracks(&call, playlist.len()).await;
-                    force_skip_top_track(&call).await;
+                    if !queue_was_empty {
+                        rotate_tracks(&call, playlist.len()).await;
+                        force_skip_top_track(&call).await;
+                    }
                 }
             }
         },
