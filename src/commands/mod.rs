@@ -23,10 +23,12 @@ pub enum PlayMode {
     All,
     Reverse,
     Shuffle,
+    Jump,
 }
 
-pub enum EnqueueType {
-    Link,
-    Search,
-    Playlist,
+#[derive(Copy, Clone)]
+pub enum QueryType {
+    Keywords,
+    VideoLink,
+    PlaylistLink,
 }
