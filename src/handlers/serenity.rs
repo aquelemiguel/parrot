@@ -1,8 +1,8 @@
 use crate::{
     commands::{
         autopause::*, clear::*, forceskip::*, leave::*, now_playing::*, pause::*, play::*,
-        playtop::*, queue::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*,
-        stop::*, summon::*, version::*,
+        queue::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*,
+        summon::*, version::*,
     },
     strings::{
         FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
@@ -125,27 +125,72 @@ impl SerenityHandler {
                 .create_application_command(|command| {
                     command
                         .name("play")
-                        .description("Adds a track to the queue")
+                        .description("Add a track to the queue")
                         .default_permission(true)
                         .create_option(|option| {
                             option
-                                .name("query")
-                                .description("The media to play")
-                                .kind(ApplicationCommandOptionType::String)
-                                .required(true)
+                                .name("end")
+                                .description("Add a track to the end of the queue")
+                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .create_sub_option(|option| {
+                                    option
+                                        .name("query")
+                                        .description("The media to play")
+                                        .kind(ApplicationCommandOptionType::String)
+                                        .required(true)
+                                })
                         })
-                })
-                .create_application_command(|command| {
-                    command
-                        .name("playtop")
-                        .description("Places a track on the top of the queue")
-                        .default_permission(false)
                         .create_option(|option| {
                             option
-                                .name("query")
-                                .description("The media to play")
-                                .kind(ApplicationCommandOptionType::String)
-                                .required(true)
+                                .name("next")
+                                .description("Add a track to be played up next")
+                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .create_sub_option(|option| {
+                                    option
+                                        .name("query")
+                                        .description("The media to play")
+                                        .kind(ApplicationCommandOptionType::String)
+                                        .required(true)
+                                })
+                        })
+                        .create_option(|option| {
+                            option
+                                .name("all")
+                                .description("Add all tracks if the URL refers to a video and a playlist")
+                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .create_sub_option(|option| {
+                                    option
+                                        .name("query")
+                                        .description("The media to play")
+                                        .kind(ApplicationCommandOptionType::String)
+                                        .required(true)
+                                })
+                        })
+                        .create_option(|option| {
+                            option
+                                .name("reverse")
+                                .description("Add a playlist to the queue in reverse order")
+                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .create_sub_option(|option| {
+                                    option
+                                        .name("query")
+                                        .description("The media to play")
+                                        .kind(ApplicationCommandOptionType::String)
+                                        .required(true)
+                                })
+                        })
+                        .create_option(|option| {
+                            option
+                                .name("shuffle")
+                                .description("Add a playlist to the queue in random order")
+                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .create_sub_option(|option| {
+                                    option
+                                        .name("query")
+                                        .description("The media to play")
+                                        .kind(ApplicationCommandOptionType::String)
+                                        .required(true)
+                                })
                         })
                 })
                 .create_application_command(|command| {
@@ -281,24 +326,22 @@ impl SerenityHandler {
                     _ => Ok(()),
                 }
             }
-            "play" | "playtop" | "summon" => {
-                match check_voice_connections(&guild, &user_id, &bot_id) {
-                    Connection::User(_) => Ok(()),
-                    Connection::Bot(_) if command_name == "summon" => {
-                        Err(FAIL_AUTHOR_NOT_FOUND.to_owned())
-                    }
-                    Connection::Bot(_) if command_name != "summon" => {
-                        Err(FAIL_WRONG_CHANNEL.to_owned())
-                    }
-                    Connection::Separate(bot_channel_id, _) => Err(format!(
-                        "{} {}!",
-                        FAIL_ANOTHER_CHANNEL,
-                        bot_channel_id.mention()
-                    )),
-                    Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND.to_owned()),
-                    _ => Ok(()),
+            "play" | "summon" => match check_voice_connections(&guild, &user_id, &bot_id) {
+                Connection::User(_) => Ok(()),
+                Connection::Bot(_) if command_name == "summon" => {
+                    Err(FAIL_AUTHOR_NOT_FOUND.to_owned())
                 }
-            }
+                Connection::Bot(_) if command_name != "summon" => {
+                    Err(FAIL_WRONG_CHANNEL.to_owned())
+                }
+                Connection::Separate(bot_channel_id, _) => Err(format!(
+                    "{} {}!",
+                    FAIL_ANOTHER_CHANNEL,
+                    bot_channel_id.mention()
+                )),
+                Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND.to_owned()),
+                _ => Ok(()),
+            },
             "np" | "queue" => match check_voice_connections(&guild, &user_id, &bot_id) {
                 Connection::User(_) | Connection::Neither => {
                     Err(FAIL_NO_VOICE_CONNECTION.to_owned())
@@ -320,7 +363,6 @@ impl SerenityHandler {
             "np" => now_playing(ctx, command).await,
             "pause" => pause(ctx, command).await,
             "play" => play(ctx, command).await,
-            "playtop" => playtop(ctx, command).await,
             "queue" => queue(ctx, command).await,
             "remove" => remove(ctx, command).await,
             "repeat" => repeat(ctx, command).await,
