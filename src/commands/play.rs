@@ -75,25 +75,23 @@ pub async fn play(
     if queue.len() > 1 {
         let estimated_time = calculate_time_until_play(&queue, mode).await.unwrap();
 
-        match enqueue_type {
-            EnqueueType::Link | EnqueueType::Search => match mode {
-                PlayMode::Next => {
-                    let track = queue.get(1).unwrap();
-                    let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
+        match (enqueue_type, mode) {
+            (EnqueueType::Link | EnqueueType::Search, PlayMode::Next) => {
+                let track = queue.get(1).unwrap();
+                let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
 
-                    edit_embed_response(&ctx.http, interaction, embed).await?;
-                }
-                PlayMode::End => {
-                    let track = queue.last().unwrap();
-                    let embed = create_queued_embed(PLAY_QUEUE, track, estimated_time).await;
+                edit_embed_response(&ctx.http, interaction, embed).await?;
+            }
+            (EnqueueType::Link | EnqueueType::Search, PlayMode::End) => {
+                let track = queue.last().unwrap();
+                let embed = create_queued_embed(PLAY_QUEUE, track, estimated_time).await;
 
-                    edit_embed_response(&ctx.http, interaction, embed).await?;
-                }
-                _ => {}
-            },
-            EnqueueType::Playlist => {
+                edit_embed_response(&ctx.http, interaction, embed).await?;
+            }
+            (EnqueueType::Playlist, _) => {
                 edit_response(&ctx.http, interaction, PLAY_PLAYLIST).await?;
             }
+            (_, _) => {}
         }
     } else {
         let track = queue.first().unwrap();
