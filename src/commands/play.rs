@@ -63,9 +63,9 @@ pub async fn play(
     let call = manager.get(guild_id).unwrap();
 
     match enqueue_type {
-        EnqueueType::Link => enqueue_song(&call, url.to_string(), true, &mode).await,
-        EnqueueType::Search => enqueue_song(&call, url.to_string(), false, &mode).await,
-        EnqueueType::Playlist => enqueue_playlist(&call, url, &mode).await,
+        EnqueueType::Link => enqueue_song(&call, url.to_string(), true, mode).await,
+        EnqueueType::Search => enqueue_song(&call, url.to_string(), false, mode).await,
+        EnqueueType::Playlist => enqueue_playlist(&call, url, mode).await,
     };
 
     let handler = call.lock().await;
@@ -73,7 +73,7 @@ pub async fn play(
     drop(handler);
 
     if queue.len() > 1 {
-        let estimated_time = calculate_time_until_play(&queue, &mode).await.unwrap();
+        let estimated_time = calculate_time_until_play(&queue, mode).await.unwrap();
 
         match enqueue_type {
             EnqueueType::Link | EnqueueType::Search => match mode {
@@ -106,7 +106,7 @@ pub async fn play(
     Ok(())
 }
 
-async fn calculate_time_until_play(queue: &[TrackHandle], mode: &PlayMode) -> Option<Duration> {
+async fn calculate_time_until_play(queue: &[TrackHandle], mode: PlayMode) -> Option<Duration> {
     if queue.is_empty() {
         return None;
     }
@@ -140,7 +140,7 @@ async fn calculate_time_until_play(queue: &[TrackHandle], mode: &PlayMode) -> Op
     }
 }
 
-async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str, mode: &PlayMode) {
+async fn enqueue_playlist(call: &Arc<Mutex<Call>>, uri: &str, mode: PlayMode) {
     if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri, mode).await {
         for url in urls {
             enqueue_song(call, url.to_string(), true, mode).await;
@@ -180,7 +180,7 @@ async fn create_queued_embed(
     embed
 }
 
-async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, mode: &PlayMode) {
+async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, is_url: bool, mode: PlayMode) {
     let source_return = if is_url {
         YouTubeRestartable::ytdl(query, true).await
     } else {

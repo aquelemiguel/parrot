@@ -16,6 +16,7 @@ pub mod stop;
 pub mod summon;
 pub mod version;
 
+#[derive(Copy, Clone)]
 pub enum PlayMode {
     End,
     Next,

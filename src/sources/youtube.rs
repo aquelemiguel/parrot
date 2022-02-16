@@ -34,7 +34,7 @@ impl YouTubeRestartable {
         Restartable::new(YouTubeRestarter { uri }, lazy).await
     }
 
-    pub async fn ytdl_playlist(uri: &str, mode: &PlayMode) -> Option<Vec<String>> {
+    pub async fn ytdl_playlist(uri: &str, mode: PlayMode) -> Option<Vec<String>> {
         let mut args = vec![uri, "--flat-playlist", "-j"];
         match mode {
             PlayMode::Reverse => args.push("--playlist-reverse"),
