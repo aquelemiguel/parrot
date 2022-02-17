@@ -14,7 +14,7 @@ use crate::{
 use serenity::{
     builder::CreateEmbed,
     client::Context,
-    model::interactions::application_command::ApplicationCommandInteraction,
+    model::{id::GuildId, interactions::application_command::ApplicationCommandInteraction},
     prelude::{Mutex, SerenityError},
 };
 use songbird::{tracks::TrackHandle, Call};
@@ -74,26 +74,28 @@ pub async fn play(
     match mode {
         PlayMode::End => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
-                enqueue_song(&call, url.to_string(), query_type).await;
+                enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
             }
             QueryType::PlaylistLink => {
-                enqueue_playlist(&call, url, mode).await;
+                enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await;
             }
         },
         PlayMode::Next => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
-                enqueue_song(&call, url.to_string(), query_type).await;
+                enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
                 rotate_tracks(&call, 1).await;
             }
             QueryType::PlaylistLink => {
-                if let Some(playlist) = enqueue_playlist(&call, url, mode).await {
+                if let Some(playlist) =
+                    enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await
+                {
                     rotate_tracks(&call, playlist.len()).await;
                 }
             }
         },
         PlayMode::Jump => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
-                enqueue_song(&call, url.to_string(), query_type).await;
+                enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
 
                 if !queue_was_empty {
                     rotate_tracks(&call, 1).await;
@@ -101,7 +103,9 @@ pub async fn play(
                 }
             }
             QueryType::PlaylistLink => {
-                if let Some(playlist) = enqueue_playlist(&call, url, mode).await {
+                if let Some(playlist) =
+                    enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await
+                {
                     if !queue_was_empty {
                         rotate_tracks(&call, playlist.len()).await;
                         force_skip_top_track(&call).await;
@@ -111,7 +115,7 @@ pub async fn play(
         },
         PlayMode::All | PlayMode::Reverse | PlayMode::Shuffle => match query_type {
             QueryType::VideoLink | QueryType::PlaylistLink => {
-                enqueue_playlist(&call, url, mode).await;
+                enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await;
             }
             _ => {
                 edit_response(&ctx.http, interaction, PLAY_ALL_FAILED).await?;
@@ -152,7 +156,6 @@ pub async fn play(
         edit_embed_response(&ctx.http, interaction, embed).await?;
     }
 
-    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
     Ok(())
 }
 
@@ -217,13 +220,16 @@ async fn calculate_time_until_play(queue: &[TrackHandle], mode: PlayMode) -> Opt
 }
 
 async fn enqueue_playlist(
+    ctx: &Context,
     call: &Arc<Mutex<Call>>,
+    guild_id: GuildId,
     uri: &str,
     mode: PlayMode,
+    query_type: QueryType,
 ) -> Option<Vec<String>> {
     if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri, mode).await {
         for url in urls.iter() {
-            enqueue_song(call, url.to_string(), QueryType::VideoLink).await;
+            enqueue_song(ctx, call, guild_id, url.to_string(), query_type).await;
         }
         return Some(urls);
     }
@@ -262,14 +268,20 @@ async fn create_queued_embed(
     embed
 }
 
-async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, query_type: QueryType) {
+async fn enqueue_song(
+    ctx: &Context,
+    call: &Arc<Mutex<Call>>,
+    guild_id: GuildId,
+    query: String,
+    query_type: QueryType,
+) {
     let source_return = match query_type {
         QueryType::VideoLink => YouTubeRestartable::ytdl(query, true).await,
         QueryType::Keywords => YouTubeRestartable::ytdl_search(query, true).await,
         QueryType::PlaylistLink => unreachable!(),
     };
 
-    // safeguard against ytdl dying on a private / deleted video and killing the playlist
+    // safeguard against ytdl dying on a private/deleted video and killing the playlist
     let source = match source_return {
         Ok(source) => source,
         Err(_) => return,
@@ -277,4 +289,7 @@ async fn enqueue_song(call: &Arc<Mutex<Call>>, query: String, query_type: QueryT
 
     let mut handler = call.lock().await;
     handler.enqueue_source(source.into());
+    drop(handler);
+
+    update_queue_messages(&ctx.http, &ctx.data, call, guild_id).await;
 }
