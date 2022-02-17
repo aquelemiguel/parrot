@@ -1,4 +1,4 @@
-use crate::{commands::play::Mode, sources::ffmpeg::ffmpeg};
+use crate::{commands::PlayMode, sources::ffmpeg::ffmpeg};
 use serde_json::Value;
 use serenity::async_trait;
 use songbird::input::{
@@ -34,11 +34,11 @@ impl YouTubeRestartable {
         Restartable::new(YouTubeRestarter { uri }, lazy).await
     }
 
-    pub async fn ytdl_playlist(uri: &str, mode: Mode) -> Option<Vec<String>> {
+    pub async fn ytdl_playlist(uri: &str, mode: PlayMode) -> Option<Vec<String>> {
         let mut args = vec![uri, "--flat-playlist", "-j"];
         match mode {
-            Mode::Reverse => args.push("--playlist-reverse"),
-            Mode::Shuffle => args.push("--playlist-random"),
+            PlayMode::Reverse => args.push("--playlist-reverse"),
+            PlayMode::Shuffle => args.push("--playlist-random"),
             _ => {}
         }
 
