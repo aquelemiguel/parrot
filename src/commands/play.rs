@@ -94,7 +94,7 @@ pub async fn play(
                 enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
             }
             QueryType::PlaylistLink => {
-                enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await;
+                enqueue_playlist(ctx, &call, guild_id, url, mode).await;
             }
         },
         Mode::Next => match query_type {
@@ -103,9 +103,7 @@ pub async fn play(
                 rotate_tracks(&call, 1).await;
             }
             QueryType::PlaylistLink => {
-                if let Some(playlist) =
-                    enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await
-                {
+                if let Some(playlist) = enqueue_playlist(ctx, &call, guild_id, url, mode).await {
                     rotate_tracks(&call, playlist.len()).await;
                 }
             }
@@ -120,9 +118,7 @@ pub async fn play(
                 }
             }
             QueryType::PlaylistLink => {
-                if let Some(playlist) =
-                    enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await
-                {
+                if let Some(playlist) = enqueue_playlist(ctx, &call, guild_id, url, mode).await {
                     if !queue_was_empty {
                         rotate_tracks(&call, playlist.len()).await;
                         force_skip_top_track(&call).await;
@@ -132,7 +128,7 @@ pub async fn play(
         },
         Mode::All | Mode::Reverse | Mode::Shuffle => match query_type {
             QueryType::VideoLink | QueryType::PlaylistLink => {
-                enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await;
+                enqueue_playlist(ctx, &call, guild_id, url, mode).await;
             }
             _ => {
                 edit_response(&ctx.http, interaction, PLAY_ALL_FAILED).await?;
@@ -242,11 +238,10 @@ async fn enqueue_playlist(
     guild_id: GuildId,
     uri: &str,
     mode: Mode,
-    query_type: QueryType,
 ) -> Option<Vec<String>> {
     if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri, mode).await {
         for url in urls.iter() {
-            enqueue_song(ctx, call, guild_id, url.to_string(), query_type).await;
+            enqueue_song(ctx, call, guild_id, url.to_string(), QueryType::VideoLink).await;
         }
         return Some(urls);
     }
