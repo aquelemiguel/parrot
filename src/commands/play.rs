@@ -1,5 +1,5 @@
 use crate::{
-    commands::{summon::summon, PlayMode, QueryType},
+    commands::summon::summon,
     handlers::track_end::update_queue_messages,
     sources::youtube::YouTubeRestartable,
     strings::{
@@ -20,6 +20,23 @@ use serenity::{
 use songbird::{tracks::TrackHandle, Call};
 use std::{sync::Arc, time::Duration};
 
+#[derive(Clone, Copy)]
+pub enum Mode {
+    End,
+    Next,
+    All,
+    Reverse,
+    Shuffle,
+    Jump,
+}
+
+#[derive(Clone, Copy)]
+pub enum QueryType {
+    Keywords,
+    VideoLink,
+    PlaylistLink,
+}
+
 pub async fn play(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
@@ -38,13 +55,13 @@ pub async fn play(
         .unwrap();
 
     let mode = match subcommand_args.name.as_str() {
-        "next" => PlayMode::Next,
-        "all" => PlayMode::All,
-        "reverse" => PlayMode::Reverse,
-        "shuffle" => PlayMode::Shuffle,
-        "end" => PlayMode::End,
-        "jump" => PlayMode::Jump,
-        _ => PlayMode::End,
+        "next" => Mode::Next,
+        "all" => Mode::All,
+        "reverse" => Mode::Reverse,
+        "shuffle" => Mode::Shuffle,
+        "end" => Mode::End,
+        "jump" => Mode::Jump,
+        _ => Mode::End,
     };
 
     let guild_id = interaction.guild_id.unwrap();
@@ -72,7 +89,7 @@ pub async fn play(
     drop(handler);
 
     match mode {
-        PlayMode::End => match query_type {
+        Mode::End => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
                 enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
             }
@@ -80,7 +97,7 @@ pub async fn play(
                 enqueue_playlist(ctx, &call, guild_id, url, mode).await;
             }
         },
-        PlayMode::Next => match query_type {
+        Mode::Next => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
                 enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
                 rotate_tracks(&call, 1).await;
@@ -91,7 +108,7 @@ pub async fn play(
                 }
             }
         },
-        PlayMode::Jump => match query_type {
+        Mode::Jump => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
                 enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
 
@@ -109,7 +126,7 @@ pub async fn play(
                 }
             }
         },
-        PlayMode::All | PlayMode::Reverse | PlayMode::Shuffle => match query_type {
+        Mode::All | Mode::Reverse | Mode::Shuffle => match query_type {
             QueryType::VideoLink | QueryType::PlaylistLink => {
                 enqueue_playlist(ctx, &call, guild_id, url, mode).await;
             }
@@ -128,13 +145,13 @@ pub async fn play(
         let estimated_time = calculate_time_until_play(&queue, mode).await.unwrap();
 
         match (query_type, mode) {
-            (QueryType::VideoLink | QueryType::Keywords, PlayMode::Next) => {
+            (QueryType::VideoLink | QueryType::Keywords, Mode::Next) => {
                 let track = queue.get(1).unwrap();
                 let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
 
                 edit_embed_response(&ctx.http, interaction, embed).await?;
             }
-            (QueryType::VideoLink | QueryType::Keywords, PlayMode::End) => {
+            (QueryType::VideoLink | QueryType::Keywords, Mode::End) => {
                 let track = queue.last().unwrap();
                 let embed = create_queued_embed(PLAY_QUEUE, track, estimated_time).await;
 
@@ -181,7 +198,7 @@ async fn force_skip_top_track(call: &Arc<Mutex<Call>>) {
     handler.queue().resume().ok();
 }
 
-async fn calculate_time_until_play(queue: &[TrackHandle], mode: PlayMode) -> Option<Duration> {
+async fn calculate_time_until_play(queue: &[TrackHandle], mode: Mode) -> Option<Duration> {
     if queue.is_empty() {
         return None;
     }
@@ -195,7 +212,7 @@ async fn calculate_time_until_play(queue: &[TrackHandle], mode: PlayMode) -> Opt
     };
 
     match mode {
-        PlayMode::Next => Some(top_track_duration - top_track_elapsed),
+        Mode::Next => Some(top_track_duration - top_track_elapsed),
         _ => {
             let center = &queue[1..queue.len() - 1];
             let livestreams =
@@ -220,7 +237,7 @@ async fn enqueue_playlist(
     call: &Arc<Mutex<Call>>,
     guild_id: GuildId,
     uri: &str,
-    mode: PlayMode,
+    mode: Mode,
 ) -> Option<Vec<String>> {
     if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri, mode).await {
         for url in urls.iter() {
