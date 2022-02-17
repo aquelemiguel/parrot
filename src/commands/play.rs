@@ -276,9 +276,10 @@ async fn enqueue_song(
     query_type: QueryType,
 ) {
     let source_return = match query_type {
-        QueryType::VideoLink => YouTubeRestartable::ytdl(query, true).await,
+        QueryType::VideoLink | QueryType::PlaylistLink => {
+            YouTubeRestartable::ytdl(query, true).await
+        }
         QueryType::Keywords => YouTubeRestartable::ytdl_search(query, true).await,
-        QueryType::PlaylistLink => unreachable!(),
     };
 
     // safeguard against ytdl dying on a private/deleted video and killing the playlist
