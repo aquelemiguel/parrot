@@ -15,20 +15,3 @@ pub mod skip;
 pub mod stop;
 pub mod summon;
 pub mod version;
-
-#[derive(Clone, Copy)]
-pub enum PlayMode {
-    End,
-    Next,
-    All,
-    Reverse,
-    Shuffle,
-    Jump,
-}
-
-#[derive(Clone, Copy)]
-pub enum QueryType {
-    Keywords,
-    VideoLink,
-    PlaylistLink,
-}

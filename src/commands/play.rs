@@ -1,5 +1,5 @@
 use crate::{
-    commands::{summon::summon, PlayMode, QueryType},
+    commands::summon::summon,
     handlers::track_end::update_queue_messages,
     sources::youtube::YouTubeRestartable,
     strings::{
@@ -20,6 +20,23 @@ use serenity::{
 use songbird::{tracks::TrackHandle, Call};
 use std::{sync::Arc, time::Duration};
 
+#[derive(Clone, Copy)]
+pub enum Mode {
+    End,
+    Next,
+    All,
+    Reverse,
+    Shuffle,
+    Jump,
+}
+
+#[derive(Clone, Copy)]
+pub enum QueryType {
+    Keywords,
+    VideoLink,
+    PlaylistLink,
+}
+
 pub async fn play(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
@@ -38,13 +55,12 @@ pub async fn play(
         .unwrap();
 
     let mode = match subcommand_args.name.as_str() {
-        "next" => PlayMode::Next,
-        "all" => PlayMode::All,
-        "reverse" => PlayMode::Reverse,
-        "shuffle" => PlayMode::Shuffle,
-        "end" => PlayMode::End,
-        "jump" => PlayMode::Jump,
-        _ => PlayMode::End,
+        "next" => Mode::Next,
+        "all" => Mode::All,
+        "reverse" => Mode::Reverse,
+        "shuffle" => Mode::Shuffle,
+        "jump" => Mode::Jump,
+        _ => Mode::End,
     };
 
     let guild_id = interaction.guild_id.unwrap();
