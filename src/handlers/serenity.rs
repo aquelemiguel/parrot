@@ -155,6 +155,18 @@ impl SerenityHandler {
                         })
                         .create_option(|option| {
                             option
+                                .name("jump")
+                                .description("Instantly plays a track, skipping the current one")
+                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .create_sub_option(|option| {
+                                    option.name("query")
+                                    .description("The media to play")
+                                    .kind(ApplicationCommandOptionType::String)
+                                    .required(true)
+                                })
+                        })
+                        .create_option(|option| {
+                            option
                                 .name("all")
                                 .description("Add all tracks if the URL refers to a video and a playlist")
                                 .kind(ApplicationCommandOptionType::SubCommand)

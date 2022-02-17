@@ -16,17 +16,19 @@ pub mod stop;
 pub mod summon;
 pub mod version;
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy)]
 pub enum PlayMode {
     End,
     Next,
     All,
     Reverse,
     Shuffle,
+    Jump,
 }
 
-pub enum EnqueueType {
-    Link,
-    Search,
-    Playlist,
+#[derive(Clone, Copy)]
+pub enum QueryType {
+    Keywords,
+    VideoLink,
+    PlaylistLink,
 }
