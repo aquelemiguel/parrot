@@ -128,18 +128,18 @@ impl SerenityHandler {
                         .description("Add a track to the queue")
                         .default_permission(true)
                         .create_option(|option| {
-                            option
-                                .name("end")
-                                .description("Add a track to the end of the queue")
-                                .kind(ApplicationCommandOptionType::SubCommand)
-                                .create_sub_option(|option| {
-                                    option
-                                        .name("query")
-                                        .description("The media to play")
-                                        .kind(ApplicationCommandOptionType::String)
-                                        .required(true)
-                                })
+                                option
+                                    .name("query")
+                                    .description("The media to play")
+                                    .kind(ApplicationCommandOptionType::String)
+                                    .required(true)
                         })
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("splay")
+                        .description("Add a track to the queue in a special way")
+                        .default_permission(false)
                         .create_option(|option| {
                             option
                                 .name("next")
@@ -338,7 +338,8 @@ impl SerenityHandler {
                     _ => Ok(()),
                 }
             }
-            "play" | "summon" => match check_voice_connections(&guild, &user_id, &bot_id) {
+            "play" | "splay" | "summon" => match check_voice_connections(&guild, &user_id, &bot_id)
+            {
                 Connection::User(_) => Ok(()),
                 Connection::Bot(_) if command_name == "summon" => {
                     Err(FAIL_AUTHOR_NOT_FOUND.to_owned())
@@ -382,6 +383,7 @@ impl SerenityHandler {
             "seek" => seek(ctx, command).await,
             "shuffle" => shuffle(ctx, command).await,
             "skip" => skip(ctx, command).await,
+            "splay" => play(ctx, command).await,
             "stop" => stop(ctx, command).await,
             "summon" => summon(ctx, command, true).await,
             "version" => version(ctx, command).await,
