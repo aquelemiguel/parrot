@@ -53,7 +53,12 @@ impl YouTubeRestartable {
 
             let lines = reader.lines().flatten().map(|line| {
                 let entry: Value = serde_json::from_str(&line).unwrap();
-                entry.get("url").unwrap().as_str().unwrap().to_string()
+                entry
+                    .get("webpage_url")
+                    .unwrap()
+                    .as_str()
+                    .unwrap()
+                    .to_string()
             });
 
             Some(lines.collect())
