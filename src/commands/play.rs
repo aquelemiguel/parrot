@@ -74,20 +74,20 @@ pub async fn play(
     match mode {
         PlayMode::End => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
-                enqueue_song(&ctx, &call, guild_id, url.to_string(), query_type).await;
+                enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
             }
             QueryType::PlaylistLink => {
-                enqueue_playlist(&ctx, &call, guild_id, url, mode, query_type).await;
+                enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await;
             }
         },
         PlayMode::Next => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
-                enqueue_song(&ctx, &call, guild_id, url.to_string(), query_type).await;
+                enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
                 rotate_tracks(&call, 1).await;
             }
             QueryType::PlaylistLink => {
                 if let Some(playlist) =
-                    enqueue_playlist(&ctx, &call, guild_id, url, mode, query_type).await
+                    enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await
                 {
                     rotate_tracks(&call, playlist.len()).await;
                 }
@@ -95,7 +95,7 @@ pub async fn play(
         },
         PlayMode::Jump => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
-                enqueue_song(&ctx, &call, guild_id, url.to_string(), query_type).await;
+                enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
 
                 if !queue_was_empty {
                     rotate_tracks(&call, 1).await;
@@ -104,7 +104,7 @@ pub async fn play(
             }
             QueryType::PlaylistLink => {
                 if let Some(playlist) =
-                    enqueue_playlist(&ctx, &call, guild_id, url, mode, query_type).await
+                    enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await
                 {
                     if !queue_was_empty {
                         rotate_tracks(&call, playlist.len()).await;
@@ -115,7 +115,7 @@ pub async fn play(
         },
         PlayMode::All | PlayMode::Reverse | PlayMode::Shuffle => match query_type {
             QueryType::VideoLink | QueryType::PlaylistLink => {
-                enqueue_playlist(&ctx, &call, guild_id, url, mode, query_type).await;
+                enqueue_playlist(ctx, &call, guild_id, url, mode, query_type).await;
             }
             _ => {
                 edit_response(&ctx.http, interaction, PLAY_ALL_FAILED).await?;
