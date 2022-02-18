@@ -103,7 +103,7 @@ async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
         "-j",            // print JSON information for video for metadata
         "--no-simulate", // ensure video is downloaded regardless of printing
         "-f",
-        "bestaudio", // select best quality audio-only
+        "webm[abr>0]/bestaudio/best", // select best quality audio-only
         "-R",
         "infinite",        // infinite number of download retries
         "--no-playlist",   // only download the video if URL also has playlist info
