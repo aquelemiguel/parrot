@@ -137,7 +137,7 @@ impl SerenityHandler {
                 })
                 .create_application_command(|command| {
                     command
-                        .name("splay")
+                        .name("superplay")
                         .description("Add a track to the queue in a special way")
                         .default_permission(false)
                         .create_option(|option| {
@@ -338,23 +338,24 @@ impl SerenityHandler {
                     _ => Ok(()),
                 }
             }
-            "play" | "splay" | "summon" => match check_voice_connections(&guild, &user_id, &bot_id)
-            {
-                Connection::User(_) => Ok(()),
-                Connection::Bot(_) if command_name == "summon" => {
-                    Err(FAIL_AUTHOR_NOT_FOUND.to_owned())
+            "play" | "superplay" | "summon" => {
+                match check_voice_connections(&guild, &user_id, &bot_id) {
+                    Connection::User(_) => Ok(()),
+                    Connection::Bot(_) if command_name == "summon" => {
+                        Err(FAIL_AUTHOR_NOT_FOUND.to_owned())
+                    }
+                    Connection::Bot(_) if command_name != "summon" => {
+                        Err(FAIL_WRONG_CHANNEL.to_owned())
+                    }
+                    Connection::Separate(bot_channel_id, _) => Err(format!(
+                        "{} {}!",
+                        FAIL_ANOTHER_CHANNEL,
+                        bot_channel_id.mention()
+                    )),
+                    Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND.to_owned()),
+                    _ => Ok(()),
                 }
-                Connection::Bot(_) if command_name != "summon" => {
-                    Err(FAIL_WRONG_CHANNEL.to_owned())
-                }
-                Connection::Separate(bot_channel_id, _) => Err(format!(
-                    "{} {}!",
-                    FAIL_ANOTHER_CHANNEL,
-                    bot_channel_id.mention()
-                )),
-                Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND.to_owned()),
-                _ => Ok(()),
-            },
+            }
             "np" | "queue" => match check_voice_connections(&guild, &user_id, &bot_id) {
                 Connection::User(_) | Connection::Neither => {
                     Err(FAIL_NO_VOICE_CONNECTION.to_owned())
@@ -383,7 +384,7 @@ impl SerenityHandler {
             "seek" => seek(ctx, command).await,
             "shuffle" => shuffle(ctx, command).await,
             "skip" => skip(ctx, command).await,
-            "splay" => play(ctx, command).await,
+            "superplay" => play(ctx, command).await,
             "stop" => stop(ctx, command).await,
             "summon" => summon(ctx, command, true).await,
             "version" => version(ctx, command).await,
