@@ -23,6 +23,15 @@ pub async fn skip(
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
 
+    let args = interaction.data.options.clone();
+
+    let to_skip = match args.first() {
+        Some(arg) => arg.value.as_ref().unwrap().as_u64().unwrap(),
+        None => 1,
+    };
+
+    // check user has permission to forceskip
+
     let handler = call.lock().await;
     let queue = handler.queue();
 
