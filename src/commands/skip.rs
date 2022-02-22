@@ -1,12 +1,14 @@
 use crate::{
-    strings::{NOTHING_IS_PLAYING, SKIPPED},
+    strings::{NOTHING_IS_PLAYING, SKIPPED_ALL, SKIPPED_TO},
     utils::create_response,
 };
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,
 };
+use songbird::Call;
 use std::cmp::min;
+use tokio::sync::MutexGuard;
 
 pub async fn skip(
     ctx: &Context,
@@ -26,16 +28,39 @@ pub async fn skip(
     let queue = handler.queue();
 
     if queue.is_empty() {
-        return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await;
+        create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await
     } else {
         let tracks_to_skip = min(to_skip, queue.len());
         for _ in 1..tracks_to_skip {
             queue.dequeue(1);
         }
-        if queue.skip().is_ok() {
-            return create_response(&ctx.http, interaction, SKIPPED).await;
+        force_skip_top_track(&handler).await;
+
+        match handler.queue().current() {
+            Some(track) => {
+                create_response(
+                    &ctx.http,
+                    interaction,
+                    &format!(
+                        "{} [**{}**]({})!",
+                        SKIPPED_TO,
+                        track.metadata().title.as_ref().unwrap(),
+                        track.metadata().source_url.as_ref().unwrap()
+                    ),
+                )
+                .await
+            }
+            None => create_response(&ctx.http, interaction, SKIPPED_ALL).await,
         }
     }
+}
 
-    Ok(())
+pub async fn force_skip_top_track(handler: &MutexGuard<'_, Call>) {
+    // this is an odd sequence of commands to ensure the queue is properly updated
+    // apparently, skipping/stopping a track takes a little to remove it from the queue
+    // also, manually removing tracks doesn't trigger the next track to play
+    // so first, stop the top song, manually remove it and then resume playback
+    handler.queue().current().unwrap().stop().ok();
+    handler.queue().dequeue(0);
+    handler.queue().resume().ok();
 }

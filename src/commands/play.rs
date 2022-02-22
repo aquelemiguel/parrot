@@ -1,5 +1,5 @@
 use crate::{
-    commands::summon::summon,
+    commands::{skip::force_skip_top_track, summon::summon},
     handlers::track_end::update_queue_messages,
     sources::youtube::YouTubeRestartable,
     strings::{
@@ -116,14 +116,14 @@ pub async fn play(
 
                 if !queue_was_empty {
                     rotate_tracks(&call, 1).await;
-                    force_skip_top_track(&call).await;
+                    force_skip_top_track(&call.lock().await).await;
                 }
             }
             QueryType::PlaylistLink => {
                 if let Some(playlist) = enqueue_playlist(ctx, &call, guild_id, url, mode).await {
                     if !queue_was_empty {
                         rotate_tracks(&call, playlist.len()).await;
-                        force_skip_top_track(&call).await;
+                        force_skip_top_track(&call.lock().await).await;
                     }
                 }
             }
@@ -186,18 +186,6 @@ async fn rotate_tracks(call: &Arc<Mutex<Call>>, n: usize) {
         not_playing.rotate_right(n);
         queue.append(&mut not_playing);
     });
-}
-
-async fn force_skip_top_track(call: &Arc<Mutex<Call>>) {
-    let handler = call.lock().await;
-
-    // this is an odd sequence of commands to ensure the queue is properly updated
-    // apparently, skipping/stopping a track takes a little to remove it from the queue
-    // also, manually removing tracks doesn't trigger the next track to play
-    // so first, stop the top song, manually remove it and then resume playback
-    handler.queue().current().unwrap().stop().ok();
-    handler.queue().dequeue(0);
-    handler.queue().resume().ok();
 }
 
 async fn calculate_time_until_play(queue: &[TrackHandle], mode: Mode) -> Option<Duration> {
