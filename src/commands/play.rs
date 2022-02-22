@@ -41,27 +41,29 @@ pub async fn play(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
 ) -> Result<(), SerenityError> {
-    let subcommand_args = interaction.data.options.first().unwrap();
+    let args = interaction.data.options.clone();
+    let first_arg = args.first().unwrap();
 
-    let args = subcommand_args.options.clone();
-
-    let url = args
-        .first()
-        .unwrap()
-        .value
-        .as_ref()
-        .unwrap()
-        .as_str()
-        .unwrap();
-
-    let mode = match subcommand_args.name.as_str() {
+    let mode = match first_arg.name.as_str() {
         "next" => Mode::Next,
         "all" => Mode::All,
         "reverse" => Mode::Reverse,
         "shuffle" => Mode::Shuffle,
-        "end" => Mode::End,
         "jump" => Mode::Jump,
         _ => Mode::End,
+    };
+
+    let url = match mode {
+        Mode::End => first_arg.value.as_ref().unwrap().as_str().unwrap(),
+        _ => first_arg
+            .options
+            .first()
+            .unwrap()
+            .value
+            .as_ref()
+            .unwrap()
+            .as_str()
+            .unwrap(),
     };
 
     let guild_id = interaction.guild_id.unwrap();
