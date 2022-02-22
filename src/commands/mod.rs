@@ -1,6 +1,5 @@
 pub mod autopause;
 pub mod clear;
-pub mod forceskip;
 pub mod leave;
 pub mod now_playing;
 pub mod pause;
@@ -15,3 +14,4 @@ pub mod skip;
 pub mod stop;
 pub mod summon;
 pub mod version;
+pub mod voteskip;
