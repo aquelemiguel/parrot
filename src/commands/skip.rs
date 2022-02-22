@@ -16,7 +16,7 @@ pub async fn skip(
     let call = manager.get(guild_id).unwrap();
 
     let args = interaction.data.options.clone();
-    let tracks_to_skip = match args.first() {
+    let to_skip = match args.first() {
         Some(arg) => arg.value.as_ref().unwrap().as_u64().unwrap() as usize,
         None => 1,
     };
@@ -27,7 +27,7 @@ pub async fn skip(
     if queue.is_empty() {
         return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await;
     } else {
-        for _ in 1..tracks_to_skip {
+        for _ in 1..to_skip {
             queue.dequeue(1);
         }
         if queue.skip().is_ok() {
