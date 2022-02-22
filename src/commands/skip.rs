@@ -6,6 +6,7 @@ use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
     prelude::SerenityError,
 };
+use std::cmp::min;
 
 pub async fn skip(
     ctx: &Context,
@@ -27,7 +28,8 @@ pub async fn skip(
     if queue.is_empty() {
         return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await;
     } else {
-        for _ in 1..to_skip {
+        let tracks_to_skip = min(to_skip, queue.len());
+        for _ in 1..tracks_to_skip {
             queue.dequeue(1);
         }
         if queue.skip().is_ok() {
