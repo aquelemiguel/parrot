@@ -1,7 +1,8 @@
 use crate::{
     commands::{
-        autopause::*, clear::*, leave::*, now_playing::*, pause::*, play::*, queue::*, remove::*,
-        repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
+        autopause::*, clear::*, forceskip::*, leave::*, now_playing::*, pause::*, play::*,
+        queue::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*,
+        summon::*, version::*,
     },
     strings::{
         FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
@@ -98,6 +99,18 @@ impl SerenityHandler {
                 .create_application_command(|command| {
                     command.name("clear").description("Clears the queue")
                     .default_permission(false)
+                })
+                .create_application_command(|command| {
+                    command.name("forceskip").description("Forcibly skips the current track")
+                    .default_permission(false)
+                    .create_option(|option| {
+                        option
+                            .name("skip-to")
+                            .description("Track to skip to")
+                            .kind(ApplicationCommandOptionType::Integer)
+                            .required(false)
+                            .min_int_value(1)
+                    })
                 })
                 .create_application_command(|command| {
                     command
@@ -249,6 +262,14 @@ impl SerenityHandler {
                 .create_application_command(|command| {
                     command.name("skip").description("Skips the current track")
                     .default_permission(true)
+                    .create_option(|option| {
+                        option
+                            .name("skip-to")
+                            .description("Track to skip to")
+                            .kind(ApplicationCommandOptionType::Integer)
+                            .required(false)
+                            .min_int_value(1)
+                    })
                 })
                 .create_application_command(|command| {
                     command
@@ -318,8 +339,8 @@ impl SerenityHandler {
         let bot_id = ctx.cache.current_user_id().await;
 
         let message = match command_name {
-            "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume" | "seek"
-            | "shuffle" | "skip" | "stop" => {
+            "autopause" | "clear" | "forceskip" | "leave" | "pause" | "remove" | "repeat"
+            | "resume" | "seek" | "shuffle" | "skip" | "stop" => {
                 match check_voice_connections(&guild, &user_id, &bot_id) {
                     Connection::User(_) | Connection::Neither => {
                         Err(FAIL_NO_VOICE_CONNECTION.to_owned())
@@ -365,6 +386,7 @@ impl SerenityHandler {
         match command_name {
             "autopause" => autopause(ctx, command).await,
             "clear" => clear(ctx, command).await,
+            "forceskip" => forceskip(ctx, command).await,
             "leave" => leave(ctx, command).await,
             "np" => now_playing(ctx, command).await,
             "pause" => pause(ctx, command).await,
