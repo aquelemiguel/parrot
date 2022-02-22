@@ -252,7 +252,7 @@ impl SerenityHandler {
                     .default_permission(false)
                     .create_option(|option| {
                         option
-                            .name("skip-to")
+                            .name("to")
                             .description("Track to skip to")
                             .kind(ApplicationCommandOptionType::Integer)
                             .required(false)
