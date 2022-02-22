@@ -280,14 +280,6 @@ impl SerenityHandler {
                 .create_application_command(|command| {
                     command.name("voteskip").description("Starts a vote to skip the current track")
                     .default_permission(true)
-                    .create_option(|option| {
-                        option
-                            .name("skip-to")
-                            .description("Track to skip to")
-                            .kind(ApplicationCommandOptionType::Integer)
-                            .required(false)
-                            .min_int_value(1)
-                    })
                 })
         })
         .await

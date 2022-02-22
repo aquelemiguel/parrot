@@ -23,12 +23,6 @@ pub async fn voteskip(
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
 
-    let args = interaction.data.options.clone();
-    let tracks_to_skip = match args.first() {
-        Some(arg) => arg.value.as_ref().unwrap().as_u64().unwrap() as usize,
-        None => 1,
-    };
-
     let handler = call.lock().await;
     let queue = handler.queue();
 
@@ -49,9 +43,6 @@ pub async fn voteskip(
     let skip_threshold = channel_guild_users.count() / 2;
 
     if cache.current_skip_votes.len() >= skip_threshold {
-        for _ in 1..tracks_to_skip {
-            queue.dequeue(1);
-        }
         if queue.skip().is_ok() {
             create_response(&ctx.http, interaction, SKIPPED).await?
         }
