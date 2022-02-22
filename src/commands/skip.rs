@@ -52,7 +52,6 @@ pub async fn skip(
         for _ in 1..tracks_to_skip {
             queue.dequeue(1);
         }
-
         if queue.skip().is_ok() {
             create_response(&ctx.http, interaction, SKIPPED).await?
         }
