@@ -1,6 +1,7 @@
 use crate::{
+    commands::skip::{create_skip_response, force_skip_top_track},
     guild::cache::GuildCacheMap,
-    strings::{NOTHING_IS_PLAYING, SKIPPED, SKIP_VOTE_EMOJI, SKIP_VOTE_MISSING, SKIP_VOTE_USER},
+    strings::{NOTHING_IS_PLAYING, SKIP_VOTE_EMOJI, SKIP_VOTE_MISSING, SKIP_VOTE_USER},
     utils::{create_response, get_voice_channel_for_user},
 };
 use serenity::{
@@ -43,9 +44,8 @@ pub async fn voteskip(
     let skip_threshold = channel_guild_users.count() / 2;
 
     if cache.current_skip_votes.len() >= skip_threshold {
-        if queue.skip().is_ok() {
-            create_response(&ctx.http, interaction, SKIPPED).await?
-        }
+        force_skip_top_track(&handler).await;
+        create_skip_response(&ctx, interaction, &handler).await
     } else {
         create_response(
             &ctx.http,
@@ -59,10 +59,8 @@ pub async fn voteskip(
                 SKIP_VOTE_MISSING
             ),
         )
-        .await?
-    };
-
-    Ok(())
+        .await
+    }
 }
 
 pub async fn forget_skip_votes(data: &Arc<RwLock<TypeMap>>, guild_id: GuildId) -> Result<(), ()> {
