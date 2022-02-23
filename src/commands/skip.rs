@@ -31,9 +31,11 @@ pub async fn skip(
         create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await
     } else {
         let tracks_to_skip = min(to_skip, queue.len());
-        for _ in 1..tracks_to_skip {
-            queue.dequeue(1);
-        }
+
+        handler.queue().modify_queue(|v| {
+            v.drain(1..tracks_to_skip);
+        });
+
         force_skip_top_track(&handler).await;
 
         match handler.queue().current() {
