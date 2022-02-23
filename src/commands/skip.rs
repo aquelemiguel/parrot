@@ -37,7 +37,7 @@ pub async fn skip(
         });
 
         force_skip_top_track(&handler).await;
-        create_skip_response(&ctx, interaction, &handler, tracks_to_skip).await
+        create_skip_response(ctx, interaction, &handler, tracks_to_skip).await
     }
 }
 

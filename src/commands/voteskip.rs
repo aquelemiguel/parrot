@@ -45,7 +45,7 @@ pub async fn voteskip(
 
     if cache.current_skip_votes.len() >= skip_threshold {
         force_skip_top_track(&handler).await;
-        create_skip_response(&ctx, interaction, &handler, 1).await
+        create_skip_response(ctx, interaction, &handler, 1).await
     } else {
         create_response(
             &ctx.http,
