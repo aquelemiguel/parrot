@@ -1,5 +1,5 @@
 use crate::{
-    strings::{NOTHING_IS_PLAYING, SKIPPED_ALL, SKIPPED_TO},
+    strings::{NOTHING_IS_PLAYING, SKIPPED, SKIPPED_ALL, SKIPPED_TO},
     utils::create_response,
 };
 use serenity::{
@@ -37,7 +37,7 @@ pub async fn skip(
         });
 
         force_skip_top_track(&handler).await;
-        create_skip_response(&ctx, interaction, &handler).await
+        create_skip_response(&ctx, interaction, &handler, tracks_to_skip).await
     }
 }
 
@@ -45,6 +45,7 @@ pub async fn create_skip_response(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
     handler: &MutexGuard<'_, Call>,
+    tracks_to_skip: usize,
 ) -> Result<(), SerenityError> {
     match handler.queue().current() {
         Some(track) => {
@@ -60,7 +61,13 @@ pub async fn create_skip_response(
             )
             .await
         }
-        None => create_response(&ctx.http, interaction, SKIPPED_ALL).await,
+        None => {
+            if tracks_to_skip > 1 {
+                create_response(&ctx.http, interaction, SKIPPED_ALL).await
+            } else {
+                create_response(&ctx.http, interaction, SKIPPED).await
+            }
+        }
     }
 }
 
