@@ -41,6 +41,7 @@ pub async fn remove(
 
     let handler = call.lock().await;
     let queue = handler.queue().current_queue();
+    let remove_until = min(remove_until, queue.len() - 1);
 
     if queue.len() <= 1 {
         create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await
@@ -52,7 +53,7 @@ pub async fn remove(
         let track = queue.get(remove_index).unwrap();
 
         handler.queue().modify_queue(|v| {
-            v.drain(remove_index..=min(remove_until, queue.len() - 1));
+            v.drain(remove_index..=remove_until);
         });
         drop(handler);
 
