@@ -1,76 +1,82 @@
 use crate::{
-    guild::cache::GuildCacheMap,
-    strings::{NOTHING_IS_PLAYING, SKIPPED, SKIP_VOTE_EMOJI, SKIP_VOTE_MISSING, SKIP_VOTE_USER},
-    utils::{create_response, get_voice_channel_for_user},
+    strings::{NOTHING_IS_PLAYING, SKIPPED, SKIPPED_ALL, SKIPPED_TO},
+    utils::create_response,
 };
 use serenity::{
-    client::Context,
-    model::{id::GuildId, interactions::application_command::ApplicationCommandInteraction},
-    prelude::{Mentionable, RwLock, SerenityError, TypeMap},
+    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
+    prelude::SerenityError,
 };
-use std::{collections::HashSet, sync::Arc};
+use songbird::Call;
+use std::cmp::min;
+use tokio::sync::MutexGuard;
 
 pub async fn skip(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
 ) -> Result<(), SerenityError> {
     let guild_id = interaction.guild_id.unwrap();
-    let bot_channel_id = get_voice_channel_for_user(
-        &ctx.cache.guild(guild_id).await.unwrap(),
-        &ctx.cache.current_user_id().await,
-    )
-    .unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
+
+    let args = interaction.data.options.clone();
+    let to_skip = match args.first() {
+        Some(arg) => arg.value.as_ref().unwrap().as_u64().unwrap() as usize,
+        None => 1,
+    };
 
     let handler = call.lock().await;
     let queue = handler.queue();
 
     if queue.is_empty() {
-        return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await;
-    }
-
-    let mut data = ctx.data.write().await;
-    let cache_map = data.get_mut::<GuildCacheMap>().unwrap();
-
-    let cache = cache_map.entry(guild_id).or_default();
-    cache.current_skip_votes.insert(interaction.user.id);
-
-    let guild_users = ctx.cache.guild(guild_id).await.unwrap().voice_states;
-    let channel_guild_users = guild_users
-        .into_values()
-        .filter(|v| v.channel_id.unwrap() == bot_channel_id);
-    let skip_threshold = channel_guild_users.count() / 2;
-
-    if cache.current_skip_votes.len() >= skip_threshold {
-        if queue.skip().is_ok() {
-            create_response(&ctx.http, interaction, SKIPPED).await?
-        }
+        create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await
     } else {
-        create_response(
-            &ctx.http,
-            interaction,
-            &format!(
-                "{}{} {} {} {}",
-                SKIP_VOTE_EMOJI,
-                interaction.user.id.mention(),
-                SKIP_VOTE_USER,
-                skip_threshold - cache.current_skip_votes.len(),
-                SKIP_VOTE_MISSING
-            ),
-        )
-        .await?
-    };
+        let tracks_to_skip = min(to_skip, queue.len());
 
-    Ok(())
+        handler.queue().modify_queue(|v| {
+            v.drain(1..tracks_to_skip);
+        });
+
+        force_skip_top_track(&handler).await;
+        create_skip_response(ctx, interaction, &handler, tracks_to_skip).await
+    }
 }
 
-pub async fn forget_skip_votes(data: &Arc<RwLock<TypeMap>>, guild_id: GuildId) -> Result<(), ()> {
-    let mut data = data.write().await;
+pub async fn create_skip_response(
+    ctx: &Context,
+    interaction: &mut ApplicationCommandInteraction,
+    handler: &MutexGuard<'_, Call>,
+    tracks_to_skip: usize,
+) -> Result<(), SerenityError> {
+    match handler.queue().current() {
+        Some(track) => {
+            create_response(
+                &ctx.http,
+                interaction,
+                &format!(
+                    "{} [**{}**]({})!",
+                    SKIPPED_TO,
+                    track.metadata().title.as_ref().unwrap(),
+                    track.metadata().source_url.as_ref().unwrap()
+                ),
+            )
+            .await
+        }
+        None => {
+            if tracks_to_skip > 1 {
+                create_response(&ctx.http, interaction, SKIPPED_ALL).await
+            } else {
+                create_response(&ctx.http, interaction, SKIPPED).await
+            }
+        }
+    }
+}
 
-    let cache_map = data.get_mut::<GuildCacheMap>().ok_or(())?;
-    let cache = cache_map.get_mut(&guild_id).ok_or(())?;
-    cache.current_skip_votes = HashSet::new();
-
-    Ok(())
+pub async fn force_skip_top_track(handler: &MutexGuard<'_, Call>) {
+    // this is an odd sequence of commands to ensure the queue is properly updated
+    // apparently, skipping/stopping a track takes a little to remove it from the queue
+    // also, manually removing tracks doesn't trigger the next track to play
+    // so first, stop the top song, manually remove it and then resume playback
+    handler.queue().current().unwrap().stop().ok();
+    handler.queue().dequeue(0);
+    handler.queue().resume().ok();
 }

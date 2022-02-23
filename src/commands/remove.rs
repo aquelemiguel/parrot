@@ -39,9 +39,7 @@ pub async fn remove(
         create_response(&ctx.http, interaction, FAIL_NO_SONG_ON_INDEX).await
     } else {
         let track = queue.get(remove_index).unwrap();
-        handler.queue().modify_queue(|v| {
-            v.remove(remove_index);
-        });
+        handler.queue().dequeue(remove_index);
 
         drop(handler);
 

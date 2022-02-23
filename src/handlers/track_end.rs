@@ -10,7 +10,7 @@ use std::sync::Arc;
 use crate::{
     commands::{
         queue::{build_nav_btns, calculate_num_pages, create_queue_embed, forget_queue_message},
-        skip::forget_skip_votes,
+        voteskip::forget_skip_votes,
     },
     guild::{cache::GuildCacheMap, settings::GuildSettingsMap},
 };
