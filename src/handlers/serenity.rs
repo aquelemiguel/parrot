@@ -217,6 +217,14 @@ impl SerenityHandler {
                                 .required(true)
                                 .min_int_value(1)
                         })
+                        .create_option(|option| {
+                            option
+                                .name("until")
+                                .description("Upper range track position to remove a range of tracks")
+                                .kind(ApplicationCommandOptionType::Integer)
+                                .required(false)
+                                .min_int_value(1)
+                        })
                 })
                 .create_application_command(|command| {
                     command
