@@ -1,6 +1,9 @@
 use crate::{
     handlers::track_end::update_queue_messages,
-    strings::{FAIL_NO_SONG_ON_INDEX, QUEUE_IS_EMPTY, REMOVED_QUEUE, REMOVED_QUEUE_MULTIPLE},
+    strings::{
+        FAIL_NO_SONG_ON_INDEX, FAIL_REMOVE_RANGE, QUEUE_IS_EMPTY, REMOVED_QUEUE,
+        REMOVED_QUEUE_MULTIPLE,
+    },
     utils::create_embed_response,
     utils::create_response,
 };
@@ -10,6 +13,7 @@ use serenity::{
     prelude::SerenityError,
 };
 use songbird::tracks::TrackHandle;
+use std::cmp::min;
 
 pub async fn remove(
     ctx: &Context,
@@ -42,11 +46,13 @@ pub async fn remove(
         create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await
     } else if queue.len() < remove_index + 1 {
         create_response(&ctx.http, interaction, FAIL_NO_SONG_ON_INDEX).await
+    } else if remove_until < remove_index {
+        create_response(&ctx.http, interaction, FAIL_REMOVE_RANGE).await
     } else {
         let track = queue.get(remove_index).unwrap();
 
         handler.queue().modify_queue(|v| {
-            v.drain(remove_index..remove_until + 1);
+            v.drain(remove_index..=min(remove_until, queue.len() - 1));
         });
         drop(handler);
 
