@@ -37,23 +37,30 @@ pub async fn skip(
         });
 
         force_skip_top_track(&handler).await;
+        create_skip_response(&ctx, interaction, &handler).await
+    }
+}
 
-        match handler.queue().current() {
-            Some(track) => {
-                create_response(
-                    &ctx.http,
-                    interaction,
-                    &format!(
-                        "{} [**{}**]({})!",
-                        SKIPPED_TO,
-                        track.metadata().title.as_ref().unwrap(),
-                        track.metadata().source_url.as_ref().unwrap()
-                    ),
-                )
-                .await
-            }
-            None => create_response(&ctx.http, interaction, SKIPPED_ALL).await,
+pub async fn create_skip_response(
+    ctx: &Context,
+    interaction: &mut ApplicationCommandInteraction,
+    handler: &MutexGuard<'_, Call>,
+) -> Result<(), SerenityError> {
+    match handler.queue().current() {
+        Some(track) => {
+            create_response(
+                &ctx.http,
+                interaction,
+                &format!(
+                    "{} [**{}**]({})!",
+                    SKIPPED_TO,
+                    track.metadata().title.as_ref().unwrap(),
+                    track.metadata().source_url.as_ref().unwrap()
+                ),
+            )
+            .await
         }
+        None => create_response(&ctx.http, interaction, SKIPPED_ALL).await,
     }
 }
 
