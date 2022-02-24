@@ -14,10 +14,14 @@ use crate::{
 use serenity::{
     builder::CreateEmbed,
     client::Context,
-    model::{id::GuildId, interactions::application_command::ApplicationCommandInteraction},
+    model::interactions::application_command::ApplicationCommandInteraction,
     prelude::{Mutex, SerenityError},
 };
-use songbird::{tracks::TrackHandle, Call};
+use songbird::{
+    input::{error::Error, Restartable},
+    tracks::TrackHandle,
+    Call,
+};
 use std::{sync::Arc, time::Duration};
 
 #[derive(Clone, Copy)]
@@ -93,44 +97,71 @@ pub async fn play(
     match mode {
         Mode::End => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
-                enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
+                enqueue_track(&call, url.to_string(), query_type).await;
+                update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
             }
             QueryType::PlaylistLink => {
-                enqueue_playlist(ctx, &call, guild_id, url, mode).await;
+                if let Some(urls) = YouTubeRestartable::ytdl_playlist(url, mode).await {
+                    for url in urls.iter() {
+                        enqueue_track(&call, url.to_string(), QueryType::VideoLink).await;
+                        update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    }
+                }
             }
         },
         Mode::Next => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
-                enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
-                rotate_tracks(&call, 1).await;
+                insert_track(&call, url.to_string(), query_type, 1).await;
+                update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
             }
             QueryType::PlaylistLink => {
-                if let Some(playlist) = enqueue_playlist(ctx, &call, guild_id, url, mode).await {
-                    rotate_tracks(&call, playlist.len()).await;
+                if let Some(urls) = YouTubeRestartable::ytdl_playlist(url, mode).await {
+                    for (idx, url) in urls.into_iter().enumerate() {
+                        insert_track(&call, url, QueryType::VideoLink, idx + 1).await;
+                        update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    }
                 }
             }
         },
         Mode::Jump => match query_type {
             QueryType::Keywords | QueryType::VideoLink => {
-                enqueue_song(ctx, &call, guild_id, url.to_string(), query_type).await;
+                enqueue_track(&call, url.to_string(), query_type).await;
 
                 if !queue_was_empty {
                     rotate_tracks(&call, 1).await;
                     force_skip_top_track(&call.lock().await).await;
                 }
+
+                update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
             }
             QueryType::PlaylistLink => {
-                if let Some(playlist) = enqueue_playlist(ctx, &call, guild_id, url, mode).await {
-                    if !queue_was_empty {
-                        rotate_tracks(&call, playlist.len()).await;
-                        force_skip_top_track(&call.lock().await).await;
+                if let Some(urls) = YouTubeRestartable::ytdl_playlist(url, mode).await {
+                    let mut insert_idx = 1;
+                    let mut is_first_playlist_track = true;
+
+                    for url in urls.into_iter() {
+                        insert_track(&call, url, QueryType::VideoLink, insert_idx).await;
+
+                        if is_first_playlist_track && !queue_was_empty {
+                            force_skip_top_track(&call.lock().await).await;
+                            is_first_playlist_track = false;
+                        } else {
+                            insert_idx += 1;
+                        }
+
+                        update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
                     }
                 }
             }
         },
         Mode::All | Mode::Reverse | Mode::Shuffle => match query_type {
             QueryType::VideoLink | QueryType::PlaylistLink => {
-                enqueue_playlist(ctx, &call, guild_id, url, mode).await;
+                if let Some(urls) = YouTubeRestartable::ytdl_playlist(url, mode).await {
+                    for url in urls.into_iter() {
+                        enqueue_track(&call, url, QueryType::VideoLink).await;
+                        update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    }
+                }
             }
             _ => {
                 edit_response(&ctx.http, interaction, PLAY_ALL_FAILED).await?;
@@ -222,22 +253,6 @@ async fn calculate_time_until_play(queue: &[TrackHandle], mode: Mode) -> Option<
     }
 }
 
-async fn enqueue_playlist(
-    ctx: &Context,
-    call: &Arc<Mutex<Call>>,
-    guild_id: GuildId,
-    uri: &str,
-    mode: Mode,
-) -> Option<Vec<String>> {
-    if let Some(urls) = YouTubeRestartable::ytdl_playlist(uri, mode).await {
-        for url in urls.iter() {
-            enqueue_song(ctx, call, guild_id, url.to_string(), QueryType::VideoLink).await;
-        }
-        return Some(urls);
-    }
-    None
-}
-
 async fn create_queued_embed(
     title: &str,
     track: &TrackHandle,
@@ -270,28 +285,36 @@ async fn create_queued_embed(
     embed
 }
 
-async fn enqueue_song(
-    ctx: &Context,
-    call: &Arc<Mutex<Call>>,
-    guild_id: GuildId,
-    query: String,
-    query_type: QueryType,
-) {
-    let source_return = match query_type {
+async fn get_track_source(query: String, query_type: QueryType) -> Result<Restartable, Error> {
+    match query_type {
         QueryType::VideoLink => YouTubeRestartable::ytdl(query, true).await,
         QueryType::Keywords => YouTubeRestartable::ytdl_search(query, true).await,
         QueryType::PlaylistLink => unreachable!(),
-    };
+    }
+}
 
+async fn enqueue_track(call: &Arc<Mutex<Call>>, query: String, query_type: QueryType) {
     // safeguard against ytdl dying on a private/deleted video and killing the playlist
-    let source = match source_return {
+    let source = match get_track_source(query, query_type).await {
         Ok(source) => source,
         Err(_) => return,
     };
 
     let mut handler = call.lock().await;
     handler.enqueue_source(source.into());
-    drop(handler);
+}
 
-    update_queue_messages(&ctx.http, &ctx.data, call, guild_id).await;
+async fn insert_track(call: &Arc<Mutex<Call>>, query: String, query_type: QueryType, idx: usize) {
+    enqueue_track(call, query, query_type).await;
+
+    let handler = call.lock().await;
+
+    if idx == 0 || idx >= handler.queue().len() - 1 {
+        return;
+    }
+
+    handler.queue().modify_queue(|queue| {
+        let back = queue.pop_back().unwrap();
+        queue.insert(idx, back);
+    })
 }
