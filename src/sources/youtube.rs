@@ -174,7 +174,7 @@ async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
     let end = (&o_vec)
         .iter()
         .position(|el| *el == NEWLINE_BYTE)
-        .unwrap_or_else(|| o_vec.len());
+        .unwrap_or(o_vec.len());
 
     let value = serde_json::from_slice(&o_vec[..end]).map_err(|err| SongbirdError::Json {
         error: err,
