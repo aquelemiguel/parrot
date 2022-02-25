@@ -25,12 +25,10 @@ pub async fn seek(
     let (minutes, seconds) = (
         units_iter
             .next()
-            .map(|token| token.parse::<u64>().ok())
-            .flatten(),
+            .and_then(|token| token.parse::<u64>().ok()),
         units_iter
             .next()
-            .map(|token| token.parse::<u64>().ok())
-            .flatten(),
+            .and_then(|token| token.parse::<u64>().ok()),
     );
 
     if minutes.is_none() || seconds.is_none() {
