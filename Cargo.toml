@@ -1,6 +1,6 @@
 [package]
 name = "parrot"
-version = "1.2.1"
+version = "1.3.0"
 authors = ["aquelemiguel"]
 edition = "2018"
 description = "A Discord music bot built in Rust"
