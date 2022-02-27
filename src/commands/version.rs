@@ -1,4 +1,5 @@
 use crate::{
+    errors::ParrotError,
     strings::{VERSION, VERSION_LATEST},
     utils::create_response,
 };
@@ -11,7 +12,7 @@ const RELEASES_LINK: &str = "https://github.com/aquelemiguel/parrot/releases";
 pub async fn version(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let current = option_env!("CARGO_PKG_VERSION").unwrap_or_else(|| "Unknown");
     let current = format!(
         "{} [{}]({}/tag/v{})",

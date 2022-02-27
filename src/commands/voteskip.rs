@@ -1,5 +1,6 @@
 use crate::{
     commands::skip::{create_skip_response, force_skip_top_track},
+    errors::ParrotError,
     guild::cache::GuildCacheMap,
     strings::{NOTHING_IS_PLAYING, SKIP_VOTE_EMOJI, SKIP_VOTE_MISSING, SKIP_VOTE_USER},
     utils::{create_response, get_voice_channel_for_user},
@@ -14,7 +15,7 @@ use std::{collections::HashSet, sync::Arc};
 pub async fn voteskip(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let bot_channel_id = get_voice_channel_for_user(
         &ctx.cache.guild(guild_id).await.unwrap(),

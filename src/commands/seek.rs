@@ -1,4 +1,5 @@
 use crate::{
+    errors::ParrotError,
     strings::{FAIL_TIMESTAMP_PARSING, NOTHING_IS_PLAYING, SEEKED},
     utils::create_response,
 };
@@ -10,7 +11,7 @@ use std::time::Duration;
 pub async fn seek(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();

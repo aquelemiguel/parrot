@@ -4,10 +4,7 @@ use crate::{
         repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
         voteskip::*,
     },
-    strings::{
-        FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
-        FAIL_NO_VOICE_CONNECTION, FAIL_WRONG_CHANNEL,
-    },
+    errors::ParrotError,
     utils::{check_voice_connections, create_response, Connection},
 };
 use serenity::{
@@ -47,7 +44,9 @@ impl EventHandler for SerenityHandler {
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
         if let Interaction::ApplicationCommand(mut command) = interaction {
-            self.run_command(&ctx, &mut command).await.unwrap();
+            if let Err(err) = self.run_command(&ctx, &mut command).await {
+                self.handle_error(&ctx, &mut command, err).await
+            }
         }
     }
 
@@ -316,7 +315,7 @@ impl SerenityHandler {
         &self,
         ctx: &Context,
         command: &mut ApplicationCommandInteraction,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<(), ParrotError> {
         let command_name = command.data.name.as_str();
 
         let guild_id = command.guild_id.unwrap();
@@ -338,19 +337,15 @@ impl SerenityHandler {
         let user_id = command.user.id;
         let bot_id = ctx.cache.current_user_id().await;
 
-        let message = match command_name {
+        match command_name {
             "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume" | "seek"
             | "shuffle" | "skip" | "stop" | "voteskip" => {
                 match check_voice_connections(&guild, &user_id, &bot_id) {
-                    Connection::User(_) | Connection::Neither => {
-                        Err(FAIL_NO_VOICE_CONNECTION.to_owned())
+                    Connection::User(_) | Connection::Neither => Err(ParrotError::NotConnected),
+                    Connection::Bot(bot_channel_id) => {
+                        Err(ParrotError::AuthorDisconnected(bot_channel_id.mention()))
                     }
-                    Connection::Bot(bot_channel_id) => Err(format!(
-                        "{} {}!",
-                        FAIL_AUTHOR_DISCONNECTED,
-                        bot_channel_id.mention()
-                    )),
-                    Connection::Separate(_, _) => Err(FAIL_WRONG_CHANNEL.to_owned()),
+                    Connection::Separate(_, _) => Err(ParrotError::WrongVoiceChannel),
                     _ => Ok(()),
                 }
             }
@@ -358,32 +353,24 @@ impl SerenityHandler {
                 match check_voice_connections(&guild, &user_id, &bot_id) {
                     Connection::User(_) => Ok(()),
                     Connection::Bot(_) if command_name == "summon" => {
-                        Err(FAIL_AUTHOR_NOT_FOUND.to_owned())
+                        Err(ParrotError::AuthorNotFound)
                     }
                     Connection::Bot(_) if command_name != "summon" => {
-                        Err(FAIL_WRONG_CHANNEL.to_owned())
+                        Err(ParrotError::WrongVoiceChannel)
                     }
-                    Connection::Separate(bot_channel_id, _) => Err(format!(
-                        "{} {}!",
-                        FAIL_ANOTHER_CHANNEL,
-                        bot_channel_id.mention()
-                    )),
-                    Connection::Neither => Err(FAIL_AUTHOR_NOT_FOUND.to_owned()),
+                    Connection::Separate(bot_channel_id, _) => {
+                        Err(ParrotError::AlreadyConnected(bot_channel_id.mention()))
+                    }
+                    Connection::Neither => Err(ParrotError::AuthorNotFound),
                     _ => Ok(()),
                 }
             }
             "np" | "queue" => match check_voice_connections(&guild, &user_id, &bot_id) {
-                Connection::User(_) | Connection::Neither => {
-                    Err(FAIL_NO_VOICE_CONNECTION.to_owned())
-                }
+                Connection::User(_) | Connection::Neither => Err(ParrotError::NotConnected),
                 _ => Ok(()),
             },
             _ => Ok(()),
-        };
-
-        if let Err(message) = message {
-            return create_response(&ctx.http, command, &message).await;
-        }
+        }?;
 
         match command_name {
             "autopause" => autopause(ctx, command).await,
@@ -406,9 +393,6 @@ impl SerenityHandler {
             "voteskip" => voteskip(ctx, command).await,
             _ => unreachable!(),
         }
-        .unwrap();
-
-        Ok(())
     }
 
     async fn self_deafen(&self, ctx: &Context, guild: Option<GuildId>, new: VoiceState) {
@@ -438,5 +422,29 @@ impl SerenityHandler {
                 ),
             };
         }
+    }
+
+    async fn handle_error(
+        &self,
+        ctx: &Context,
+        interaction: &mut ApplicationCommandInteraction,
+        err: ParrotError,
+    ) {
+        println!("{err:?}");
+        create_response(&ctx.http, interaction, &format!("{err}"))
+            .await
+            .unwrap();
+        // match err {
+        //     ParrotError::AdHoc(err) => {
+        //         create_response(&ctx.http, interaction, &err)
+        //         .await
+        //         .unwrap()
+        //     },
+        //     ParrotError::QueueEmpty => create_response(&ctx.http, interaction, QUEUE_IS_EMPTY)
+        //         .await
+        //         .unwrap(),
+        //     ParrotError::Serenity(_) => todo!(),
+        //     ParrotError::NotConnected => todo!(),
+        // };
     }
 }

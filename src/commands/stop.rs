@@ -1,4 +1,5 @@
 use crate::{
+    errors::ParrotError,
     handlers::track_end::update_queue_messages,
     strings::{NOTHING_IS_PLAYING, STOPPED},
     utils::create_response,
@@ -10,7 +11,7 @@ use serenity::{
 pub async fn stop(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();

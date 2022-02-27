@@ -1,5 +1,6 @@
 use crate::{
     commands::{skip::force_skip_top_track, summon::summon},
+    errors::ParrotError,
     handlers::track_end::update_queue_messages,
     sources::youtube::YouTubeRestartable,
     strings::{
@@ -44,7 +45,7 @@ pub enum QueryType {
 pub async fn play(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let args = interaction.data.options.clone();
     let first_arg = args.first().unwrap();
 

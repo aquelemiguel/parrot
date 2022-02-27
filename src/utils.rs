@@ -13,13 +13,13 @@ use serenity::{
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
 
-use crate::strings::QUEUE_NOW_PLAYING;
+use crate::{errors::ParrotError, strings::QUEUE_NOW_PLAYING};
 
 pub async fn create_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     content: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let mut embed = CreateEmbed::default();
     embed.description(content);
     create_embed_response(http, interaction, embed).await
@@ -29,7 +29,7 @@ pub async fn edit_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     content: &str,
-) -> Result<Message, Box<dyn std::error::Error>> {
+) -> Result<Message, ParrotError> {
     let mut embed = CreateEmbed::default();
     embed.description(content);
     edit_embed_response(http, interaction, embed).await
@@ -39,7 +39,7 @@ pub async fn create_embed_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     embed: CreateEmbed,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     interaction
         .create_interaction_response(&http, |response| {
             response
@@ -54,7 +54,7 @@ pub async fn edit_embed_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     embed: CreateEmbed,
-) -> Result<Message, Box<dyn std::error::Error>> {
+) -> Result<Message, ParrotError> {
     interaction
         .edit_original_interaction_response(http, |message| message.content(" ").add_embed(embed))
         .await

@@ -1,4 +1,5 @@
 use crate::{
+    errors::ParrotError,
     guild::settings::GuildSettingsMap,
     strings::{AUTOPAUSE_OFF, AUTOPAUSE_ON},
     utils::create_response,
@@ -10,7 +11,7 @@ use serenity::{
 pub async fn autopause(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let mut data = ctx.data.write().await;
     let settings = data.get_mut::<GuildSettingsMap>().unwrap();

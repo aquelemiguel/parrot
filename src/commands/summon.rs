@@ -1,4 +1,5 @@
 use crate::{
+    errors::ParrotError,
     handlers::{IdleHandler, TrackEndHandler},
     strings::{FAIL_ANOTHER_CHANNEL, JOINING},
     utils::{create_response, get_voice_channel_for_user},
@@ -15,7 +16,7 @@ pub async fn summon(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
     send_reply: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let guild = ctx.cache.guild(guild_id).await.unwrap();
 

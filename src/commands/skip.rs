@@ -1,4 +1,5 @@
 use crate::{
+    errors::ParrotError,
     strings::{NOTHING_IS_PLAYING, SKIPPED, SKIPPED_ALL, SKIPPED_TO},
     utils::create_response,
 };
@@ -12,7 +13,7 @@ use tokio::sync::MutexGuard;
 pub async fn skip(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
@@ -45,7 +46,7 @@ pub async fn create_skip_response(
     interaction: &mut ApplicationCommandInteraction,
     handler: &MutexGuard<'_, Call>,
     tracks_to_skip: usize,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     match handler.queue().current() {
         Some(track) => {
             create_response(

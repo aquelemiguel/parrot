@@ -1,4 +1,5 @@
 use crate::{
+    errors::ParrotError,
     handlers::track_end::update_queue_messages,
     strings::{
         FAIL_NO_SONG_ON_INDEX, FAIL_REMOVE_RANGE, QUEUE_IS_EMPTY, REMOVED_QUEUE,
@@ -17,7 +18,7 @@ use std::cmp::min;
 pub async fn remove(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();

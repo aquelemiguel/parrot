@@ -1,4 +1,5 @@
 use crate::{
+    errors::ParrotError,
     guild::cache::GuildCacheMap,
     handlers::track_end::ModifyQueueHandler,
     strings::{
@@ -35,7 +36,7 @@ const EMBED_TIMEOUT: u64 = 3600;
 pub async fn queue(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();

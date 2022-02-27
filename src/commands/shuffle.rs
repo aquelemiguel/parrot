@@ -1,5 +1,6 @@
 use crate::{
-    handlers::track_end::update_queue_messages, strings::SHUFFLED_SUCCESS, utils::create_response,
+    errors::ParrotError, handlers::track_end::update_queue_messages, strings::SHUFFLED_SUCCESS,
+    utils::create_response,
 };
 use rand::Rng;
 use serenity::{
@@ -9,7 +10,7 @@ use serenity::{
 pub async fn shuffle(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();

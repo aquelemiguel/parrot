@@ -1,4 +1,4 @@
-use crate::{strings::LEAVING, utils::create_response};
+use crate::{errors::ParrotError, strings::LEAVING, utils::create_response};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
 };
@@ -6,7 +6,7 @@ use serenity::{
 pub async fn leave(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     manager.remove(guild_id).await.unwrap();
