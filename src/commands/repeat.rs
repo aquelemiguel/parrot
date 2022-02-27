@@ -4,14 +4,13 @@ use crate::{
 };
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
-    prelude::SerenityError,
 };
 use songbird::tracks::{LoopState, TrackHandle};
 
 pub async fn repeat(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), SerenityError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();

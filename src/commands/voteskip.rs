@@ -7,14 +7,14 @@ use crate::{
 use serenity::{
     client::Context,
     model::{id::GuildId, interactions::application_command::ApplicationCommandInteraction},
-    prelude::{Mentionable, RwLock, SerenityError, TypeMap},
+    prelude::{Mentionable, RwLock, TypeMap},
 };
 use std::{collections::HashSet, sync::Arc};
 
 pub async fn voteskip(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), SerenityError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let guild_id = interaction.guild_id.unwrap();
     let bot_channel_id = get_voice_channel_for_user(
         &ctx.cache.guild(guild_id).await.unwrap(),

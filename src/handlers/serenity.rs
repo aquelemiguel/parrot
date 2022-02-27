@@ -316,7 +316,7 @@ impl SerenityHandler {
         &self,
         ctx: &Context,
         command: &mut ApplicationCommandInteraction,
-    ) -> Result<(), SerenityError> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let command_name = command.data.name.as_str();
 
         let guild_id = command.guild_id.unwrap();

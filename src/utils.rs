@@ -9,7 +9,6 @@ use serenity::{
             application_command::ApplicationCommandInteraction, InteractionResponseType,
         },
     },
-    prelude::SerenityError,
 };
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
@@ -20,7 +19,7 @@ pub async fn create_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     content: &str,
-) -> Result<(), SerenityError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut embed = CreateEmbed::default();
     embed.description(content);
     create_embed_response(http, interaction, embed).await
@@ -30,7 +29,7 @@ pub async fn edit_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     content: &str,
-) -> Result<Message, SerenityError> {
+) -> Result<Message, Box<dyn std::error::Error>> {
     let mut embed = CreateEmbed::default();
     embed.description(content);
     edit_embed_response(http, interaction, embed).await
@@ -40,7 +39,7 @@ pub async fn create_embed_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     embed: CreateEmbed,
-) -> Result<(), SerenityError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     interaction
         .create_interaction_response(&http, |response| {
             response
@@ -48,16 +47,18 @@ pub async fn create_embed_response(
                 .interaction_response_data(|message| message.add_embed(embed))
         })
         .await
+        .map_err(Into::into)
 }
 
 pub async fn edit_embed_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     embed: CreateEmbed,
-) -> Result<Message, SerenityError> {
+) -> Result<Message, Box<dyn std::error::Error>> {
     interaction
         .edit_original_interaction_response(http, |message| message.content(" ").add_embed(embed))
         .await
+        .map_err(Into::into)
 }
 
 pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {

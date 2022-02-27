@@ -4,7 +4,6 @@ use crate::{
 };
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
-    prelude::SerenityError,
 };
 use songbird::Call;
 use std::cmp::min;
@@ -13,7 +12,7 @@ use tokio::sync::MutexGuard;
 pub async fn skip(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), SerenityError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
@@ -46,7 +45,7 @@ pub async fn create_skip_response(
     interaction: &mut ApplicationCommandInteraction,
     handler: &MutexGuard<'_, Call>,
     tracks_to_skip: usize,
-) -> Result<(), SerenityError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     match handler.queue().current() {
         Some(track) => {
             create_response(

@@ -44,7 +44,7 @@ pub enum QueryType {
 pub async fn play(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), SerenityError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let args = interaction.data.options.clone();
     let first_arg = args.first().unwrap();
 

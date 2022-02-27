@@ -6,7 +6,7 @@ use crate::{
 use serenity::{
     client::Context,
     model::{id::ChannelId, interactions::application_command::ApplicationCommandInteraction},
-    prelude::{Mentionable, SerenityError},
+    prelude::Mentionable,
 };
 use songbird::{Event, TrackEvent};
 use std::time::Duration;
@@ -15,7 +15,7 @@ pub async fn summon(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
     send_reply: bool,
-) -> Result<(), SerenityError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let guild_id = interaction.guild_id.unwrap();
     let guild = ctx.cache.guild(guild_id).await.unwrap();
 

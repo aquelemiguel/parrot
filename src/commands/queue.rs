@@ -19,7 +19,7 @@ use serenity::{
             InteractionResponseType,
         },
     },
-    prelude::{RwLock, SerenityError, TypeMap},
+    prelude::{RwLock, TypeMap},
 };
 use songbird::{tracks::TrackHandle, Event, TrackEvent};
 use std::{
@@ -35,7 +35,7 @@ const EMBED_TIMEOUT: u64 = 3600;
 pub async fn queue(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), SerenityError> {
+) -> Result<(), Box<dyn std::error::Error>> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
