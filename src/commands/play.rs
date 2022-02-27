@@ -22,7 +22,7 @@ use songbird::{
     tracks::TrackHandle,
     Call,
 };
-use std::{error::Error as StdError, sync::Arc, time::Duration};
+use std::{cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
 
 #[derive(Clone, Copy)]
 pub enum Mode {
@@ -188,32 +188,36 @@ pub async fn play(
     let queue = handler.queue().current_queue();
     drop(handler);
 
-    if queue.len() > 1 {
-        let estimated_time = calculate_time_until_play(&queue, mode).await.unwrap();
+    match queue.len().cmp(&1) {
+        Ordering::Greater => {
+            let estimated_time = calculate_time_until_play(&queue, mode).await.unwrap();
 
-        match (query_type, mode) {
-            (QueryType::VideoLink | QueryType::Keywords, Mode::Next) => {
-                let track = queue.get(1).unwrap();
-                let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
+            match (query_type, mode) {
+                (QueryType::VideoLink | QueryType::Keywords, Mode::Next) => {
+                    let track = queue.get(1).unwrap();
+                    let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
 
-                edit_embed_response(&ctx.http, interaction, embed).await?;
-            }
-            (QueryType::VideoLink | QueryType::Keywords, Mode::End) => {
-                let track = queue.last().unwrap();
-                let embed = create_queued_embed(PLAY_QUEUE, track, estimated_time).await;
+                    edit_embed_response(&ctx.http, interaction, embed).await?;
+                }
+                (QueryType::VideoLink | QueryType::Keywords, Mode::End) => {
+                    let track = queue.last().unwrap();
+                    let embed = create_queued_embed(PLAY_QUEUE, track, estimated_time).await;
 
-                edit_embed_response(&ctx.http, interaction, embed).await?;
+                    edit_embed_response(&ctx.http, interaction, embed).await?;
+                }
+                (QueryType::PlaylistLink, _) => {
+                    edit_response(&ctx.http, interaction, PLAY_PLAYLIST).await?;
+                }
+                (_, _) => {}
             }
-            (QueryType::PlaylistLink, _) => {
-                edit_response(&ctx.http, interaction, PLAY_PLAYLIST).await?;
-            }
-            (_, _) => {}
         }
-    } else if queue.len() == 1 {
-        let track = queue.first().unwrap();
-        let embed = create_now_playing_embed(track).await;
+        Ordering::Equal => {
+            let track = queue.first().unwrap();
+            let embed = create_now_playing_embed(track).await;
 
-        edit_embed_response(&ctx.http, interaction, embed).await?;
+            edit_embed_response(&ctx.http, interaction, embed).await?;
+        }
+        _ => unreachable!(),
     }
 
     Ok(())
