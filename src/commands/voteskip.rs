@@ -1,9 +1,10 @@
 use crate::{
     commands::skip::{create_skip_response, force_skip_top_track},
+    connection::get_voice_channel_for_user,
     errors::ParrotError,
     guild::cache::GuildCacheMap,
     strings::{NOTHING_IS_PLAYING, SKIP_VOTE_EMOJI, SKIP_VOTE_MISSING, SKIP_VOTE_USER},
-    utils::{create_response, get_voice_channel_for_user},
+    utils::create_response,
 };
 use serenity::{
     client::Context,

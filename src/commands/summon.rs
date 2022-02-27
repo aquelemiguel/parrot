@@ -1,8 +1,9 @@
 use crate::{
+    connection::get_voice_channel_for_user,
     errors::ParrotError,
     handlers::{IdleHandler, TrackEndHandler},
     strings::{FAIL_ANOTHER_CHANNEL, JOINING},
-    utils::{create_response, get_voice_channel_for_user},
+    utils::create_response,
 };
 use serenity::{
     client::Context,

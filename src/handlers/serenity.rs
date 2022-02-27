@@ -4,8 +4,9 @@ use crate::{
         repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
         voteskip::*,
     },
+    connection::{check_voice_connections, Connection},
     errors::ParrotError,
-    utils::{check_voice_connections, create_response, Connection},
+    utils::create_response,
 };
 use serenity::{
     async_trait,
@@ -434,17 +435,5 @@ impl SerenityHandler {
         create_response(&ctx.http, interaction, &format!("{err}"))
             .await
             .unwrap();
-        // match err {
-        //     ParrotError::AdHoc(err) => {
-        //         create_response(&ctx.http, interaction, &err)
-        //         .await
-        //         .unwrap()
-        //     },
-        //     ParrotError::QueueEmpty => create_response(&ctx.http, interaction, QUEUE_IS_EMPTY)
-        //         .await
-        //         .unwrap(),
-        //     ParrotError::Serenity(_) => todo!(),
-        //     ParrotError::NotConnected => todo!(),
-        // };
     }
 }
