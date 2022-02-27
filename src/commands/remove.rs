@@ -1,16 +1,14 @@
 use crate::{
     errors::ParrotError,
     handlers::track_end::update_queue_messages,
-    strings::{
-        FAIL_NO_SONG_ON_INDEX, FAIL_REMOVE_RANGE, QUEUE_IS_EMPTY, REMOVED_QUEUE,
-        REMOVED_QUEUE_MULTIPLE,
-    },
+    strings::{REMOVED_QUEUE, REMOVED_QUEUE_MULTIPLE},
     utils::create_embed_response,
     utils::create_response,
 };
 use serenity::{
     builder::CreateEmbed, client::Context,
     model::interactions::application_command::ApplicationCommandInteraction,
+    prelude::SerenityError,
 };
 use songbird::tracks::TrackHandle;
 use std::cmp::min;
@@ -43,30 +41,43 @@ pub async fn remove(
     let queue = handler.queue().current_queue();
     let remove_until = min(remove_until, queue.len() - 1);
 
-    if queue.len() <= 1 {
-        create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await
-    } else if queue.len() < remove_index + 1 {
-        create_response(&ctx.http, interaction, FAIL_NO_SONG_ON_INDEX).await
+    let queue_len = queue.len();
+    if queue_len <= 1 {
+        return Err(ParrotError::QueueEmpty);
+    } else if queue_len < remove_index + 1 {
+        return Err(SerenityError::NotInRange(
+            "remove_index",
+            remove_index as u64,
+            1,
+            queue_len as u64,
+        ))
+        .map_err(Into::into);
     } else if remove_until < remove_index {
-        create_response(&ctx.http, interaction, FAIL_REMOVE_RANGE).await
-    } else {
-        let track = queue.get(remove_index).unwrap();
-
-        handler.queue().modify_queue(|v| {
-            v.drain(remove_index..=remove_until);
-        });
-        drop(handler);
-
-        if remove_until == remove_index {
-            let embed = create_remove_enqueued_embed(track).await;
-            create_embed_response(&ctx.http, interaction, embed).await?;
-        } else {
-            create_response(&ctx.http, interaction, REMOVED_QUEUE_MULTIPLE).await?;
-        }
-        update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
-
-        Ok(())
+        return Err(SerenityError::NotInRange(
+            "remove_until",
+            remove_until as u64,
+            remove_index as u64,
+            queue_len as u64,
+        ))
+        .map_err(Into::into);
     }
+
+    let track = queue.get(remove_index).unwrap();
+
+    handler.queue().modify_queue(|v| {
+        v.drain(remove_index..=remove_until);
+    });
+    drop(handler);
+
+    if remove_until == remove_index {
+        let embed = create_remove_enqueued_embed(track).await;
+        create_embed_response(&ctx.http, interaction, embed).await?;
+    } else {
+        create_response(&ctx.http, interaction, REMOVED_QUEUE_MULTIPLE).await?;
+    }
+    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+
+    Ok(())
 }
 
 async fn create_remove_enqueued_embed(track: &TrackHandle) -> CreateEmbed {

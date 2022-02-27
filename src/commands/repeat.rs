@@ -29,6 +29,6 @@ pub async fn repeat(
     match toggler(&track) {
         Ok(_) if was_looping => create_response(&ctx.http, interaction, LOOP_DISABLED).await,
         Ok(_) if !was_looping => create_response(&ctx.http, interaction, LOOP_ENABLED).await,
-        _ => create_response(&ctx.http, interaction, FAIL_LOOP).await,
+        _ => Err(ParrotError::Other(FAIL_LOOP)),
     }
 }

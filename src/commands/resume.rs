@@ -1,8 +1,4 @@
-use crate::{
-    errors::ParrotError,
-    strings::{NOTHING_IS_PLAYING, RESUMED},
-    utils::create_response,
-};
+use crate::{errors::ParrotError, strings::RESUMED, utils::create_response};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
 };
@@ -19,12 +15,12 @@ pub async fn resume(
     let queue = handler.queue();
 
     if queue.is_empty() {
-        return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await;
+        return Err(ParrotError::NothingPlaying);
     }
 
     if queue.resume().is_ok() {
-        return create_response(&ctx.http, interaction, RESUMED).await;
+        create_response(&ctx.http, interaction, RESUMED).await
+    } else {
+        Err(ParrotError::Other("Failed resuming current track"))
     }
-
-    Ok(())
 }

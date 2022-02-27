@@ -3,7 +3,7 @@ use crate::{
     connection::get_voice_channel_for_user,
     errors::ParrotError,
     guild::cache::GuildCacheMap,
-    strings::{NOTHING_IS_PLAYING, SKIP_VOTE_EMOJI, SKIP_VOTE_MISSING, SKIP_VOTE_USER},
+    strings::{SKIP_VOTE_EMOJI, SKIP_VOTE_MISSING, SKIP_VOTE_USER},
     utils::create_response,
 };
 use serenity::{
@@ -30,7 +30,7 @@ pub async fn voteskip(
     let queue = handler.queue();
 
     if queue.is_empty() {
-        return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await;
+        return Err(ParrotError::NothingPlaying);
     }
 
     let mut data = ctx.data.write().await;

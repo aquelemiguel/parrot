@@ -1,6 +1,6 @@
 use crate::{
     errors::ParrotError,
-    strings::{FAIL_TIMESTAMP_PARSING, NOTHING_IS_PLAYING, SEEKED},
+    strings::{FAIL_TIMESTAMP_PARSING, SEEKED},
     utils::create_response,
 };
 use serenity::{
@@ -32,16 +32,16 @@ pub async fn seek(
     );
 
     if minutes.is_none() || seconds.is_none() {
-        return create_response(&ctx.http, interaction, FAIL_TIMESTAMP_PARSING).await;
+        return Err(ParrotError::Other(FAIL_TIMESTAMP_PARSING));
     }
 
     let timestamp = minutes.unwrap() * 60 + seconds.unwrap();
 
     let handler = call.lock().await;
-    let track = match handler.queue().current() {
-        Some(track) => track,
-        None => return create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await,
-    };
+    let track = handler
+        .queue()
+        .current()
+        .ok_or(ParrotError::NothingPlaying)?;
     drop(handler);
 
     track.seek_time(Duration::from_secs(timestamp)).unwrap();

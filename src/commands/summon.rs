@@ -2,7 +2,7 @@ use crate::{
     connection::get_voice_channel_for_user,
     errors::ParrotError,
     handlers::{IdleHandler, TrackEndHandler},
-    strings::{FAIL_ANOTHER_CHANNEL, JOINING},
+    strings::JOINING,
     utils::create_response,
 };
 use serenity::{
@@ -32,8 +32,7 @@ pub async fn summon(
         if has_current_connection && send_reply {
             // bot is in another channel
             let bot_channel_id: ChannelId = handler.current_channel().unwrap().0.into();
-            let message = format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_channel_id.mention());
-            return create_response(&ctx.http, interaction, &message).await;
+            return Err(ParrotError::AlreadyConnected(bot_channel_id.mention()));
         }
     }
 

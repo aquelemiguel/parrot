@@ -1,6 +1,6 @@
 use crate::{
     errors::ParrotError,
-    strings::{NOTHING_IS_PLAYING, SKIPPED, SKIPPED_ALL, SKIPPED_TO},
+    strings::{SKIPPED, SKIPPED_ALL, SKIPPED_TO},
     utils::create_response,
 };
 use serenity::{
@@ -28,17 +28,17 @@ pub async fn skip(
     let queue = handler.queue();
 
     if queue.is_empty() {
-        create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await
-    } else {
-        let tracks_to_skip = min(to_skip, queue.len());
-
-        handler.queue().modify_queue(|v| {
-            v.drain(1..tracks_to_skip);
-        });
-
-        force_skip_top_track(&handler).await;
-        create_skip_response(ctx, interaction, &handler, tracks_to_skip).await
+        return Err(ParrotError::NothingPlaying);
     }
+
+    let tracks_to_skip = min(to_skip, queue.len());
+
+    handler.queue().modify_queue(|v| {
+        v.drain(1..tracks_to_skip);
+    });
+
+    force_skip_top_track(&handler).await;
+    create_skip_response(ctx, interaction, &handler, tracks_to_skip).await
 }
 
 pub async fn create_skip_response(

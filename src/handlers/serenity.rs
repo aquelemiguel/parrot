@@ -83,7 +83,7 @@ impl SerenityHandler {
                     })
                 })
                 .await
-                .unwrap();
+                .expect("failed to create command permission");
         }
     }
 
@@ -291,7 +291,7 @@ impl SerenityHandler {
                 })
         })
         .await
-        .unwrap()
+        .expect("failed to create command")
     }
 
     async fn ensure_role(
@@ -300,7 +300,7 @@ impl SerenityHandler {
         guild: GuildId,
         role_name: &str,
     ) -> Result<Role, SerenityError> {
-        let roles = guild.roles(&ctx.http).await.unwrap();
+        let roles = guild.roles(&ctx.http).await?;
         let role = roles.iter().find(|(_, role)| role.name == role_name);
         match role {
             Some((_, role)) => Ok(role.to_owned()),
@@ -328,7 +328,6 @@ impl SerenityHandler {
         // parrot might have been disconnected manually
         if let Some(call) = manager.get(guild.id) {
             let mut handler = call.lock().await;
-
             if handler.current_connection().is_none() {
                 handler.leave().await.unwrap();
             }
@@ -434,6 +433,6 @@ impl SerenityHandler {
         println!("{err:?}");
         create_response(&ctx.http, interaction, &format!("{err}"))
             .await
-            .unwrap();
+            .expect("failed to create response");
     }
 }
