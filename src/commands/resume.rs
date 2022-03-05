@@ -19,10 +19,7 @@ pub async fn resume(
     let queue = handler.queue();
 
     verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
+    verify(queue.resume(), ParrotError::Other("Failed resuming track"))?;
 
-    if queue.resume().is_ok() {
-        create_response(&ctx.http, interaction, RESUMED).await
-    } else {
-        Err(ParrotError::Other("Failed resuming current track"))
-    }
+    create_response(&ctx.http, interaction, RESUMED).await
 }
