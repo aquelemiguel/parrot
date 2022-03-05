@@ -62,7 +62,7 @@ impl Spotify {
         let artist_names = artist_names.join(" ");
 
         let query = format!("{} - {}", artist_names, track.name);
-        return Ok(query);
+        Ok(query)
     }
 
     pub async fn get_album_info(
@@ -87,7 +87,7 @@ impl Spotify {
             .map(|track| format!("{} - {}", artist_names, track.name))
             .collect();
 
-        return Ok(queries);
+        Ok(queries)
     }
 
     pub async fn get_playlist_info(
