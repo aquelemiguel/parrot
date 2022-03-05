@@ -1,5 +1,7 @@
 use crate::{
-    errors::ParrotError, handlers::track_end::update_queue_messages, strings::STOPPED,
+    errors::{verify, ParrotError},
+    handlers::track_end::update_queue_messages,
+    strings::STOPPED,
     utils::create_response,
 };
 use serenity::{
@@ -17,9 +19,7 @@ pub async fn stop(
     let handler = call.lock().await;
     let queue = handler.queue();
 
-    if queue.is_empty() {
-        return Err(ParrotError::NothingPlaying);
-    }
+    verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
 
     queue.stop();
     drop(handler);

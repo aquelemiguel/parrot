@@ -1,4 +1,8 @@
-use crate::{errors::{ParrotError, verify}, strings::PAUSED, utils::create_response};
+use crate::{
+    errors::{verify, ParrotError},
+    strings::PAUSED,
+    utils::create_response,
+};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
 };

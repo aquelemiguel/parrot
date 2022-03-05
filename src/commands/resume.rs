@@ -1,4 +1,8 @@
-use crate::{errors::ParrotError, strings::RESUMED, utils::create_response};
+use crate::{
+    errors::{verify, ParrotError},
+    strings::RESUMED,
+    utils::create_response,
+};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
 };
@@ -14,9 +18,7 @@ pub async fn resume(
     let handler = call.lock().await;
     let queue = handler.queue();
 
-    if queue.is_empty() {
-        return Err(ParrotError::NothingPlaying);
-    }
+    verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
 
     if queue.resume().is_ok() {
         create_response(&ctx.http, interaction, RESUMED).await

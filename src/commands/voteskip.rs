@@ -1,7 +1,7 @@
 use crate::{
     commands::skip::{create_skip_response, force_skip_top_track},
     connection::get_voice_channel_for_user,
-    errors::ParrotError,
+    errors::{verify, ParrotError},
     guild::cache::GuildCacheMap,
     strings::{SKIP_VOTE_EMOJI, SKIP_VOTE_MISSING, SKIP_VOTE_USER},
     utils::create_response,
@@ -29,9 +29,7 @@ pub async fn voteskip(
     let handler = call.lock().await;
     let queue = handler.queue();
 
-    if queue.is_empty() {
-        return Err(ParrotError::NothingPlaying);
-    }
+    verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
 
     let mut data = ctx.data.write().await;
     let cache_map = data.get_mut::<GuildCacheMap>().unwrap();

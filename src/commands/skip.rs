@@ -1,5 +1,5 @@
 use crate::{
-    errors::ParrotError,
+    errors::{verify, ParrotError},
     strings::{SKIPPED, SKIPPED_ALL, SKIPPED_TO},
     utils::create_response,
 };
@@ -27,9 +27,7 @@ pub async fn skip(
     let handler = call.lock().await;
     let queue = handler.queue();
 
-    if queue.is_empty() {
-        return Err(ParrotError::NothingPlaying);
-    }
+    verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
 
     let tracks_to_skip = min(to_skip, queue.len());
 
