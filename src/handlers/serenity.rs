@@ -430,7 +430,6 @@ impl SerenityHandler {
         interaction: &mut ApplicationCommandInteraction,
         err: ParrotError,
     ) {
-        println!("{err:?}");
         create_response(&ctx.http, interaction, &format!("{err}"))
             .await
             .expect("failed to create response");
