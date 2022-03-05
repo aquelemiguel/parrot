@@ -1,5 +1,5 @@
 use crate::{
-    errors::ParrotError,
+    errors::{verify, ParrotError},
     handlers::track_end::update_queue_messages,
     strings::{REMOVED_QUEUE, REMOVED_QUEUE_MULTIPLE},
     utils::create_embed_response,
@@ -42,25 +42,26 @@ pub async fn remove(
     let remove_until = min(remove_until, queue.len() - 1);
 
     let queue_len = queue.len();
-    if queue_len <= 1 {
-        return Err(ParrotError::QueueEmpty);
-    } else if queue_len < remove_index + 1 {
-        return Err(SerenityError::NotInRange(
+
+    verify(queue.len() > 1, ParrotError::QueueEmpty)?;
+    verify(
+        queue_len < remove_index + 1,
+        ParrotError::Serenity(SerenityError::NotInRange(
             "remove_index",
             remove_index as u64,
             1,
             queue_len as u64,
-        ))
-        .map_err(Into::into);
-    } else if remove_until < remove_index {
-        return Err(SerenityError::NotInRange(
+        )),
+    )?;
+    verify(
+        remove_until < remove_index,
+        ParrotError::Serenity(SerenityError::NotInRange(
             "remove_until",
             remove_until as u64,
             remove_index as u64,
             queue_len as u64,
-        ))
-        .map_err(Into::into);
-    }
+        )),
+    )?;
 
     let track = queue.get(remove_index).unwrap();
 

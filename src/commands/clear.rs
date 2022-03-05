@@ -1,5 +1,7 @@
 use crate::{
-    errors::{ParrotError, verify}, handlers::track_end::update_queue_messages, strings::CLEARED,
+    errors::{verify, ParrotError},
+    handlers::track_end::update_queue_messages,
+    strings::CLEARED,
     utils::create_response,
 };
 use serenity::{
