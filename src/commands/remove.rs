@@ -43,9 +43,9 @@ pub async fn remove(
 
     let queue_len = queue.len();
 
-    verify(queue.len() > 1, ParrotError::QueueEmpty)?;
+    verify(queue_len > 1, ParrotError::QueueEmpty)?;
     verify(
-        queue_len < remove_index + 1,
+        remove_index <= queue_len - 1,
         ParrotError::Serenity(SerenityError::NotInRange(
             "remove_index",
             remove_index as u64,
@@ -54,7 +54,7 @@ pub async fn remove(
         )),
     )?;
     verify(
-        remove_until < remove_index,
+        remove_until >= remove_index,
         ParrotError::Serenity(SerenityError::NotInRange(
             "remove_until",
             remove_until as u64,
