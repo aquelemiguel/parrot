@@ -105,7 +105,7 @@ impl Spotify {
         Ok(queries)
     }
 
-    fn build_query(artists: &String, track_name: &String) -> String {
+    fn build_query(artists: &str, track_name: &str) -> String {
         format!("{} - {}", artists, track_name)
     }
 
