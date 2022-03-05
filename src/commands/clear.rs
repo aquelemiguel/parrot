@@ -1,5 +1,5 @@
 use crate::{
-    errors::ParrotError, handlers::track_end::update_queue_messages, strings::CLEARED,
+    errors::{ParrotError, verify}, handlers::track_end::update_queue_messages, strings::CLEARED,
     utils::create_response,
 };
 use serenity::{
@@ -17,9 +17,7 @@ pub async fn clear(
     let handler = call.lock().await;
     let queue = handler.queue().current_queue();
 
-    if queue.is_empty() {
-        return Err(ParrotError::QueueEmpty);
-    }
+    verify(!queue.is_empty(), ParrotError::QueueEmpty)?;
 
     handler.queue().modify_queue(|v| {
         v.drain(1..);

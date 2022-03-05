@@ -47,3 +47,11 @@ impl From<SerenityError> for ParrotError {
         ParrotError::Serenity(err)
     }
 }
+
+pub fn verify(condition: bool, err: ParrotError) -> Result<(), ParrotError> {
+    if condition {
+        Ok(())
+    } else {
+        Err(err)
+    }
+}
