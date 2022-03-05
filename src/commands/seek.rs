@@ -1,5 +1,5 @@
 use crate::{
-    errors::ParrotError,
+    errors::{verify, ParrotError},
     strings::{FAIL_TIMESTAMP_PARSING, SEEKED},
     utils::create_response,
 };
@@ -31,9 +31,8 @@ pub async fn seek(
             .and_then(|token| token.parse::<u64>().ok()),
     );
 
-    if minutes.is_none() || seconds.is_none() {
-        return Err(ParrotError::Other(FAIL_TIMESTAMP_PARSING));
-    }
+    verify(minutes, ParrotError::Other(FAIL_TIMESTAMP_PARSING))?;
+    verify(seconds, ParrotError::Other(FAIL_TIMESTAMP_PARSING))?;
 
     let timestamp = minutes.unwrap() * 60 + seconds.unwrap();
 
