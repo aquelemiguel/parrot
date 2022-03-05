@@ -3,7 +3,7 @@ use std::str::FromStr;
 use regex::Regex;
 use rspotify::{
     clients::BaseClient,
-    model::{AlbumId, Country, Id, Market, PlayableItem, PlaylistId, TrackId},
+    model::{AlbumId, Country, Id, Market, PlayableItem, PlaylistId, SimplifiedArtist, TrackId},
     ClientCredsSpotify, Credentials,
 };
 
@@ -52,17 +52,9 @@ impl Spotify {
     pub async fn get_track_info(spotify: &ClientCredsSpotify, id: String) -> Result<String, ()> {
         let track_id = TrackId::from_id(id.as_str()).unwrap();
         let track = spotify.track(&track_id).await.unwrap();
+        let artist_names = Self::join_artist_names(&track.artists);
 
-        let artist_names: Vec<String> = track
-            .artists
-            .iter()
-            .map(|artist| artist.name.clone())
-            .collect();
-
-        let artist_names = artist_names.join(" ");
-
-        let query = format!("{} - {}", artist_names, track.name);
-        Ok(query)
+        Ok(Self::build_query(&artist_names, &track.name))
     }
 
     pub async fn get_album_info(
@@ -71,20 +63,13 @@ impl Spotify {
     ) -> Result<Vec<String>, ()> {
         let album_id = AlbumId::from_id(id.as_str()).unwrap();
         let album = spotify.album(&album_id).await.unwrap();
-
-        let artist_names: Vec<String> = album
-            .artists
-            .iter()
-            .map(|artist| artist.name.clone())
-            .collect();
-
-        let artist_names = artist_names.join(" ");
+        let artist_names = Self::join_artist_names(&album.artists);
 
         let queries: Vec<String> = album
             .tracks
             .items
             .iter()
-            .map(|track| format!("{} - {}", artist_names, track.name))
+            .map(|track| Self::build_query(&artist_names, &track.name))
             .collect();
 
         Ok(queries)
@@ -110,22 +95,22 @@ impl Spotify {
             .iter()
             .filter_map(|item| match item.track.as_ref().unwrap() {
                 PlayableItem::Track(track) => {
-                    let artist_names: Vec<String> = track
-                        .album
-                        .artists
-                        .iter()
-                        .map(|artist| artist.name.clone())
-                        .collect();
-
-                    let artist_names = artist_names.join(" ");
-
-                    let query = format!("{} - {}", artist_names, track.name);
-                    Some(query)
+                    let artist_names = Self::join_artist_names(&track.album.artists);
+                    Some(Self::build_query(&artist_names, &track.name))
                 }
                 PlayableItem::Episode(_) => None,
             })
             .collect();
 
         Ok(queries)
+    }
+
+    fn build_query(artists: &String, track_name: &String) -> String {
+        format!("{} - {}", artists, track_name)
+    }
+
+    fn join_artist_names(artists: &[SimplifiedArtist]) -> String {
+        let artist_names: Vec<String> = artists.iter().map(|artist| artist.name.clone()).collect();
+        artist_names.join(" ")
     }
 }
