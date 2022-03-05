@@ -1,4 +1,4 @@
-use crate::{errors::ParrotError, strings::PAUSED, utils::create_response};
+use crate::{errors::{ParrotError, verify}, strings::PAUSED, utils::create_response};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
 };
@@ -14,13 +14,8 @@ pub async fn pause(
     let handler = call.lock().await;
     let queue = handler.queue();
 
-    if queue.is_empty() {
-        return Err(ParrotError::NothingPlaying);
-    }
+    verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
+    verify(queue.pause(), ParrotError::Other("Failed to pause"))?;
 
-    if queue.pause().is_ok() {
-        create_response(&ctx.http, interaction, PAUSED).await
-    } else {
-        Err(ParrotError::Other("Failed to pause"))
-    }
+    create_response(&ctx.http, interaction, PAUSED).await
 }

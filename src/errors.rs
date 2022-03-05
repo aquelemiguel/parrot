@@ -48,8 +48,30 @@ impl From<SerenityError> for ParrotError {
     }
 }
 
-pub fn verify(condition: bool, err: ParrotError) -> Result<(), ParrotError> {
-    if condition {
+pub trait ToBool {
+    fn to_bool(&self) -> bool;
+}
+
+impl ToBool for bool {
+    fn to_bool(&self) -> bool {
+        *self
+    }
+}
+
+impl<T> ToBool for Option<T> {
+    fn to_bool(&self) -> bool {
+        self.is_some()
+    }
+}
+
+impl<T, E> ToBool for Result<T, E> {
+    fn to_bool(&self) -> bool {
+        self.is_ok()
+    }
+}
+
+pub fn verify(condition: impl ToBool, err: ParrotError) -> Result<(), ParrotError> {
+    if condition.to_bool() {
         Ok(())
     } else {
         Err(err)
