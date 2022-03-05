@@ -45,7 +45,7 @@ pub async fn remove(
 
     verify(queue_len > 1, ParrotError::QueueEmpty)?;
     verify(
-        remove_index <= queue_len - 1,
+        remove_index < queue_len,
         ParrotError::Serenity(SerenityError::NotInRange(
             "remove_index",
             remove_index as u64,
