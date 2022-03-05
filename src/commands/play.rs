@@ -78,6 +78,7 @@ pub async fn play(
 
     // try to join a voice channel if not in one just yet
     summon(ctx, interaction, false).await?;
+    let call = manager.get(guild_id).unwrap();
 
     // reply with a temporary message while we fetch the source
     // needed because interactions must be replied within 3s and queueing takes longer
@@ -91,19 +92,41 @@ pub async fn play(
             MediaType::Track => {
                 if let Ok(query) = Spotify::get_track_info(&spotify, media_id).await {
                     println!("{:?}", query);
+
+                    enqueue_track(&call, query, QueryType::Keywords)
+                        .await
+                        .unwrap();
+
+                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
                 }
             }
             MediaType::Album => {
                 if let Ok(query_list) = Spotify::get_album_info(&spotify, media_id).await {
                     println!("{:?}", query_list);
+
+                    for query in query_list.into_iter() {
+                        enqueue_track(&call, query, QueryType::Keywords)
+                            .await
+                            .unwrap();
+                        update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    }
                 }
             }
             MediaType::Playlist => {
                 if let Ok(query_list) = Spotify::get_playlist_info(&spotify, media_id).await {
                     println!("{:?}", query_list);
+
+                    for query in query_list.into_iter() {
+                        enqueue_track(&call, query, QueryType::Keywords)
+                            .await
+                            .unwrap();
+                        update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    }
                 }
             }
         }
+
+        return Ok(());
     }
 
     let query_type = if url.contains("youtube.com/playlist?list=") {
@@ -113,8 +136,6 @@ pub async fn play(
     } else {
         QueryType::Keywords
     };
-
-    let call = manager.get(guild_id).unwrap();
 
     let handler = call.lock().await;
     let queue_was_empty = handler.queue().is_empty();
