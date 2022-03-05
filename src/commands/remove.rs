@@ -8,7 +8,6 @@ use crate::{
 use serenity::{
     builder::CreateEmbed, client::Context,
     model::interactions::application_command::ApplicationCommandInteraction,
-    prelude::SerenityError,
 };
 use songbird::tracks::TrackHandle;
 use std::cmp::min;
@@ -39,28 +38,18 @@ pub async fn remove(
 
     let handler = call.lock().await;
     let queue = handler.queue().current_queue();
-    let remove_until = min(remove_until, queue.len() - 1);
 
     let queue_len = queue.len();
+    let remove_until = min(remove_until, queue_len.saturating_sub(1));
 
     verify(queue_len > 1, ParrotError::QueueEmpty)?;
     verify(
         remove_index < queue_len,
-        ParrotError::Serenity(SerenityError::NotInRange(
-            "remove_index",
-            remove_index as u64,
-            1,
-            queue_len as u64,
-        )),
+        ParrotError::NotInRange("index", remove_index, 1, queue_len),
     )?;
     verify(
         remove_until >= remove_index,
-        ParrotError::Serenity(SerenityError::NotInRange(
-            "remove_until",
-            remove_until as u64,
-            remove_index as u64,
-            queue_len as u64,
-        )),
+        ParrotError::NotInRange("until", remove_until, remove_index, queue_len),
     )?;
 
     let track = queue.get(remove_index).unwrap();
