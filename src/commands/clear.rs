@@ -17,7 +17,7 @@ pub async fn clear(
     let handler = call.lock().await;
     let queue = handler.queue().current_queue();
 
-    verify(!queue.is_empty(), ParrotError::QueueEmpty)?;
+    verify(queue.len() > 1, ParrotError::QueueEmpty)?;
 
     handler.queue().modify_queue(|v| {
         v.drain(1..);
