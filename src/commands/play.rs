@@ -1,7 +1,10 @@
 use crate::{
     commands::{skip::force_skip_top_track, summon::summon},
     handlers::track_end::update_queue_messages,
-    sources::youtube::YouTubeRestartable,
+    sources::{
+        spotify::{MediaType, Spotify},
+        youtube::YouTubeRestartable,
+    },
     strings::{
         PLAY_ALL_FAILED, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, TRACK_DURATION,
         TRACK_TIME_TO_PLAY,
@@ -79,6 +82,29 @@ pub async fn play(
     // reply with a temporary message while we fetch the source
     // needed because interactions must be replied within 3s and queueing takes longer
     create_response(&ctx.http, interaction, SEARCHING).await?;
+
+    if url.contains("spotify.com") {
+        let spotify = Spotify::auth().await.unwrap();
+        let (media_type, media_id) = Spotify::parse(url);
+
+        match media_type {
+            MediaType::Track => {
+                if let Ok(query) = Spotify::get_track_info(&spotify, media_id).await {
+                    println!("{:?}", query);
+                }
+            }
+            MediaType::Album => {
+                if let Ok(query_list) = Spotify::get_album_info(&spotify, media_id).await {
+                    println!("{:?}", query_list);
+                }
+            }
+            MediaType::Playlist => {
+                if let Ok(query_list) = Spotify::get_playlist_info(&spotify, media_id).await {
+                    println!("{:?}", query_list);
+                }
+            }
+        }
+    }
 
     let query_type = if url.contains("youtube.com/playlist?list=") {
         QueryType::PlaylistLink
