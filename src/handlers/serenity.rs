@@ -417,8 +417,7 @@ impl SerenityHandler {
             match self.ensure_role(ctx, guild_id, &role_name).await {
                 Ok(role) => self.apply_role(ctx, role, guild_id, &commands).await,
                 Err(err) => println!(
-                    "Could not create '{}' role for guild {} because {:?}",
-                    role_name, guild_id, err
+                    "Could not create '{role_name}' role for guild {guild_id} because {err:?}"
                 ),
             };
         }

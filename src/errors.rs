@@ -1,6 +1,6 @@
 use serenity::{model::misc::Mention, prelude::SerenityError};
-use std::error::Error;
 use std::fmt::Display;
+use std::{error::Error, fmt};
 
 use crate::strings::{
     FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
@@ -23,7 +23,7 @@ pub enum ParrotError {
 impl Error for ParrotError {}
 
 impl Display for ParrotError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ParrotError::Other(msg) => f.write_str(msg),
             ParrotError::Serenity(err) => f.write_str(&format!("{err}")),
