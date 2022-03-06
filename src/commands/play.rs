@@ -2,8 +2,8 @@ use crate::{
     commands::{skip::force_skip_top_track, summon::summon},
     handlers::track_end::update_queue_messages,
     sources::{
-        spotify::{MediaType, Spotify},
-        youtube::YouTubeRestartable,
+        spotify::Spotify,
+        youtube::{YouTube, YouTubeRestartable},
     },
     strings::{
         PLAY_ALL_FAILED, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, TRACK_DURATION,
@@ -87,28 +87,9 @@ pub async fn play(
 
     let query_type = if url.contains("spotify.com") {
         let spotify = Spotify::auth().await.unwrap();
-        let (media_type, media_id) = Spotify::parse(url);
-
-        match media_type {
-            MediaType::Track => match Spotify::get_track_info(&spotify, media_id).await {
-                Ok(query) => Some(QueryType::Keywords(query)),
-                Err(_) => None,
-            },
-            MediaType::Album => match Spotify::get_album_info(&spotify, media_id).await {
-                Ok(query_list) => Some(QueryType::KeywordList(query_list)),
-                Err(_) => None,
-            },
-            MediaType::Playlist => match Spotify::get_playlist_info(&spotify, media_id).await {
-                Ok(query_list) => Some(QueryType::KeywordList(query_list)),
-                Err(_) => None,
-            },
-        }
+        Spotify::extract(&spotify, url).await
     } else if url.contains("youtube.com") {
-        if url.contains("playlist?list=") {
-            Some(QueryType::PlaylistLink(url.to_string()))
-        } else {
-            Some(QueryType::VideoLink(url.to_string()))
-        }
+        YouTube::extract(url)
     } else {
         Some(QueryType::Keywords(url.to_string()))
     };
