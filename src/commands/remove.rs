@@ -45,11 +45,16 @@ pub async fn remove(
     verify(queue_len > 1, ParrotError::QueueEmpty)?;
     verify(
         remove_index < queue_len,
-        ParrotError::NotInRange("index", remove_index, 1, queue_len),
+        ParrotError::NotInRange("index", remove_index as isize, 1, queue_len as isize),
     )?;
     verify(
         remove_until >= remove_index,
-        ParrotError::NotInRange("until", remove_until, remove_index, queue_len),
+        ParrotError::NotInRange(
+            "until",
+            remove_until as isize,
+            remove_index as isize,
+            queue_len as isize,
+        ),
     )?;
 
     let track = queue.get(remove_index).unwrap();

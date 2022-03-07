@@ -11,7 +11,7 @@ use crate::strings::{
 pub enum ParrotError {
     Other(&'static str),
     QueueEmpty,
-    NotInRange(&'static str, usize, usize, usize),
+    NotInRange(&'static str, isize, isize, isize),
     NotConnected,
     AuthorDisconnected(Mention),
     WrongVoiceChannel,
@@ -48,7 +48,13 @@ impl Display for ParrotError {
 
 impl From<SerenityError> for ParrotError {
     fn from(err: SerenityError) -> ParrotError {
-        ParrotError::Serenity(err)
+        match err {
+            SerenityError::NotInRange(param, value, lower, upper) => {
+                ParrotError::NotInRange(param, value as isize, lower as isize, upper as isize)
+            }
+            SerenityError::Other(msg) => ParrotError::Other(msg),
+            _ => ParrotError::Serenity(err),
+        }
     }
 }
 
