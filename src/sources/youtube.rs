@@ -101,6 +101,7 @@ where
 async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
     let ytdl_args = [
         "-j",            // print JSON information for video for metadata
+        "-q",            // don't print progress logs (this messes with -o -)
         "--no-simulate", // ensure video is downloaded regardless of printing
         "-f",
         "webm[abr>0]/bestaudio/best", // select best quality audio-only
