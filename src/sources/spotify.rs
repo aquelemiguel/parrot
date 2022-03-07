@@ -36,10 +36,9 @@ pub struct Spotify {}
 
 impl Spotify {
     pub async fn auth() -> Result<ClientCredsSpotify, ClientError> {
-        let creds = Credentials::from_env().ok_or(ClientError::Io(Error::new(
-            ErrorKind::Other,
-            "could not find credentials",
-        )))?;
+        let creds = Credentials::from_env().ok_or_else(|| {
+            ClientError::Io(Error::new(ErrorKind::Other, "could not find credentials"))
+        })?;
 
         let mut spotify = ClientCredsSpotify::new(creds);
         spotify.request_token().await?;
@@ -49,23 +48,23 @@ impl Spotify {
 
     pub async fn extract(spotify: &ClientCredsSpotify, query: &str) -> Option<QueryType> {
         let re = Regex::new(r"spotify.com/(?P<media_type>.+)/(?P<media_id>.*?)(?:\?|$)").unwrap();
-        let captures = re.captures(query).unwrap();
+        let captures = re.captures(query)?;
 
-        let media_type = captures.name("media_type").unwrap();
+        let media_type = captures.name("media_type")?;
         let media_type = MediaType::from_str(media_type.as_str()).unwrap();
 
-        let media_id = captures.name("media_id").unwrap().as_str();
+        let media_id = captures.name("media_id")?.as_str();
 
         match media_type {
-            MediaType::Track => match Self::get_track_info(&spotify, media_id).await {
+            MediaType::Track => match Self::get_track_info(spotify, media_id).await {
                 Ok(query) => Some(QueryType::Keywords(query)),
                 Err(_) => None,
             },
-            MediaType::Album => match Self::get_album_info(&spotify, media_id).await {
+            MediaType::Album => match Self::get_album_info(spotify, media_id).await {
                 Ok(query_list) => Some(QueryType::KeywordList(query_list)),
                 Err(_) => None,
             },
-            MediaType::Playlist => match Self::get_playlist_info(&spotify, media_id).await {
+            MediaType::Playlist => match Self::get_playlist_info(spotify, media_id).await {
                 Ok(query_list) => Some(QueryType::KeywordList(query_list)),
                 Err(_) => None,
             },

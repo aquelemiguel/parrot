@@ -89,7 +89,7 @@ pub async fn play(
             return Ok(());
         }
 
-        Spotify::extract(&spotify.as_ref().unwrap(), url).await
+        Spotify::extract(spotify.as_ref().unwrap(), url).await
     } else if url.contains("youtube.com") {
         YouTube::extract(url)
     } else {
