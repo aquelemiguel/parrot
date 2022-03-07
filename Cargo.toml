@@ -10,6 +10,7 @@ keywords = ["discord", "music-bot", "rust"]
 
 [dependencies]
 dotenv = "0.15"
+lazy_static = "1.4"
 rand = "0.8"
 regex = "1.5"
 rspotify = "0.11"

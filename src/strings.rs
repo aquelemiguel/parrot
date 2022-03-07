@@ -22,6 +22,7 @@ pub const PLAY_ALL_FAILED: &str =
     "⚠️ Cannot fetch playlist via keywords! Try passing this command an URL.";
 pub const PLAY_PLAYLIST: &str = "📃 Added playlist to queue!";
 pub const PLAY_QUEUE: &str = "📃 Added to queue!";
+pub const SPOTIFY_AUTH_FAILED: &str = "⚠️ **Could not authenticate with Spotify!**\nDid you forget to provide your Spotify application's client ID and secret?";
 pub const PLAY_TOP: &str = "📃 Added to top!";
 pub const QUEUE_EXPIRED: &str =
     "In order to save resources, this command has expired.\nPlease feel free to reinvoke it!";

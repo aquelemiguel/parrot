@@ -1,10 +1,13 @@
-use std::str::FromStr;
+use std::{
+    io::{Error, ErrorKind},
+    str::FromStr,
+};
 
 use regex::Regex;
 use rspotify::{
     clients::BaseClient,
     model::{AlbumId, Country, Id, Market, PlayableItem, PlaylistId, SimplifiedArtist, TrackId},
-    ClientCredsSpotify, Credentials,
+    ClientCredsSpotify, ClientError, Credentials,
 };
 
 use crate::commands::play::QueryType;
@@ -32,10 +35,14 @@ impl FromStr for MediaType {
 pub struct Spotify {}
 
 impl Spotify {
-    pub async fn auth() -> Result<ClientCredsSpotify, ()> {
-        let creds = Credentials::from_env().ok_or(())?;
+    pub async fn auth() -> Result<ClientCredsSpotify, ClientError> {
+        let creds = Credentials::from_env().ok_or(ClientError::Io(Error::new(
+            ErrorKind::Other,
+            "could not find credentials",
+        )))?;
+
         let mut spotify = ClientCredsSpotify::new(creds);
-        spotify.request_token().await.unwrap();
+        spotify.request_token().await?;
 
         Ok(spotify)
     }

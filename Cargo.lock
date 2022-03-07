@@ -992,6 +992,7 @@ name = "parrot"
 version = "1.3.1"
 dependencies = [
  "dotenv",
+ "lazy_static",
  "rand 0.8.4",
  "regex",
  "rspotify",

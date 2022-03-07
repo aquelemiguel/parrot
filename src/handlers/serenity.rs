@@ -1,15 +1,20 @@
+use std::io::{Error, ErrorKind};
+
 use crate::{
     commands::{
         autopause::*, clear::*, leave::*, now_playing::*, pause::*, play::*, queue::*, remove::*,
         repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
         voteskip::*,
     },
+    sources::spotify::Spotify,
     strings::{
         FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
         FAIL_NO_VOICE_CONNECTION, FAIL_WRONG_CHANNEL,
     },
     utils::{check_voice_connections, create_response, Connection},
 };
+use lazy_static::lazy_static;
+use rspotify::{ClientCredsSpotify, ClientError};
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
@@ -28,6 +33,13 @@ use serenity::{
     },
     prelude::{Mentionable, SerenityError},
 };
+use tokio::sync::Mutex;
+
+lazy_static! {
+    pub static ref SPOTIFY: Mutex<Result<ClientCredsSpotify, ClientError>> = Mutex::new(Err(
+        ClientError::Io(Error::new(ErrorKind::Other, "no auth attempts"))
+    ));
+}
 
 pub struct SerenityHandler;
 
@@ -39,6 +51,9 @@ impl EventHandler for SerenityHandler {
         // sets parrot activity status message to /play
         let activity = Activity::listening("/play");
         ctx.set_activity(activity).await;
+
+        // attempt to authenticate to spotify
+        *SPOTIFY.lock().await = Spotify::auth().await;
 
         // creates the global application commands
         // and sets them with the correct permissions
