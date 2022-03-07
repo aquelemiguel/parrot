@@ -1,12 +1,14 @@
 use crate::{
+    connection::get_voice_channel_for_user,
+    errors::ParrotError,
     handlers::{IdleHandler, TrackEndHandler},
-    strings::{FAIL_ANOTHER_CHANNEL, JOINING},
-    utils::{create_response, get_voice_channel_for_user},
+    strings::JOINING,
+    utils::create_response,
 };
 use serenity::{
     client::Context,
     model::{id::ChannelId, interactions::application_command::ApplicationCommandInteraction},
-    prelude::{Mentionable, SerenityError},
+    prelude::Mentionable,
 };
 use songbird::{Event, TrackEvent};
 use std::time::Duration;
@@ -15,7 +17,7 @@ pub async fn summon(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
     send_reply: bool,
-) -> Result<(), SerenityError> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let guild = ctx.cache.guild(guild_id).await.unwrap();
 
@@ -30,8 +32,7 @@ pub async fn summon(
         if has_current_connection && send_reply {
             // bot is in another channel
             let bot_channel_id: ChannelId = handler.current_channel().unwrap().0.into();
-            let message = format!("{} {}!", FAIL_ANOTHER_CHANNEL, bot_channel_id.mention());
-            return create_response(&ctx.http, interaction, &message).await;
+            return Err(ParrotError::AlreadyConnected(bot_channel_id.mention()));
         }
     }
 
