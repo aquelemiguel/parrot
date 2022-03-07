@@ -1,6 +1,6 @@
 use crate::{
     errors::{verify, ParrotError},
-    strings::{FAIL_TIMESTAMP_PARSING, SEEKED},
+    strings::{FAIL_MINUTES_PARSING, FAIL_SECONDS_PARSING, SEEKED},
     utils::create_response,
 };
 use serenity::{
@@ -31,8 +31,8 @@ pub async fn seek(
             .and_then(|token| token.parse::<u64>().ok()),
     );
 
-    verify(minutes, ParrotError::Other(FAIL_TIMESTAMP_PARSING))?;
-    verify(seconds, ParrotError::Other(FAIL_TIMESTAMP_PARSING))?;
+    verify(minutes, ParrotError::Other(FAIL_MINUTES_PARSING))?;
+    verify(seconds, ParrotError::Other(FAIL_SECONDS_PARSING))?;
 
     let timestamp = minutes.unwrap() * 60 + seconds.unwrap();
 
