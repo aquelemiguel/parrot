@@ -36,9 +36,10 @@ pub struct Spotify {}
 
 impl Spotify {
     pub async fn auth() -> Result<ClientCredsSpotify, ClientError> {
-        let creds = Credentials::from_env().ok_or_else(|| {
-            ClientError::Io(Error::new(ErrorKind::Other, "could not find credentials"))
-        })?;
+        let creds = Credentials::from_env().ok_or_else(|| ClientError::Io(Error::new(
+            ErrorKind::Other,
+            "could not find credentials",
+        )))?;
 
         let mut spotify = ClientCredsSpotify::new(creds);
         spotify.request_token().await?;
