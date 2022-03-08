@@ -1,10 +1,10 @@
 use crate::{
-    strings::{NOTHING_IS_PLAYING, SKIPPED, SKIPPED_ALL, SKIPPED_TO},
+    errors::{verify, ParrotError},
+    strings::{SKIPPED, SKIPPED_ALL, SKIPPED_TO},
     utils::create_response,
 };
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
-    prelude::SerenityError,
 };
 use songbird::Call;
 use std::cmp::min;
@@ -13,7 +13,7 @@ use tokio::sync::MutexGuard;
 pub async fn skip(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), SerenityError> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
@@ -27,18 +27,16 @@ pub async fn skip(
     let handler = call.lock().await;
     let queue = handler.queue();
 
-    if queue.is_empty() {
-        create_response(&ctx.http, interaction, NOTHING_IS_PLAYING).await
-    } else {
-        let tracks_to_skip = min(to_skip, queue.len());
+    verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
 
-        handler.queue().modify_queue(|v| {
-            v.drain(1..tracks_to_skip);
-        });
+    let tracks_to_skip = min(to_skip, queue.len());
 
-        force_skip_top_track(&handler).await;
-        create_skip_response(ctx, interaction, &handler, tracks_to_skip).await
-    }
+    handler.queue().modify_queue(|v| {
+        v.drain(1..tracks_to_skip);
+    });
+
+    force_skip_top_track(&handler).await;
+    create_skip_response(ctx, interaction, &handler, tracks_to_skip).await
 }
 
 pub async fn create_skip_response(
@@ -46,7 +44,7 @@ pub async fn create_skip_response(
     interaction: &mut ApplicationCommandInteraction,
     handler: &MutexGuard<'_, Call>,
     tracks_to_skip: usize,
-) -> Result<(), SerenityError> {
+) -> Result<(), ParrotError> {
     match handler.queue().current() {
         Some(track) => {
             create_response(

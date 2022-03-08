@@ -5,14 +5,11 @@ use crate::{
         spotify::Spotify,
         youtube::{YouTube, YouTubeRestartable},
     },
-    strings::{
-        PLAY_ALL_FAILED, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, SPOTIFY_AUTH_FAILED,
-        TRACK_DURATION, TRACK_TIME_TO_PLAY,
-    },
+    errors::ParrotError,
     utils::{
         create_now_playing_embed, create_response, edit_embed_response, edit_response,
         get_human_readable_timestamp,
-    },
+    }, strings::{SPOTIFY_AUTH_FAILED, SEARCHING, PLAY_ALL_FAILED, PLAY_TOP, PLAY_QUEUE, PLAY_PLAYLIST, TRACK_DURATION, TRACK_TIME_TO_PLAY},
 };
 use serenity::{
     builder::CreateEmbed,
@@ -48,7 +45,7 @@ pub enum QueryType {
 pub async fn play(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), SerenityError> {
+) -> Result<(), ParrotError> {
     let args = interaction.data.options.clone();
     let first_arg = args.first().unwrap();
 

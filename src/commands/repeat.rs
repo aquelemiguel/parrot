@@ -1,17 +1,17 @@
 use crate::{
+    errors::ParrotError,
     strings::{FAIL_LOOP, LOOP_DISABLED, LOOP_ENABLED},
     utils::create_response,
 };
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
-    prelude::SerenityError,
 };
 use songbird::tracks::{LoopState, TrackHandle};
 
 pub async fn repeat(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), SerenityError> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
@@ -29,6 +29,6 @@ pub async fn repeat(
     match toggler(&track) {
         Ok(_) if was_looping => create_response(&ctx.http, interaction, LOOP_DISABLED).await,
         Ok(_) if !was_looping => create_response(&ctx.http, interaction, LOOP_ENABLED).await,
-        _ => create_response(&ctx.http, interaction, FAIL_LOOP).await,
+        _ => Err(ParrotError::Other(FAIL_LOOP)),
     }
 }
