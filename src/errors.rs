@@ -6,6 +6,7 @@ use serenity::{model::misc::Mention, prelude::SerenityError};
 use std::fmt::{Debug, Display};
 use std::{error::Error, fmt};
 
+/// A common error enum returned by most of the crate's functions within a [`Result`].
 #[derive(Debug)]
 pub enum ParrotError {
     Other(&'static str),
@@ -20,10 +21,13 @@ pub enum ParrotError {
     Serenity(SerenityError),
 }
 
-/// `ParrotError` implements the `Debug` and `Display` traits
-/// meaning it implements the `Error` trait. This just makes it explicit.
+/// `ParrotError` implements the [`Debug`] and [`Display`] traits
+/// meaning it implements the [`std::error::Error`] trait.
+/// This just makes it explicit.
 impl Error for ParrotError {}
 
+/// Implementation of the [`Display`] trait for the [`ParrotError`] enum.
+/// Errors are formatted with this and then sent as responses to the interaction.
 impl Display for ParrotError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -47,6 +51,9 @@ impl Display for ParrotError {
     }
 }
 
+/// Implementation of the [`PartialEq`] trait for the [`ParrotError`] enum.
+/// For some enum variants, values are considered equal when their inner values
+/// are equal and for others when they are of the same type.
 impl PartialEq for ParrotError {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
@@ -66,6 +73,7 @@ impl PartialEq for ParrotError {
     }
 }
 
+/// Provides an implementation to convert a [`SerenityError`] to a [`ParrotError`].
 impl From<SerenityError> for ParrotError {
     fn from(err: SerenityError) -> Self {
         match err {
@@ -78,59 +86,51 @@ impl From<SerenityError> for ParrotError {
     }
 }
 
-pub trait ToBool {
+/// Types that implement this trait can be tested as true or false and also provide
+/// a way of unpacking themselves.
+pub trait Verifiable<T> {
     fn to_bool(&self) -> bool;
-}
-
-impl ToBool for bool {
-    fn to_bool(&self) -> bool {
-        *self
-    }
-}
-
-impl<T> ToBool for Option<T> {
-    fn to_bool(&self) -> bool {
-        self.is_some()
-    }
-}
-
-impl<T, E> ToBool for Result<T, E> {
-    fn to_bool(&self) -> bool {
-        self.is_ok()
-    }
-}
-
-pub trait Unpackable<T> {
     fn unpack(self) -> T;
 }
 
-impl Unpackable<bool> for bool {
+impl Verifiable<bool> for bool {
+    fn to_bool(&self) -> bool {
+        *self
+    }
+
     fn unpack(self) -> bool {
         self
     }
 }
 
-impl<T> Unpackable<T> for Option<T> {
+impl<T> Verifiable<T> for Option<T> {
+    fn to_bool(&self) -> bool {
+        self.is_some()
+    }
+
     fn unpack(self) -> T {
         self.unwrap()
     }
 }
 
-impl<T, E> Unpackable<T> for Result<T, E>
+impl<T, E> Verifiable<T> for Result<T, E>
 where
     E: Debug,
 {
+    fn to_bool(&self) -> bool {
+        self.is_ok()
+    }
+
     fn unpack(self) -> T {
         self.unwrap()
     }
 }
 
-pub fn verify<K, T: ToBool + Unpackable<K>>(
-    condition: T,
-    err: ParrotError,
-) -> Result<K, ParrotError> {
-    if condition.to_bool() {
-        Ok(condition.unpack())
+/// Verifies if a value is true (or equivalent).
+/// Returns an [`Err`] with the given error or the value wrapped in [`Ok`].
+pub fn verify<K, T: Verifiable<K>>(verifiable: T, err: ParrotError) -> Result<K, ParrotError> {
+    if verifiable.to_bool() {
+        Ok(verifiable.unpack())
     } else {
         Err(err)
     }
