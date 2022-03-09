@@ -8,7 +8,7 @@ use crate::{
     },
     strings::{
         PLAY_ALL_FAILED, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, SPOTIFY_AUTH_FAILED,
-        SPOTIFY_INVALID_QUERY, TRACK_DURATION, TRACK_TIME_TO_PLAY,
+        TRACK_DURATION, TRACK_TIME_TO_PLAY,
     },
     utils::{
         create_now_playing_embed, create_response, edit_embed_response, edit_response,
@@ -88,10 +88,8 @@ pub async fn play(
 
         verify(spotify, ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
 
-        let query = Spotify::extract(spotify.unwrap(), url).await;
-        verify(spotify, ParrotError::Other(SPOTIFY_INVALID_QUERY))?;
-
-        query
+        let query = Spotify::extract(spotify.unwrap(), url).await?;
+        Some(query)
     } else if url.contains("youtube.com") {
         YouTube::extract(url)
     } else {

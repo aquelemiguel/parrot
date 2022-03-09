@@ -1,4 +1,4 @@
-use crate::{commands::play::QueryType, errors::ParrotError};
+use crate::{commands::play::QueryType, errors::ParrotError, strings::SPOTIFY_INVALID_QUERY};
 use regex::Regex;
 use rspotify::{
     clients::BaseClient,
@@ -40,56 +40,84 @@ impl Spotify {
         Ok(spotify)
     }
 
-    pub async fn extract(spotify: &ClientCredsSpotify, query: &str) -> Option<QueryType> {
+    pub async fn extract(
+        spotify: &ClientCredsSpotify,
+        query: &str,
+    ) -> Result<QueryType, ParrotError> {
         let re = Regex::new(r"spotify.com/(?P<media_type>.+)/(?P<media_id>.*?)(?:\?|$)").unwrap();
-        let captures = re.captures(query)?;
+        let captures = re
+            .captures(query)
+            .ok_or(ParrotError::Other(SPOTIFY_INVALID_QUERY))?;
 
-        let media_type = captures.name("media_type")?;
-        let media_type = MediaType::from_str(media_type.as_str()).unwrap();
+        let media_type = captures
+            .name("media_type")
+            .ok_or(ParrotError::Other(SPOTIFY_INVALID_QUERY))?
+            .as_str();
 
-        let media_id = captures.name("media_id")?.as_str();
+        let media_type = MediaType::from_str(media_type)
+            .map_err(|_| ParrotError::Other(SPOTIFY_INVALID_QUERY))?;
+
+        let media_id = captures
+            .name("media_id")
+            .ok_or(ParrotError::Other(SPOTIFY_INVALID_QUERY))?
+            .as_str();
 
         match media_type {
-            MediaType::Track => match Self::get_track_info(spotify, media_id).await {
-                Ok(query) => Some(QueryType::Keywords(query)),
-                Err(_) => None,
-            },
-            MediaType::Album => match Self::get_album_info(spotify, media_id).await {
-                Ok(query_list) => Some(QueryType::KeywordList(query_list)),
-                Err(_) => None,
-            },
-            MediaType::Playlist => match Self::get_playlist_info(spotify, media_id).await {
-                Ok(query_list) => Some(QueryType::KeywordList(query_list)),
-                Err(_) => None,
-            },
+            MediaType::Track => Self::get_track_info(spotify, media_id).await,
+            MediaType::Album => Self::get_album_info(spotify, media_id).await,
+            MediaType::Playlist => Self::get_playlist_info(spotify, media_id).await,
         }
     }
 
-    async fn get_track_info(spotify: &ClientCredsSpotify, id: &str) -> Result<String, ()> {
-        let track_id = TrackId::from_id(id).unwrap();
-        let track = spotify.track(&track_id).await.unwrap();
+    async fn get_track_info(
+        spotify: &ClientCredsSpotify,
+        id: &str,
+    ) -> Result<QueryType, ParrotError> {
+        let track_id = TrackId::from_id(id)
+            .map_err(|_| ParrotError::Other("track ID contains invalid characters"))?;
+
+        let track = spotify
+            .track(&track_id)
+            .await
+            .map_err(|_| ParrotError::Other("failed to fetch track"))?;
+
         let artist_names = Self::join_artist_names(&track.artists);
 
-        Ok(Self::build_query(&artist_names, &track.name))
+        let query = Self::build_query(&artist_names, &track.name);
+        Ok(QueryType::Keywords(query))
     }
 
-    async fn get_album_info(spotify: &ClientCredsSpotify, id: &str) -> Result<Vec<String>, ()> {
-        let album_id = AlbumId::from_id(id).unwrap();
-        let album = spotify.album(&album_id).await.unwrap();
+    async fn get_album_info(
+        spotify: &ClientCredsSpotify,
+        id: &str,
+    ) -> Result<QueryType, ParrotError> {
+        let album_id = AlbumId::from_id(id)
+            .map_err(|_| ParrotError::Other("album ID contains invalid characters"))?;
+
+        let album = spotify
+            .album(&album_id)
+            .await
+            .map_err(|_| ParrotError::Other("failed to fetch album"))?;
+
         let artist_names = Self::join_artist_names(&album.artists);
 
-        let queries: Vec<String> = album
+        let query_list: Vec<String> = album
             .tracks
             .items
             .iter()
             .map(|track| Self::build_query(&artist_names, &track.name))
             .collect();
 
-        Ok(queries)
+        Ok(QueryType::KeywordList(query_list))
     }
 
-    async fn get_playlist_info(spotify: &ClientCredsSpotify, id: &str) -> Result<Vec<String>, ()> {
-        let playlist_id = PlaylistId::from_id(id).unwrap();
+    async fn get_playlist_info(
+        spotify: &ClientCredsSpotify,
+        id: &str,
+    ) -> Result<QueryType, ParrotError> {
+        let playlist_id = PlaylistId::from_id(id)
+            .map_err(|_| ParrotError::Other("playlist ID contains invalid characters"))?;
+
         let playlist = spotify
             .playlist(
                 &playlist_id,
@@ -97,9 +125,9 @@ impl Spotify {
                 Some(&Market::Country(Country::UnitedStates)),
             )
             .await
-            .unwrap();
+            .map_err(|_| ParrotError::Other("failed to fetch playlist"))?;
 
-        let queries: Vec<String> = playlist
+        let query_list: Vec<String> = playlist
             .tracks
             .items
             .iter()
@@ -112,7 +140,7 @@ impl Spotify {
             })
             .collect();
 
-        Ok(queries)
+        Ok(QueryType::KeywordList(query_list))
     }
 
     fn build_query(artists: &str, track_name: &str) -> String {

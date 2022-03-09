@@ -47,7 +47,7 @@ pub const SKIPPED_TO: &str = "⏭️ Skipped to";
 pub const SKIPPED: &str = "⏭️ Skipped!";
 pub const SPOTIFY_AUTH_FAILED: &str = "⚠️ **Could not authenticate with Spotify!**\nDid you forget to provide your Spotify application's client ID and secret?";
 pub const SPOTIFY_INVALID_QUERY: &str =
-    "⚠️ **I could not find any tracks with that link!**\nAre you sure that is a valid Spotify URL?";
+    "⚠️ **Could not find any tracks with that link!**\nAre you sure that is a valid Spotify URL?";
 pub const STOPPED: &str = "⏹️ Stopped!";
 pub const TRACK_DURATION: &str = "Track duration: ";
 pub const TRACK_TIME_TO_PLAY: &str = "Estimated time until play: ";
