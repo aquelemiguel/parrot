@@ -1,16 +1,11 @@
-use std::{
-    io::{Error, ErrorKind},
-    str::FromStr,
-};
-
+use crate::{commands::play::QueryType, errors::ParrotError};
 use regex::Regex;
 use rspotify::{
     clients::BaseClient,
     model::{AlbumId, Country, Id, Market, PlayableItem, PlaylistId, SimplifiedArtist, TrackId},
-    ClientCredsSpotify, ClientError, Credentials,
+    ClientCredsSpotify, Credentials,
 };
-
-use crate::{commands::play::QueryType, errors::{ParrotError, verify}, strings::SPOTIFY_AUTH_FAILED};
+use std::str::FromStr;
 
 #[derive(Clone, Copy)]
 pub enum MediaType {
@@ -36,7 +31,8 @@ pub struct Spotify {}
 
 impl Spotify {
     pub async fn auth() -> Result<ClientCredsSpotify, ParrotError> {
-        let creds = Credentials::from_env().ok_or_else(|| ParrotError::Other("could not find credentials"))?;
+        let creds =
+            Credentials::from_env().ok_or(ParrotError::Other("could not find credentials"))?;
 
         let mut spotify = ClientCredsSpotify::new(creds);
         spotify.request_token().await?;

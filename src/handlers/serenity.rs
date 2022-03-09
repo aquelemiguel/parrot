@@ -1,18 +1,16 @@
-use std::io::{Error, ErrorKind};
-
 use crate::{
     commands::{
         autopause::*, clear::*, leave::*, now_playing::*, pause::*, play::*, queue::*, remove::*,
         repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
         voteskip::*,
     },
-    sources::spotify::Spotify,
-    utils::{create_response},
     connection::{check_voice_connections, Connection},
     errors::ParrotError,
+    sources::spotify::Spotify,
+    utils::create_response,
 };
 use lazy_static::lazy_static;
-use rspotify::{ClientCredsSpotify, ClientError};
+use rspotify::ClientCredsSpotify;
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
@@ -34,7 +32,8 @@ use serenity::{
 use tokio::sync::Mutex;
 
 lazy_static! {
-    pub static ref SPOTIFY: Mutex<Result<ClientCredsSpotify, ParrotError>> = Mutex::new(Err(ParrotError::Other("no auth attempts")));
+    pub static ref SPOTIFY: Mutex<Result<ClientCredsSpotify, ParrotError>> =
+        Mutex::new(Err(ParrotError::Other("no auth attempts")));
 }
 
 pub struct SerenityHandler;

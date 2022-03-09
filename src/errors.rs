@@ -1,5 +1,4 @@
 use rspotify::ClientError;
-use serenity::http::StatusCode;
 use serenity::{model::misc::Mention, prelude::SerenityError};
 use std::fmt::Display;
 use std::{error::Error, fmt};
@@ -45,7 +44,7 @@ impl Display for ParrotError {
             }
             ParrotError::NothingPlaying => f.write_str(NOTHING_IS_PLAYING),
             ParrotError::Serenity(err) => f.write_str(&format!("{err}")),
-            ParrotError::RSpotify(err) => f.write_str(&format!("{err}"))
+            ParrotError::RSpotify(err) => f.write_str(&format!("{err}")),
         }
     }
 }
