@@ -106,30 +106,27 @@ pub async fn play(
     let queue_was_empty = handler.queue().is_empty();
     drop(handler);
 
-    // fetch playlist beforehand to generalize PlaylistLink and KeywordList handlers
-    let playlist = match query_type.clone() {
-        QueryType::KeywordList(urls) => Some(urls),
-        QueryType::VideoLink(url) => match mode {
-            Mode::All | Mode::Reverse | Mode::Shuffle => {
-                YouTubeRestartable::ytdl_playlist(&url, mode).await
-            }
-            _ => None,
-        },
-        QueryType::PlaylistLink(url) => YouTubeRestartable::ytdl_playlist(&url, mode).await,
-        _ => None,
-    };
-
     match mode {
         Mode::End => match query_type.clone() {
             QueryType::Keywords(_) | QueryType::VideoLink(_) => {
                 enqueue_track(&call, &query_type).await.unwrap();
                 update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
             }
-            QueryType::PlaylistLink(_) | QueryType::KeywordList(_) => {
-                let urls = playlist.ok_or(ParrotError::Other("failed to fetch playlist"))?;
+            QueryType::PlaylistLink(url) => {
+                let urls = YouTubeRestartable::ytdl_playlist(&url, mode)
+                    .await
+                    .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for url in urls.iter() {
                     enqueue_track(&call, &QueryType::VideoLink(url.to_string()))
+                        .await
+                        .unwrap();
+                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                }
+            }
+            QueryType::KeywordList(keywords_list) => {
+                for keywords in keywords_list.iter() {
+                    enqueue_track(&call, &QueryType::Keywords(keywords.to_string()))
                         .await
                         .unwrap();
                     update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
@@ -141,11 +138,21 @@ pub async fn play(
                 insert_track(&call, &query_type, 1).await.unwrap();
                 update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
             }
-            QueryType::PlaylistLink(_) | QueryType::KeywordList(_) => {
-                let urls = playlist.ok_or(ParrotError::Other("failed to fetch playlist"))?;
+            QueryType::PlaylistLink(url) => {
+                let urls = YouTubeRestartable::ytdl_playlist(&url, mode)
+                    .await
+                    .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for (idx, url) in urls.into_iter().enumerate() {
                     insert_track(&call, &QueryType::VideoLink(url), idx + 1)
+                        .await
+                        .unwrap();
+                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                }
+            }
+            QueryType::KeywordList(keywords_list) => {
+                for (idx, keywords) in keywords_list.into_iter().enumerate() {
+                    insert_track(&call, &QueryType::Keywords(keywords), idx + 1)
                         .await
                         .unwrap();
                     update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
@@ -163,8 +170,10 @@ pub async fn play(
 
                 update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
             }
-            QueryType::PlaylistLink(_) | QueryType::KeywordList(_) => {
-                let urls = playlist.ok_or(ParrotError::Other("failed to fetch playlist"))?;
+            QueryType::PlaylistLink(url) => {
+                let urls = YouTubeRestartable::ytdl_playlist(&url, mode)
+                    .await
+                    .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 let mut insert_idx = 1;
                 let mut is_first_playlist_track = true;
@@ -184,13 +193,42 @@ pub async fn play(
                     update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
                 }
             }
+            QueryType::KeywordList(keywords_list) => {
+                let mut insert_idx = 1;
+                let mut is_first_playlist_track = true;
+
+                for keywords in keywords_list.into_iter() {
+                    insert_track(&call, &QueryType::Keywords(keywords), insert_idx)
+                        .await
+                        .unwrap();
+
+                    if is_first_playlist_track && !queue_was_empty {
+                        force_skip_top_track(&call.lock().await).await;
+                        is_first_playlist_track = false;
+                    } else {
+                        insert_idx += 1;
+                    }
+
+                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                }
+            }
         },
         Mode::All | Mode::Reverse | Mode::Shuffle => match query_type.clone() {
-            QueryType::VideoLink(_) | QueryType::PlaylistLink(_) | QueryType::KeywordList(_) => {
-                let urls = playlist.ok_or(ParrotError::Other("failed to fetch playlist"))?;
+            QueryType::VideoLink(url) | QueryType::PlaylistLink(url) => {
+                let urls = YouTubeRestartable::ytdl_playlist(&url, mode)
+                    .await
+                    .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for url in urls.into_iter() {
                     enqueue_track(&call, &QueryType::VideoLink(url))
+                        .await
+                        .unwrap();
+                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                }
+            }
+            QueryType::KeywordList(keywords_list) => {
+                for keywords in keywords_list.into_iter() {
+                    enqueue_track(&call, &QueryType::Keywords(keywords))
                         .await
                         .unwrap();
                     update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;

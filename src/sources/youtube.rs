@@ -45,7 +45,7 @@ impl YouTubeRestartable {
         uri: P,
         lazy: bool,
     ) -> SongbirdResult<Restartable> {
-        let uri = format!("ytsearch1:{}", uri.as_ref());
+        let uri = format!("ytsearch:{}", uri.as_ref());
         Restartable::new(YouTubeRestarter { uri }, lazy).await
     }
 

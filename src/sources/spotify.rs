@@ -1,4 +1,8 @@
-use crate::{commands::play::QueryType, errors::ParrotError, strings::SPOTIFY_INVALID_QUERY};
+use crate::{
+    commands::play::QueryType,
+    errors::ParrotError,
+    strings::{SPOTIFY_INVALID_QUERY, SPOTIFY_PLAYLIST_FAILED},
+};
 use regex::Regex;
 use rspotify::{
     clients::BaseClient,
@@ -125,7 +129,7 @@ impl Spotify {
                 Some(&Market::Country(Country::UnitedStates)),
             )
             .await
-            .map_err(|_| ParrotError::Other("failed to fetch playlist"))?;
+            .map_err(|_| ParrotError::Other(SPOTIFY_PLAYLIST_FAILED))?;
 
         let query_list: Vec<String> = playlist
             .tracks
