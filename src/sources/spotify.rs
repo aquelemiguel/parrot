@@ -10,7 +10,7 @@ use rspotify::{
     ClientCredsSpotify, ClientError, Credentials,
 };
 
-use crate::commands::play::QueryType;
+use crate::{commands::play::QueryType, errors::{ParrotError, verify}, strings::SPOTIFY_AUTH_FAILED};
 
 #[derive(Clone, Copy)]
 pub enum MediaType {
@@ -35,11 +35,8 @@ impl FromStr for MediaType {
 pub struct Spotify {}
 
 impl Spotify {
-    pub async fn auth() -> Result<ClientCredsSpotify, ClientError> {
-        let creds = Credentials::from_env().ok_or_else(|| ClientError::Io(Error::new(
-            ErrorKind::Other,
-            "could not find credentials",
-        )))?;
+    pub async fn auth() -> Result<ClientCredsSpotify, ParrotError> {
+        let creds = Credentials::from_env().ok_or_else(|| ParrotError::Other("could not find credentials"))?;
 
         let mut spotify = ClientCredsSpotify::new(creds);
         spotify.request_token().await?;

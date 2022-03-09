@@ -5,11 +5,11 @@ use crate::{
         spotify::Spotify,
         youtube::{YouTube, YouTubeRestartable},
     },
-    errors::ParrotError,
+    errors::{ParrotError, verify},
     utils::{
         create_now_playing_embed, create_response, edit_embed_response, edit_response,
         get_human_readable_timestamp,
-    }, strings::{SPOTIFY_AUTH_FAILED, SEARCHING, PLAY_ALL_FAILED, PLAY_TOP, PLAY_QUEUE, PLAY_PLAYLIST, TRACK_DURATION, TRACK_TIME_TO_PLAY},
+    }, strings::{SPOTIFY_AUTH_FAILED, SEARCHING, PLAY_ALL_FAILED, PLAY_TOP, PLAY_QUEUE, PLAY_PLAYLIST, TRACK_DURATION, TRACK_TIME_TO_PLAY, SPOTIFY_INVALID_QUERY},
 };
 use serenity::{
     builder::CreateEmbed,
@@ -80,18 +80,13 @@ pub async fn play(
 
     let query_type = if url.contains("spotify.com") {
         let spotify = SPOTIFY.lock().await;
+        let spotify = spotify.as_ref();
 
-        if spotify.is_err() {
-            create_response(&ctx.http, interaction, SPOTIFY_AUTH_FAILED).await?;
-            return Ok(());
-        }
+        verify(spotify, ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
 
-        let query = Spotify::extract(spotify.as_ref().unwrap(), url).await;
+        let query = Spotify::extract(spotify.unwrap(), url).await;
+        verify(spotify, ParrotError::Other(SPOTIFY_INVALID_QUERY))?;
 
-        if query.is_none() {
-            create_response(&ctx.http, interaction, SPOTIFY_AUTH_FAILED).await?;
-            return Ok(());
-        }
         query
     } else if url.contains("youtube.com") {
         YouTube::extract(url)

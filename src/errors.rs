@@ -1,3 +1,5 @@
+use rspotify::ClientError;
+use serenity::http::StatusCode;
 use serenity::{model::misc::Mention, prelude::SerenityError};
 use std::fmt::Display;
 use std::{error::Error, fmt};
@@ -19,6 +21,7 @@ pub enum ParrotError {
     NothingPlaying,
     AlreadyConnected(Mention),
     Serenity(SerenityError),
+    RSpotify(ClientError),
 }
 
 impl Error for ParrotError {}
@@ -42,6 +45,7 @@ impl Display for ParrotError {
             }
             ParrotError::NothingPlaying => f.write_str(NOTHING_IS_PLAYING),
             ParrotError::Serenity(err) => f.write_str(&format!("{err}")),
+            ParrotError::RSpotify(err) => f.write_str(&format!("{err}"))
         }
     }
 }
@@ -55,6 +59,12 @@ impl From<SerenityError> for ParrotError {
             SerenityError::Other(msg) => ParrotError::Other(msg),
             _ => ParrotError::Serenity(err),
         }
+    }
+}
+
+impl From<ClientError> for ParrotError {
+    fn from(err: ClientError) -> ParrotError {
+        ParrotError::RSpotify(err)
     }
 }
 

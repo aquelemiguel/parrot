@@ -34,9 +34,7 @@ use serenity::{
 use tokio::sync::Mutex;
 
 lazy_static! {
-    pub static ref SPOTIFY: Mutex<Result<ClientCredsSpotify, ClientError>> = Mutex::new(Err(
-        ClientError::Io(Error::new(ErrorKind::Other, "no auth attempts"))
-    ));
+    pub static ref SPOTIFY: Mutex<Result<ClientCredsSpotify, ParrotError>> = Mutex::new(Err(ParrotError::Other("no auth attempts")));
 }
 
 pub struct SerenityHandler;
