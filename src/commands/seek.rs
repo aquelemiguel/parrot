@@ -22,19 +22,13 @@ pub async fn seek(
     let timestamp = seek_time.as_str().unwrap();
     let mut units_iter = timestamp.split(':');
 
-    let (minutes, seconds) = (
-        units_iter
-            .next()
-            .and_then(|token| token.parse::<u64>().ok()),
-        units_iter
-            .next()
-            .and_then(|token| token.parse::<u64>().ok()),
-    );
+    let minutes = units_iter.next().and_then(|c| c.parse::<u64>().ok());
+    let minutes = verify(minutes, ParrotError::Other(FAIL_MINUTES_PARSING))?;
 
-    verify(minutes, ParrotError::Other(FAIL_MINUTES_PARSING))?;
-    verify(seconds, ParrotError::Other(FAIL_SECONDS_PARSING))?;
+    let seconds = units_iter.next().and_then(|c| c.parse::<u64>().ok());
+    let seconds = verify(seconds, ParrotError::Other(FAIL_SECONDS_PARSING))?;
 
-    let timestamp = minutes.unwrap() * 60 + seconds.unwrap();
+    let timestamp = minutes * 60 + seconds;
 
     let handler = call.lock().await;
     let track = handler
