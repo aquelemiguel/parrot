@@ -84,11 +84,9 @@ pub async fn play(
 
     let query_type = if url.contains("spotify.com") {
         let spotify = SPOTIFY.lock().await;
-        let spotify = spotify.as_ref();
+        let spotify = verify(spotify.as_ref(), ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
 
-        verify(spotify, ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
-
-        let query = Spotify::extract(spotify.unwrap(), url).await?;
+        let query = Spotify::extract(spotify, url).await?;
         Some(query)
     } else if url.contains("youtube.com") {
         YouTube::extract(url)
