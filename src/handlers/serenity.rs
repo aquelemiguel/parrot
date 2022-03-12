@@ -6,11 +6,9 @@ use crate::{
     },
     connection::{check_voice_connections, Connection},
     errors::ParrotError,
-    sources::spotify::Spotify,
+    sources::spotify::{Spotify, SPOTIFY},
     utils::create_response,
 };
-use lazy_static::lazy_static;
-use rspotify::ClientCredsSpotify;
 use serenity::{
     async_trait,
     client::{Context, EventHandler},
@@ -29,12 +27,6 @@ use serenity::{
     },
     prelude::{Mentionable, SerenityError},
 };
-use tokio::sync::Mutex;
-
-lazy_static! {
-    pub static ref SPOTIFY: Mutex<Result<ClientCredsSpotify, ParrotError>> =
-        Mutex::new(Err(ParrotError::Other("no auth attempts")));
-}
 
 pub struct SerenityHandler;
 

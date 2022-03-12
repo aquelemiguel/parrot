@@ -3,13 +3,20 @@ use crate::{
     errors::ParrotError,
     strings::{SPOTIFY_INVALID_QUERY, SPOTIFY_PLAYLIST_FAILED},
 };
+use lazy_static::lazy_static;
 use regex::Regex;
 use rspotify::{
     clients::BaseClient,
     model::{AlbumId, Id, PlayableItem, PlaylistId, SimplifiedArtist, TrackId},
     ClientCredsSpotify, Credentials,
 };
-use std::str::FromStr;
+use std::{env, str::FromStr};
+use tokio::sync::Mutex;
+
+lazy_static! {
+    pub static ref SPOTIFY: Mutex<Result<ClientCredsSpotify, ParrotError>> =
+        Mutex::new(Err(ParrotError::Other("no auth attempts")));
+}
 
 #[derive(Clone, Copy)]
 pub enum MediaType {
@@ -35,8 +42,13 @@ pub struct Spotify {}
 
 impl Spotify {
     pub async fn auth() -> Result<ClientCredsSpotify, ParrotError> {
-        let creds =
-            Credentials::from_env().ok_or(ParrotError::Other("could not find credentials"))?;
+        let spotify_client_id = env::var("SPOTIFY_CLIENT_ID")
+            .map_err(|_| ParrotError::Other("missing spotify client ID"))?;
+
+        let spotify_client_secret = env::var("SPOTIFY_CLIENT_SECRET")
+            .map_err(|_| ParrotError::Other("missing spotify client secret"))?;
+
+        let creds = Credentials::new(&spotify_client_id, &spotify_client_secret);
 
         let mut spotify = ClientCredsSpotify::new(creds);
         spotify.request_token().await?;

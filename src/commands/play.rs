@@ -1,9 +1,9 @@
 use crate::{
     commands::{skip::force_skip_top_track, summon::summon},
     errors::{verify, ParrotError},
-    handlers::{serenity::SPOTIFY, track_end::update_queue_messages},
+    handlers::track_end::update_queue_messages,
     sources::{
-        spotify::Spotify,
+        spotify::{Spotify, SPOTIFY},
         youtube::{YouTube, YouTubeRestartable},
     },
     strings::{
