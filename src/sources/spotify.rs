@@ -6,7 +6,7 @@ use crate::{
 use regex::Regex;
 use rspotify::{
     clients::BaseClient,
-    model::{AlbumId, Country, Id, Market, PlayableItem, PlaylistId, SimplifiedArtist, TrackId},
+    model::{AlbumId, Id, PlayableItem, PlaylistId, SimplifiedArtist, TrackId},
     ClientCredsSpotify, Credentials,
 };
 use std::str::FromStr;
