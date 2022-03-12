@@ -123,11 +123,7 @@ impl Spotify {
             .map_err(|_| ParrotError::Other("playlist ID contains invalid characters"))?;
 
         let playlist = spotify
-            .playlist(
-                &playlist_id,
-                None,
-                Some(&Market::Country(Country::UnitedStates)),
-            )
+            .playlist(&playlist_id, None, None)
             .await
             .map_err(|_| ParrotError::Other(SPOTIFY_PLAYLIST_FAILED))?;
 
