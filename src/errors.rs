@@ -2,7 +2,7 @@ use crate::strings::{
     FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
     FAIL_NO_VOICE_CONNECTION, FAIL_WRONG_CHANNEL, NOTHING_IS_PLAYING, QUEUE_IS_EMPTY,
 };
-use rspotify::ClientError;
+use rspotify::ClientError as RSpotifyClientError;
 use serenity::{model::misc::Mention, prelude::SerenityError};
 use std::fmt::{Debug, Display};
 use std::{error::Error, fmt};
@@ -20,7 +20,7 @@ pub enum ParrotError {
     NothingPlaying,
     AlreadyConnected(Mention),
     Serenity(SerenityError),
-    RSpotify(ClientError),
+    RSpotify(RSpotifyClientError),
 }
 
 /// `ParrotError` implements the [`Debug`] and [`Display`] traits
@@ -89,9 +89,9 @@ impl From<SerenityError> for ParrotError {
     }
 }
 
-/// Provides an implementation to convert a [`ClientError`] to a [`ParrotError`].
-impl From<ClientError> for ParrotError {
-    fn from(err: ClientError) -> ParrotError {
+/// Provides an implementation to convert a rspotify [`ClientError`] to a [`ParrotError`].
+impl From<RSpotifyClientError> for ParrotError {
+    fn from(err: RSpotifyClientError) -> ParrotError {
         ParrotError::RSpotify(err)
     }
 }

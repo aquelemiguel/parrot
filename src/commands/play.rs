@@ -94,11 +94,14 @@ pub async fn play(
         Some(QueryType::Keywords(url.to_string()))
     };
 
+    let query_type = verify(
+        query_type,
+        ParrotError::Other("Something went wrong while parsing your query!"),
+    )?;
+
     // reply with a temporary message while we fetch the source
     // needed because interactions must be replied within 3s and queueing takes longer
     create_response(&ctx.http, interaction, SEARCHING).await?;
-
-    let query_type = query_type.unwrap();
 
     let handler = call.lock().await;
     let queue_was_empty = handler.queue().is_empty();
@@ -362,7 +365,7 @@ async fn get_track_source(query_type: QueryType) -> Result<Restartable, Error> {
     match query_type {
         QueryType::VideoLink(query) => YouTubeRestartable::ytdl(query, true).await,
         QueryType::Keywords(query) => YouTubeRestartable::ytdl_search(query, true).await,
-        QueryType::PlaylistLink(_) | QueryType::KeywordList(_) => unreachable!(),
+        _ => unreachable!(),
     }
 }
 

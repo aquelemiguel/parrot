@@ -125,7 +125,7 @@ impl Spotify {
         let playlist = spotify
             .playlist(
                 &playlist_id,
-                Some(""),
+                None,
                 Some(&Market::Country(Country::UnitedStates)),
             )
             .await
