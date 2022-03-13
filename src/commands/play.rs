@@ -177,16 +177,14 @@ pub async fn play(
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 let mut insert_idx = 1;
-                let mut is_first_playlist_track = true;
 
-                for url in urls.into_iter() {
+                for (i, url) in urls.into_iter().enumerate() {
                     insert_track(&call, &QueryType::VideoLink(url), insert_idx)
                         .await
                         .unwrap();
 
-                    if is_first_playlist_track && !queue_was_empty {
+                    if i == 0 && !queue_was_empty {
                         force_skip_top_track(&call.lock().await).await;
-                        is_first_playlist_track = false;
                     } else {
                         insert_idx += 1;
                     }
@@ -196,16 +194,14 @@ pub async fn play(
             }
             QueryType::KeywordList(keywords_list) => {
                 let mut insert_idx = 1;
-                let mut is_first_playlist_track = true;
 
-                for keywords in keywords_list.into_iter() {
+                for (i, keywords) in keywords_list.into_iter().enumerate() {
                     insert_track(&call, &QueryType::Keywords(keywords), insert_idx)
                         .await
                         .unwrap();
 
-                    if is_first_playlist_track && !queue_was_empty {
+                    if i == 0 && !queue_was_empty {
                         force_skip_top_track(&call.lock().await).await;
-                        is_first_playlist_track = false;
                     } else {
                         insert_idx += 1;
                     }

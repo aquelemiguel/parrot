@@ -16,6 +16,8 @@ use tokio::sync::Mutex;
 lazy_static! {
     pub static ref SPOTIFY: Mutex<Result<ClientCredsSpotify, ParrotError>> =
         Mutex::new(Err(ParrotError::Other("no auth attempts")));
+    pub static ref SPOTIFY_QUERY_REGEX: Regex =
+        Regex::new(r"spotify.com/(?P<media_type>.+)/(?P<media_id>.*?)(?:\?|$)").unwrap();
 }
 
 #[derive(Clone, Copy)]
@@ -60,8 +62,7 @@ impl Spotify {
         spotify: &ClientCredsSpotify,
         query: &str,
     ) -> Result<QueryType, ParrotError> {
-        let re = Regex::new(r"spotify.com/(?P<media_type>.+)/(?P<media_id>.*?)(?:\?|$)").unwrap();
-        let captures = re
+        let captures = SPOTIFY_QUERY_REGEX
             .captures(query)
             .ok_or(ParrotError::Other(SPOTIFY_INVALID_QUERY))?;
 
