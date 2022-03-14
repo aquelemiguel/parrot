@@ -1,0 +1,29 @@
+name: ✨ User Story
+description: Request a new feature or enhancement
+labels: [✨ feature, 👓 triage]
+body:
+  - type: textarea
+    id: rationale
+    attributes:
+      label: 🧐 Rationale
+      description: Why are we implementing this feature and what are the key concepts someone must understand to make sense of it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 📝 Description
+      description: What the feature actually is, describes in detail the new functionality.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-information
+    attributes:
+      label: ➕ Additional Information & References
+      description: Give us some additional information on the feature request like proposed solutions, links, screenshots, etc.
+
+  - type: markdown
+    attributes:
+      value: If you'd like to see this feature implemented, add a 👍 reaction to this post.
