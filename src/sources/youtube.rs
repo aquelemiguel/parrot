@@ -1,4 +1,7 @@
-use crate::{commands::play::Mode, sources::ffmpeg::ffmpeg};
+use crate::{
+    commands::play::{Mode, QueryType},
+    sources::ffmpeg::ffmpeg,
+};
 use serde_json::Value;
 use serenity::async_trait;
 use songbird::input::{
@@ -16,6 +19,18 @@ use tokio::{process::Command as TokioCommand, task};
 
 const NEWLINE_BYTE: u8 = 0xA;
 
+pub struct YouTube {}
+
+impl YouTube {
+    pub fn extract(query: &str) -> Option<QueryType> {
+        if query.contains("playlist?list=") {
+            Some(QueryType::PlaylistLink(query.to_string()))
+        } else {
+            Some(QueryType::VideoLink(query.to_string()))
+        }
+    }
+}
+
 pub struct YouTubeRestartable {}
 
 impl YouTubeRestartable {
@@ -30,7 +45,7 @@ impl YouTubeRestartable {
         uri: P,
         lazy: bool,
     ) -> SongbirdResult<Restartable> {
-        let uri = format!("ytsearch1:{}", uri.as_ref());
+        let uri = format!("ytsearch:{}", uri.as_ref());
         Restartable::new(YouTubeRestarter { uri }, lazy).await
     }
 
