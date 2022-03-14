@@ -396,17 +396,14 @@ impl SerenityHandler {
     }
 
     async fn self_deafen(&self, ctx: &Context, guild: Option<GuildId>, new: VoiceState) {
-        match ctx.http.get_current_user().await {
-            Ok(user) => {
-                if user.id == new.user_id && !new.deaf {
-                    guild
-                        .unwrap()
-                        .edit_member(&ctx.http, new.user_id, |n| n.deafen(true))
-                        .await
-                        .unwrap();
-                }
+        if let Ok(user) = ctx.http.get_current_user().await {
+            if user.id == new.user_id && !new.deaf {
+                guild
+                    .unwrap()
+                    .edit_member(&ctx.http, new.user_id, |n| n.deafen(true))
+                    .await
+                    .unwrap();
             }
-            Err(_) => {}
         }
     }
 
