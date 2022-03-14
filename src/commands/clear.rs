@@ -1,17 +1,17 @@
 use crate::{
+    errors::{verify, ParrotError},
     handlers::track_end::update_queue_messages,
-    strings::{CLEARED, QUEUE_IS_EMPTY},
+    strings::CLEARED,
     utils::create_response,
 };
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
-    prelude::SerenityError,
 };
 
 pub async fn clear(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), SerenityError> {
+) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
@@ -19,9 +19,7 @@ pub async fn clear(
     let handler = call.lock().await;
     let queue = handler.queue().current_queue();
 
-    if queue.len() <= 1 {
-        return create_response(&ctx.http, interaction, QUEUE_IS_EMPTY).await;
-    }
+    verify(queue.len() > 1, ParrotError::QueueEmpty)?;
 
     handler.queue().modify_queue(|v| {
         v.drain(1..);
