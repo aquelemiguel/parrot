@@ -18,7 +18,7 @@ impl Client {
 
     pub async fn new(token: String) -> Result<Client, Box<dyn Error>> {
         let application_id = env::var("DISCORD_APP_ID")
-            .expect("Fatality! DISCORD_APPID not set!")
+            .expect("Fatality! DISCORD_APP_ID not set!")
             .parse()?;
 
         let client = serenity::Client::builder(token)
