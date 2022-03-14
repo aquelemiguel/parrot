@@ -6,6 +6,7 @@ use crate::{
     },
     connection::{check_voice_connections, Connection},
     errors::ParrotError,
+    sources::spotify::{Spotify, SPOTIFY},
     utils::create_response,
 };
 use serenity::{
@@ -37,6 +38,9 @@ impl EventHandler for SerenityHandler {
         // sets parrot activity status message to /play
         let activity = Activity::listening("/play");
         ctx.set_activity(activity).await;
+
+        // attempt to authenticate to spotify
+        *SPOTIFY.lock().await = Spotify::auth().await;
 
         // creates the global application commands
         // and sets them with the correct permissions
@@ -396,12 +400,14 @@ impl SerenityHandler {
     }
 
     async fn self_deafen(&self, ctx: &Context, guild: Option<GuildId>, new: VoiceState) {
-        if new.user_id == ctx.http.get_current_user().await.unwrap().id && !new.deaf {
-            guild
-                .unwrap()
-                .edit_member(&ctx.http, new.user_id, |n| n.deafen(true))
-                .await
-                .unwrap();
+        if let Ok(user) = ctx.http.get_current_user().await {
+            if user.id == new.user_id && !new.deaf {
+                guild
+                    .unwrap()
+                    .edit_member(&ctx.http, new.user_id, |n| n.deafen(true))
+                    .await
+                    .unwrap();
+            }
         }
     }
 
