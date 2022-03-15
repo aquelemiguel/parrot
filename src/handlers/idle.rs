@@ -2,7 +2,7 @@ use serenity::{
     async_trait, http::Http,
     model::interactions::application_command::ApplicationCommandInteraction,
 };
-use songbird::{Event, EventContext, EventHandler, Songbird};
+use songbird::{tracks::PlayMode, Event, EventContext, EventHandler, Songbird};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
@@ -22,9 +22,12 @@ pub struct IdleHandler {
 impl EventHandler for IdleHandler {
     async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
         if let EventContext::Track(track_list) = ctx {
-            if !track_list.is_empty() {
-                self.count.store(0, Ordering::Relaxed);
-                return None;
+            if let Some(top_track) = track_list.first() {
+                // if the top track is playing (not paused), then reset the counter
+                if matches!(top_track.0.playing, PlayMode::Play) {
+                    self.count.store(0, Ordering::Relaxed);
+                    return None;
+                }
             }
 
             if self.count.fetch_add(1, Ordering::Relaxed) >= self.limit {
