@@ -20,11 +20,12 @@ pub async fn stop(
     let queue = handler.queue();
 
     verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
-
     queue.stop();
+
+    let queue = handler.queue().current_queue();
     drop(handler);
 
     create_response(&ctx.http, interaction, STOPPED).await?;
-    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
     Ok(())
 }

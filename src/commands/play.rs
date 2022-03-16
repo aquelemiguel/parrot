@@ -110,8 +110,8 @@ pub async fn play(
     match mode {
         Mode::End => match query_type.clone() {
             QueryType::Keywords(_) | QueryType::VideoLink(_) => {
-                enqueue_track(&call, &query_type).await.unwrap();
-                update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                let queue = enqueue_track(&call, &query_type).await.unwrap();
+                update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
             }
             QueryType::PlaylistLink(url) => {
                 let urls = YouTubeRestartable::ytdl_playlist(&url, mode)
@@ -119,25 +119,25 @@ pub async fn play(
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for url in urls.iter() {
-                    enqueue_track(&call, &QueryType::VideoLink(url.to_string()))
+                    let queue = enqueue_track(&call, &QueryType::VideoLink(url.to_string()))
                         .await
                         .unwrap();
-                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
             QueryType::KeywordList(keywords_list) => {
                 for keywords in keywords_list.iter() {
-                    enqueue_track(&call, &QueryType::Keywords(keywords.to_string()))
+                    let queue = enqueue_track(&call, &QueryType::Keywords(keywords.to_string()))
                         .await
                         .unwrap();
-                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
         },
         Mode::Next => match query_type.clone() {
             QueryType::Keywords(_) | QueryType::VideoLink(_) => {
-                insert_track(&call, &query_type, 1).await.unwrap();
-                update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                let queue = insert_track(&call, &query_type, 1).await.unwrap();
+                update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
             }
             QueryType::PlaylistLink(url) => {
                 let urls = YouTubeRestartable::ytdl_playlist(&url, mode)
@@ -145,31 +145,31 @@ pub async fn play(
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for (idx, url) in urls.into_iter().enumerate() {
-                    insert_track(&call, &QueryType::VideoLink(url), idx + 1)
+                    let queue = insert_track(&call, &QueryType::VideoLink(url), idx + 1)
                         .await
                         .unwrap();
-                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
             QueryType::KeywordList(keywords_list) => {
                 for (idx, keywords) in keywords_list.into_iter().enumerate() {
-                    insert_track(&call, &QueryType::Keywords(keywords), idx + 1)
+                    let queue = insert_track(&call, &QueryType::Keywords(keywords), idx + 1)
                         .await
                         .unwrap();
-                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
         },
         Mode::Jump => match query_type.clone() {
             QueryType::Keywords(_) | QueryType::VideoLink(_) => {
-                enqueue_track(&call, &query_type).await.unwrap();
+                let mut queue = enqueue_track(&call, &query_type).await.unwrap();
 
                 if !queue_was_empty {
                     rotate_tracks(&call, 1).await;
-                    force_skip_top_track(&call.lock().await).await;
+                    queue = force_skip_top_track(&call.lock().await).await.unwrap();
                 }
 
-                update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
             }
             QueryType::PlaylistLink(url) => {
                 let urls = YouTubeRestartable::ytdl_playlist(&url, mode)
@@ -179,34 +179,34 @@ pub async fn play(
                 let mut insert_idx = 1;
 
                 for (i, url) in urls.into_iter().enumerate() {
-                    insert_track(&call, &QueryType::VideoLink(url), insert_idx)
+                    let mut queue = insert_track(&call, &QueryType::VideoLink(url), insert_idx)
                         .await
                         .unwrap();
 
                     if i == 0 && !queue_was_empty {
-                        force_skip_top_track(&call.lock().await).await;
+                        queue = force_skip_top_track(&call.lock().await).await.unwrap();
                     } else {
                         insert_idx += 1;
                     }
 
-                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
             QueryType::KeywordList(keywords_list) => {
                 let mut insert_idx = 1;
 
                 for (i, keywords) in keywords_list.into_iter().enumerate() {
-                    insert_track(&call, &QueryType::Keywords(keywords), insert_idx)
+                    let mut queue = insert_track(&call, &QueryType::Keywords(keywords), insert_idx)
                         .await
                         .unwrap();
 
                     if i == 0 && !queue_was_empty {
-                        force_skip_top_track(&call.lock().await).await;
+                        queue = force_skip_top_track(&call.lock().await).await.unwrap();
                     } else {
                         insert_idx += 1;
                     }
 
-                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
         },
@@ -217,18 +217,18 @@ pub async fn play(
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for url in urls.into_iter() {
-                    enqueue_track(&call, &QueryType::VideoLink(url))
+                    let queue = enqueue_track(&call, &QueryType::VideoLink(url))
                         .await
                         .unwrap();
-                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
             QueryType::KeywordList(keywords_list) => {
                 for keywords in keywords_list.into_iter() {
-                    enqueue_track(&call, &QueryType::Keywords(keywords))
+                    let queue = enqueue_track(&call, &QueryType::Keywords(keywords))
                         .await
                         .unwrap();
-                    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
             _ => {
@@ -368,20 +368,21 @@ async fn get_track_source(query_type: QueryType) -> Result<Restartable, Error> {
 async fn enqueue_track(
     call: &Arc<Mutex<Call>>,
     query_type: &QueryType,
-) -> Result<(), Box<dyn StdError>> {
+) -> Result<Vec<TrackHandle>, Box<dyn StdError>> {
     // safeguard against ytdl dying on a private/deleted video and killing the playlist
     let source = get_track_source(query_type.clone()).await?;
 
     let mut handler = call.lock().await;
     handler.enqueue_source(source.into());
-    Ok(())
+
+    Ok(handler.queue().current_queue())
 }
 
 async fn insert_track(
     call: &Arc<Mutex<Call>>,
     query_type: &QueryType,
     idx: usize,
-) -> Result<(), Box<dyn StdError>> {
+) -> Result<Vec<TrackHandle>, Box<dyn StdError>> {
     let handler = call.lock().await;
     let queue_size = handler.queue().len();
     drop(handler);
@@ -398,5 +399,5 @@ async fn insert_track(
         queue.insert(idx, back);
     });
 
-    Ok(())
+    Ok(handler.queue().current_queue())
 }

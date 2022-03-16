@@ -44,7 +44,7 @@ pub async fn voteskip(
     let skip_threshold = channel_guild_users.count() / 2;
 
     if cache.current_skip_votes.len() >= skip_threshold {
-        force_skip_top_track(&handler).await;
+        force_skip_top_track(&handler).await?;
         create_skip_response(ctx, interaction, &handler, 1).await
     } else {
         create_response(
