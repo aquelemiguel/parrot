@@ -3,8 +3,10 @@
 </p>
 
 <p align="center">
-  A hassle-free, highly performant, host-it-yourself Discord music bot
+  A hassle-free, highly performant, host-it-yourself Discord music bot  
 </p>
+
+[![dependency status](https://deps.rs/repo/github/aquelemiguel/parrot/status.svg)](https://deps.rs/repo/github/aquelemiguel/parrot)
 
 ## Deployment
 
