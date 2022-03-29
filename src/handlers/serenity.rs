@@ -70,7 +70,7 @@ impl EventHandler for SerenityHandler {
         let manager = songbird::get(&ctx).await.unwrap();
         let guild_id = guild.unwrap();
 
-        if let Some(_) = manager.get(guild_id) {
+        if manager.get(guild_id).is_some() {
             manager.remove(guild_id).await.ok();
         }
 

@@ -81,11 +81,11 @@ pub async fn update_queue_messages(
 
     for (message, page_lock) in messages.iter_mut() {
         // has the page size shrunk?
-        let num_pages = calculate_num_pages(&tracks);
+        let num_pages = calculate_num_pages(tracks);
         let mut page = page_lock.write().await;
         *page = usize::min(*page, num_pages - 1);
 
-        let embed = create_queue_embed(&tracks, *page);
+        let embed = create_queue_embed(tracks, *page);
 
         let edit_message = message
             .edit(&http, |edit| {
