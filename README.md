@@ -7,7 +7,10 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/aquelemiguel/parrot/actions/workflows/main.yml"><img src="https://github.com/aquelemiguel/parrot/actions/workflows/main.yml/badge.svg"></a>
   <a href="https://deps.rs/repo/github/aquelemiguel/parrot"><img src="https://deps.rs/repo/github/aquelemiguel/parrot/status.svg"></a>
+  <a href="https://github.com/aquelemiguel/parrot/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+  <a href="https://github.com/aquelemiguel/parrot/"><img src="https://img.shields.io/badge/rustc-1.58-blue.svg"></a>
 </p>
 
 ## Deployment
