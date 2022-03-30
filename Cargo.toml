@@ -26,5 +26,5 @@ default-features = false
 features = ["cache", "collector", "client", "gateway", "model", "rustls_backend", "unstable_discord_api", "voice"]
 
 [dependencies.tokio]
-version = "1.0"
+version = "1.17"
 features = ["macros", "rt-multi-thread"]
