@@ -239,6 +239,7 @@ pub async fn play(
     }
 
     let handler = call.lock().await;
+
     // refetch the queue after modification
     let queue = handler.queue().current_queue();
     drop(handler);
