@@ -22,6 +22,7 @@ pub async fn stop(
     verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
     queue.stop();
 
+    // refetch the queue after modification
     let queue = handler.queue().current_queue();
     drop(handler);
 

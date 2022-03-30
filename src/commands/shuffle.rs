@@ -24,6 +24,7 @@ pub async fn shuffle(
         )
     });
 
+    // refetch the queue after modification
     let queue = handler.queue().current_queue();
     drop(handler);
 

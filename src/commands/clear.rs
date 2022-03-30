@@ -25,6 +25,7 @@ pub async fn clear(
         v.drain(1..);
     });
 
+    // refetch the queue after modification
     let queue = handler.queue().current_queue();
     drop(handler);
 

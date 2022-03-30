@@ -63,7 +63,8 @@ pub async fn remove(
         v.drain(remove_index..=remove_until);
     });
 
-    let queue = handler.queue().current_queue(); // refetch the queue after modification
+    // refetch the queue after modification
+    let queue = handler.queue().current_queue();
     drop(handler);
 
     if remove_until == remove_index {
