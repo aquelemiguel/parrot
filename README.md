@@ -6,6 +6,10 @@
   A hassle-free, highly performant, host-it-yourself Discord music bot
 </p>
 
+<p align="center">
+  <a href="https://deps.rs/repo/github/aquelemiguel/parrot"><img src="https://deps.rs/repo/github/aquelemiguel/parrot/status.svg"></a>
+</p>
+
 ## Deployment
 
 ### Usage
