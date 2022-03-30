@@ -25,9 +25,11 @@ pub async fn clear(
         v.drain(1..);
     });
 
+    // refetch the queue after modification
+    let queue = handler.queue().current_queue();
     drop(handler);
 
     create_response(&ctx.http, interaction, CLEARED).await?;
-    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
+    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
     Ok(())
 }

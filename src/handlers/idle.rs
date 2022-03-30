@@ -33,16 +33,12 @@ impl EventHandler for IdleHandler {
             if self.count.fetch_add(1, Ordering::Relaxed) >= self.limit {
                 let guild_id = self.interaction.guild_id?;
 
-                if let Some(call) = self.manager.get(guild_id) {
-                    let mut handler = call.lock().await;
-
-                    if handler.leave().await.is_ok() {
-                        self.interaction
-                            .channel_id
-                            .say(&self.http, IDLE_ALERT)
-                            .await
-                            .unwrap();
-                    }
+                if self.manager.remove(guild_id).await.is_ok() {
+                    self.interaction
+                        .channel_id
+                        .say(&self.http, IDLE_ALERT)
+                        .await
+                        .unwrap();
                 }
             }
         }

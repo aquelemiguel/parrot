@@ -4,7 +4,7 @@ use serenity::{
     model::id::GuildId,
     prelude::{Mutex, RwLock, TypeMap},
 };
-use songbird::{Call, Event, EventContext, EventHandler};
+use songbird::{tracks::TrackHandle, Call, Event, EventContext, EventHandler};
 use std::sync::Arc;
 
 use crate::{
@@ -55,7 +55,11 @@ impl EventHandler for TrackEndHandler {
 #[async_trait]
 impl EventHandler for ModifyQueueHandler {
     async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
-        update_queue_messages(&self.http, &self.ctx_data, &self.call, self.guild_id).await;
+        let handler = self.call.lock().await;
+        let queue = handler.queue().current_queue();
+        drop(handler);
+
+        update_queue_messages(&self.http, &self.ctx_data, &queue, self.guild_id).await;
         None
     }
 }
@@ -63,7 +67,7 @@ impl EventHandler for ModifyQueueHandler {
 pub async fn update_queue_messages(
     http: &Arc<Http>,
     ctx_data: &Arc<RwLock<TypeMap>>,
-    call: &Arc<Mutex<Call>>,
+    tracks: &[TrackHandle],
     guild_id: GuildId,
 ) {
     let data = ctx_data.read().await;
@@ -76,16 +80,12 @@ pub async fn update_queue_messages(
     drop(data);
 
     for (message, page_lock) in messages.iter_mut() {
-        let handler = call.lock().await;
-        let tracks = handler.queue().current_queue();
-        drop(handler);
-
         // has the page size shrunk?
-        let num_pages = calculate_num_pages(&tracks);
+        let num_pages = calculate_num_pages(tracks);
         let mut page = page_lock.write().await;
         *page = usize::min(*page, num_pages - 1);
 
-        let embed = create_queue_embed(&tracks, *page);
+        let embed = create_queue_embed(tracks, *page);
 
         let edit_message = message
             .edit(&http, |edit| {

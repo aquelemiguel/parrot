@@ -62,6 +62,9 @@ pub async fn remove(
     handler.queue().modify_queue(|v| {
         v.drain(remove_index..=remove_until);
     });
+
+    // refetch the queue after modification
+    let queue = handler.queue().current_queue();
     drop(handler);
 
     if remove_until == remove_index {
@@ -70,8 +73,8 @@ pub async fn remove(
     } else {
         create_response(&ctx.http, interaction, REMOVED_QUEUE_MULTIPLE).await?;
     }
-    update_queue_messages(&ctx.http, &ctx.data, &call, guild_id).await;
 
+    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
     Ok(())
 }
 

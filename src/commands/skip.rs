@@ -6,7 +6,7 @@ use crate::{
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
 };
-use songbird::Call;
+use songbird::{tracks::TrackHandle, Call};
 use std::cmp::min;
 use tokio::sync::MutexGuard;
 
@@ -35,7 +35,7 @@ pub async fn skip(
         v.drain(1..tracks_to_skip);
     });
 
-    force_skip_top_track(&handler).await;
+    force_skip_top_track(&handler).await?;
     create_skip_response(ctx, interaction, &handler, tracks_to_skip).await
 }
 
@@ -69,12 +69,16 @@ pub async fn create_skip_response(
     }
 }
 
-pub async fn force_skip_top_track(handler: &MutexGuard<'_, Call>) {
+pub async fn force_skip_top_track(
+    handler: &MutexGuard<'_, Call>,
+) -> Result<Vec<TrackHandle>, ParrotError> {
     // this is an odd sequence of commands to ensure the queue is properly updated
-    // apparently, skipping/stopping a track takes a little to remove it from the queue
+    // apparently, skipping/stopping a track takes a while to remove it from the queue
     // also, manually removing tracks doesn't trigger the next track to play
     // so first, stop the top song, manually remove it and then resume playback
     handler.queue().current().unwrap().stop().ok();
     handler.queue().dequeue(0);
     handler.queue().resume().ok();
+
+    Ok(handler.queue().current_queue())
 }

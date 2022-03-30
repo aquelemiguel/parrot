@@ -6,6 +6,7 @@ use crate::{
     },
     connection::{check_voice_connections, Connection},
     errors::ParrotError,
+    handlers::track_end::update_queue_messages,
     sources::spotify::{Spotify, SPOTIFY},
     utils::create_response,
 };
@@ -62,7 +63,18 @@ impl EventHandler for SerenityHandler {
         _old: Option<VoiceState>,
         new: VoiceState,
     ) {
-        self.self_deafen(&ctx, guild, new).await;
+        if new.channel_id.is_some() {
+            return self.self_deafen(&ctx, guild, new).await;
+        }
+
+        let manager = songbird::get(&ctx).await.unwrap();
+        let guild_id = guild.unwrap();
+
+        if manager.get(guild_id).is_some() {
+            manager.remove(guild_id).await.ok();
+        }
+
+        update_queue_messages(&ctx.http, &ctx.data, &[], guild_id).await;
     }
 }
 
