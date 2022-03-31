@@ -16,10 +16,8 @@ use crate::{
     },
 };
 use serenity::{
-    builder::CreateEmbed,
-    client::Context,
-    model::interactions::application_command::ApplicationCommandInteraction,
-    prelude::{Mutex, SerenityError},
+    builder::CreateEmbed, client::Context,
+    model::interactions::application_command::ApplicationCommandInteraction, prelude::Mutex,
 };
 use songbird::{
     input::{error::Error, Restartable},
@@ -165,7 +163,7 @@ pub async fn play(
                 let mut queue = enqueue_track(&call, &query_type).await.unwrap();
 
                 if !queue_was_empty {
-                    rotate_tracks(&call, 1).await;
+                    rotate_tracks(&call, 1).await.ok();
                     queue = force_skip_top_track(&call.lock().await).await.unwrap();
                 }
 
@@ -279,20 +277,6 @@ pub async fn play(
     Ok(())
 }
 
-async fn rotate_tracks(call: &Arc<Mutex<Call>>, n: usize) {
-    let handler = call.lock().await;
-
-    if handler.queue().len() <= 2 {
-        return;
-    }
-
-    handler.queue().modify_queue(|queue| {
-        let mut not_playing = queue.split_off(1);
-        not_playing.rotate_right(n);
-        queue.append(&mut not_playing);
-    });
-}
-
 async fn calculate_time_until_play(queue: &[TrackHandle], mode: Mode) -> Option<Duration> {
     if queue.is_empty() {
         return None;
@@ -389,9 +373,10 @@ async fn insert_track(
     let queue_size = handler.queue().len();
     drop(handler);
 
-    if idx == 0 || idx >= queue_size {
-        return Err(SerenityError::NotInRange("index", idx as u64, 1, queue_size as u64).into());
-    }
+    verify(
+        idx != 0 && idx < queue_size,
+        ParrotError::NotInRange("index", idx as isize, 1, queue_size as isize),
+    )?;
 
     enqueue_track(call, query_type).await?;
 
@@ -399,6 +384,26 @@ async fn insert_track(
     handler.queue().modify_queue(|queue| {
         let back = queue.pop_back().unwrap();
         queue.insert(idx, back);
+    });
+
+    Ok(handler.queue().current_queue())
+}
+
+async fn rotate_tracks(
+    call: &Arc<Mutex<Call>>,
+    n: usize,
+) -> Result<Vec<TrackHandle>, Box<dyn StdError>> {
+    let handler = call.lock().await;
+
+    verify(
+        handler.queue().len() > 2,
+        ParrotError::Other("cannot rotate queues smaller than 3 tracks"),
+    )?;
+
+    handler.queue().modify_queue(|queue| {
+        let mut not_playing = queue.split_off(1);
+        not_playing.rotate_right(n);
+        queue.append(&mut not_playing);
     });
 
     Ok(handler.queue().current_queue())

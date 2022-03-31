@@ -22,12 +22,16 @@ pub struct IdleHandler {
 impl EventHandler for IdleHandler {
     async fn act(&self, ctx: &EventContext<'_>) -> Option<Event> {
         if let EventContext::Track(track_list) = ctx {
-            if let Some(top_track) = track_list.first() {
-                // if the top track is playing (not paused), then reset the counter
-                if matches!(top_track.0.playing, PlayMode::Play) {
-                    self.count.store(0, Ordering::Relaxed);
-                    return None;
-                }
+            // looks like the track list isn't ordered here, so the first track in the list isn't
+            // guaranteed to be the first track in the actual queue, so search the entire list
+            let bot_is_playing = track_list
+                .iter()
+                .any(|track| matches!(track.0.playing, PlayMode::Play));
+
+            // if there's a track playing, then reset the counter
+            if bot_is_playing {
+                self.count.store(0, Ordering::Relaxed);
+                return None;
             }
 
             if self.count.fetch_add(1, Ordering::Relaxed) >= self.limit {
