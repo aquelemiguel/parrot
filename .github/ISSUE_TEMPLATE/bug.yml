@@ -1,6 +1,6 @@
 name: 🐛 Bug report
 description: Report errors or unexpected behavior for us to improve.
-labels: [🐛 bug, 👓 triage]
+labels: [🪲 bug, 👓 triage]
 body:
   - type: textarea
     attributes:
