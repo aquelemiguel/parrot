@@ -63,6 +63,11 @@ impl EventHandler for SerenityHandler {
         _old: Option<VoiceState>,
         new: VoiceState,
     ) {
+        // do nothing if this is a voice update event for a user, not a bot
+        if new.user_id != ctx.cache.current_user_id().await {
+            return;
+        }
+
         if new.channel_id.is_some() {
             return self.self_deafen(&ctx, guild, new).await;
         }
