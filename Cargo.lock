@@ -1017,6 +1017,7 @@ dependencies = [
  "rand 0.8.5",
  "regex",
  "rspotify",
+ "serde",
  "serde_json",
  "serenity",
  "songbird",
