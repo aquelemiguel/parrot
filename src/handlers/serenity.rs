@@ -8,7 +8,7 @@ use crate::{
     errors::ParrotError,
     handlers::track_end::update_queue_messages,
     sources::spotify::{Spotify, SPOTIFY},
-    utils::create_response,
+    utils::{create_response, edit_response},
 };
 use serenity::{
     async_trait,
@@ -452,8 +452,18 @@ impl SerenityHandler {
         interaction: &mut ApplicationCommandInteraction,
         err: ParrotError,
     ) {
-        create_response(&ctx.http, interaction, &format!("{err}"))
+        if interaction
+            .get_interaction_response(&ctx.http)
             .await
-            .expect("failed to create response");
+            .is_err()
+        {
+            create_response(&ctx.http, interaction, &format!("{err}"))
+                .await
+                .expect("failed to create response");
+        } else {
+            edit_response(&ctx.http, interaction, &format!("{err}"))
+                .await
+                .expect("failed to edit response");
+        }
     }
 }
