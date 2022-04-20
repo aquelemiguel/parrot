@@ -62,7 +62,7 @@ impl Display for ParrotError {
                         f.write_str(TRACK_NOT_FOUND)
                     }
                 }
-                _ => unimplemented!(),
+                _ => f.write_str(&format!("{err}")),
             },
             Self::Serenity(err) => f.write_str(&format!("{err}")),
             Self::RSpotify(err) => f.write_str(&format!("{err}")),
