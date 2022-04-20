@@ -332,11 +332,11 @@ async fn get_track_source(query_type: QueryType) -> Result<Restartable, ParrotEr
     match query_type {
         QueryType::VideoLink(query) => YouTubeRestartable::ytdl(query, true)
             .await
-            .map_err(|_| ParrotError::TrackNotFound),
+            .map_err(ParrotError::TrackFail),
 
         QueryType::Keywords(query) => YouTubeRestartable::ytdl_search(query, true)
             .await
-            .map_err(|_| ParrotError::TrackNotFound),
+            .map_err(ParrotError::TrackFail),
 
         _ => unreachable!(),
     }

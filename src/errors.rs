@@ -1,10 +1,11 @@
 use crate::strings::{
     FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
     FAIL_NO_VOICE_CONNECTION, FAIL_WRONG_CHANNEL, NOTHING_IS_PLAYING, QUEUE_IS_EMPTY,
-    TRACK_NOT_FOUND,
+    TRACK_INAPPROPRIATE, TRACK_NOT_FOUND,
 };
 use rspotify::ClientError as RSpotifyClientError;
 use serenity::{model::misc::Mention, prelude::SerenityError};
+use songbird::input::error::Error as InputError;
 use std::fmt::{Debug, Display};
 use std::{error::Error, fmt};
 
@@ -19,7 +20,7 @@ pub enum ParrotError {
     WrongVoiceChannel,
     AuthorNotFound,
     NothingPlaying,
-    TrackNotFound,
+    TrackFail(InputError),
     AlreadyConnected(Mention),
     Serenity(SerenityError),
     RSpotify(RSpotifyClientError),
@@ -50,7 +51,19 @@ impl Display for ParrotError {
                 f.write_fmt(format_args!("{} {}", FAIL_ANOTHER_CHANNEL, mention))
             }
             Self::NothingPlaying => f.write_str(NOTHING_IS_PLAYING),
-            Self::TrackNotFound => f.write_str(TRACK_NOT_FOUND),
+            Self::TrackFail(err) => match err {
+                InputError::Json {
+                    error: _,
+                    parsed_text,
+                } => {
+                    if parsed_text.contains("Sign in to confirm your age") {
+                        f.write_str(TRACK_INAPPROPRIATE)
+                    } else {
+                        f.write_str(TRACK_NOT_FOUND)
+                    }
+                }
+                _ => f.write_str(&format!("{err}")),
+            },
             Self::Serenity(err) => f.write_str(&format!("{err}")),
             Self::RSpotify(err) => f.write_str(&format!("{err}")),
         }
