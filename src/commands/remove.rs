@@ -8,7 +8,7 @@ use crate::{
 };
 use serenity::{
     builder::CreateEmbed, client::Context,
-    model::interactions::application_command::ApplicationCommandInteraction,
+    model::application::interaction::application_command::ApplicationCommandInteraction,
 };
 use songbird::tracks::TrackHandle;
 use std::cmp::min;
@@ -85,14 +85,14 @@ async fn create_remove_enqueued_embed(track: &TrackHandle) -> CreateEmbed {
 
     embed.field(
         REMOVED_QUEUE,
-        format!(
+        &format!(
             "[**{}**]({})",
             metadata.title.unwrap(),
             metadata.source_url.unwrap()
         ),
         false,
     );
-    embed.thumbnail(metadata.thumbnail.unwrap());
+    embed.thumbnail(&metadata.thumbnail.unwrap());
 
     embed
 }

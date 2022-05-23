@@ -3,7 +3,7 @@ use serenity::{
     http::Http,
     model::{
         channel::Message,
-        interactions::{
+        application::interaction::{
             application_command::ApplicationCommandInteraction, InteractionResponseType,
         },
     },
@@ -92,7 +92,7 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
         ),
         false,
     );
-    embed.thumbnail(metadata.thumbnail.unwrap());
+    embed.thumbnail(&metadata.thumbnail.unwrap());
 
     let position = get_human_readable_timestamp(Some(track.get_info().await.unwrap().position));
     let duration = get_human_readable_timestamp(metadata.duration);

@@ -17,11 +17,9 @@ use serenity::{
         gateway::Ready,
         guild::Role,
         id::GuildId,
-        interactions::{
-            application_command::{
-                ApplicationCommand, ApplicationCommandInteraction, ApplicationCommandOptionType,
-                ApplicationCommandPermissionType,
-            },
+        application::command::{Command, CommandOptionType, CommandPermissionType},
+        application::interaction::{
+            application_command::ApplicationCommandInteraction,
             Interaction,
         },
         prelude::{Activity, VoiceState},
@@ -59,21 +57,20 @@ impl EventHandler for SerenityHandler {
     async fn voice_state_update(
         &self,
         ctx: Context,
-        guild: Option<GuildId>,
         _old: Option<VoiceState>,
         new: VoiceState,
     ) {
         // do nothing if this is a voice update event for a user, not a bot
-        if new.user_id != ctx.cache.current_user_id().await {
+        if new.user_id != ctx.cache.current_user_id() {
             return;
         }
 
         if new.channel_id.is_some() {
-            return self.self_deafen(&ctx, guild, new).await;
+            return self.self_deafen(&ctx, new.guild_id, new).await;
         }
 
         let manager = songbird::get(&ctx).await.unwrap();
-        let guild_id = guild.unwrap();
+        let guild_id = new.guild_id.unwrap();
 
         if manager.get(guild_id).is_some() {
             manager.remove(guild_id).await.ok();
@@ -89,7 +86,7 @@ impl SerenityHandler {
         ctx: &Context,
         role: Role,
         guild: GuildId,
-        commands: &[ApplicationCommand],
+        commands: &[Command],
     ) {
         let commands = commands
             .iter()
@@ -98,7 +95,7 @@ impl SerenityHandler {
             guild
                 .create_application_command_permission(&ctx.http, command.id, |p| {
                     p.create_permission(|d| {
-                        d.kind(ApplicationCommandPermissionType::Role)
+                        d.kind(CommandPermissionType::Role)
                             .id(role.id.0)
                             .permission(true)
                     })
@@ -108,8 +105,8 @@ impl SerenityHandler {
         }
     }
 
-    async fn create_commands(&self, ctx: &Context) -> Vec<ApplicationCommand> {
-        ApplicationCommand::set_global_application_commands(&ctx.http, |commands| {
+    async fn create_commands(&self, ctx: &Context) -> Vec<Command> {
+        Command::set_global_application_commands(&ctx.http, |commands| {
             commands
                 .create_application_command(|command| {
                     command
@@ -148,7 +145,7 @@ impl SerenityHandler {
                                 option
                                     .name("query")
                                     .description("The media to play")
-                                    .kind(ApplicationCommandOptionType::String)
+                                    .kind(CommandOptionType::String)
                                     .required(true)
                         })
                 })
@@ -161,12 +158,12 @@ impl SerenityHandler {
                             option
                                 .name("next")
                                 .description("Add a track to be played up next")
-                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .kind(CommandOptionType::SubCommand)
                                 .create_sub_option(|option| {
                                     option
                                         .name("query")
                                         .description("The media to play")
-                                        .kind(ApplicationCommandOptionType::String)
+                                        .kind(CommandOptionType::String)
                                         .required(true)
                                 })
                         })
@@ -174,11 +171,11 @@ impl SerenityHandler {
                             option
                                 .name("jump")
                                 .description("Instantly plays a track, skipping the current one")
-                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .kind(CommandOptionType::SubCommand)
                                 .create_sub_option(|option| {
                                     option.name("query")
                                     .description("The media to play")
-                                    .kind(ApplicationCommandOptionType::String)
+                                    .kind(CommandOptionType::String)
                                     .required(true)
                                 })
                         })
@@ -186,12 +183,12 @@ impl SerenityHandler {
                             option
                                 .name("all")
                                 .description("Add all tracks if the URL refers to a video and a playlist")
-                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .kind(CommandOptionType::SubCommand)
                                 .create_sub_option(|option| {
                                     option
                                         .name("query")
                                         .description("The media to play")
-                                        .kind(ApplicationCommandOptionType::String)
+                                        .kind(CommandOptionType::String)
                                         .required(true)
                                 })
                         })
@@ -199,12 +196,12 @@ impl SerenityHandler {
                             option
                                 .name("reverse")
                                 .description("Add a playlist to the queue in reverse order")
-                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .kind(CommandOptionType::SubCommand)
                                 .create_sub_option(|option| {
                                     option
                                         .name("query")
                                         .description("The media to play")
-                                        .kind(ApplicationCommandOptionType::String)
+                                        .kind(CommandOptionType::String)
                                         .required(true)
                                 })
                         })
@@ -212,12 +209,12 @@ impl SerenityHandler {
                             option
                                 .name("shuffle")
                                 .description("Add a playlist to the queue in random order")
-                                .kind(ApplicationCommandOptionType::SubCommand)
+                                .kind(CommandOptionType::SubCommand)
                                 .create_sub_option(|option| {
                                     option
                                         .name("query")
                                         .description("The media to play")
-                                        .kind(ApplicationCommandOptionType::String)
+                                        .kind(CommandOptionType::String)
                                         .required(true)
                                 })
                         })
@@ -234,7 +231,7 @@ impl SerenityHandler {
                             option
                                 .name("index")
                                 .description("Position of the track in the queue (1 is the next track to be played)")
-                                .kind(ApplicationCommandOptionType::Integer)
+                                .kind(CommandOptionType::Integer)
                                 .required(true)
                                 .min_int_value(1)
                         })
@@ -242,7 +239,7 @@ impl SerenityHandler {
                             option
                                 .name("until")
                                 .description("Upper range track position to remove a range of tracks")
-                                .kind(ApplicationCommandOptionType::Integer)
+                                .kind(CommandOptionType::Integer)
                                 .required(false)
                                 .min_int_value(1)
                         })
@@ -268,7 +265,7 @@ impl SerenityHandler {
                             option
                                 .name("timestamp")
                                 .description("Timestamp in the format HH:MM:SS")
-                                .kind(ApplicationCommandOptionType::String)
+                                .kind(CommandOptionType::String)
                                 .required(true)
                         })
                 })
@@ -283,7 +280,7 @@ impl SerenityHandler {
                         option
                             .name("to")
                             .description("Track index to skip to")
-                            .kind(ApplicationCommandOptionType::Integer)
+                            .kind(CommandOptionType::Integer)
                             .required(false)
                             .min_int_value(1)
                     })
@@ -341,7 +338,7 @@ impl SerenityHandler {
         let command_name = command.data.name.as_str();
 
         let guild_id = command.guild_id.unwrap();
-        let guild = ctx.cache.guild(guild_id).await.unwrap();
+        let guild = ctx.cache.guild(guild_id).unwrap();
 
         // get songbird voice client
         let manager = songbird::get(ctx).await.unwrap();
@@ -356,7 +353,7 @@ impl SerenityHandler {
 
         // fetch the user and the bot's user IDs
         let user_id = command.user.id;
-        let bot_id = ctx.cache.current_user_id().await;
+        let bot_id = ctx.cache.current_user_id();
 
         match command_name {
             "autopause" | "clear" | "leave" | "pause" | "remove" | "repeat" | "resume" | "seek"
@@ -432,7 +429,7 @@ impl SerenityHandler {
         let commands = self.create_commands(ctx).await;
         let role_name = ready.user.name + "'s DJ";
         for guild in ready.guilds {
-            let guild_id = guild.id();
+            let guild_id = guild.id;
 
             // ensures the role exists, creating it if does not
             // if it fails to create the role (e.g. no permissions)

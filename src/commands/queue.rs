@@ -11,13 +11,15 @@ use crate::{
 use serenity::{
     builder::{CreateButton, CreateComponents, CreateEmbed},
     client::Context,
-    futures::StreamExt,
     model::{
         channel::Message,
         id::GuildId,
-        interactions::{
-            application_command::ApplicationCommandInteraction, message_component::ButtonStyle,
-            InteractionResponseType,
+        application::{
+            component::ButtonStyle,
+            interaction::{
+                application_command::ApplicationCommandInteraction,
+                InteractionResponseType,
+            },
         },
     },
     prelude::{RwLock, TypeMap},
@@ -151,8 +153,8 @@ pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
         String::from(QUEUE_NOTHING_IS_PLAYING)
     };
 
-    embed.field(QUEUE_NOW_PLAYING, description, false);
-    embed.field(QUEUE_UP_NEXT, build_queue_page(tracks, page), false);
+    embed.field(QUEUE_NOW_PLAYING, &description, false);
+    embed.field(QUEUE_UP_NEXT, &build_queue_page(tracks, page), false);
 
     embed.footer(|f| {
         f.text(format!(

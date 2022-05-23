@@ -17,7 +17,7 @@ use crate::{
 };
 use serenity::{
     builder::CreateEmbed, client::Context,
-    model::interactions::application_command::ApplicationCommandInteraction, prelude::Mutex,
+    model::application::interaction::application_command::ApplicationCommandInteraction, prelude::Mutex,
 };
 use songbird::{input::Restartable, tracks::TrackHandle, Call};
 use std::{cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
@@ -304,11 +304,11 @@ async fn create_queued_embed(
     let mut embed = CreateEmbed::default();
     let metadata = track.metadata().clone();
 
-    embed.thumbnail(metadata.thumbnail.unwrap());
+    embed.thumbnail(&metadata.thumbnail.unwrap());
 
     embed.field(
         title,
-        format!(
+        &format!(
             "[**{}**]({})",
             metadata.title.unwrap(),
             metadata.source_url.unwrap()
