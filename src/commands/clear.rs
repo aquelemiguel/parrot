@@ -29,7 +29,7 @@ pub async fn clear(
     let queue = handler.queue().current_queue();
     drop(handler);
 
-    create_response(&ctx.http, interaction, ParrotMessage::Cleared).await?;
+    create_response(&ctx.http, interaction, ParrotMessage::Clear).await?;
     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
     Ok(())
 }

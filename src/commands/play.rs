@@ -96,7 +96,7 @@ pub async fn play(
 
     // reply with a temporary message while we fetch the source
     // needed because interactions must be replied within 3s and queueing takes longer
-    create_response(&ctx.http, interaction, ParrotMessage::Searching).await?;
+    create_response(&ctx.http, interaction, ParrotMessage::Search).await?;
 
     let handler = call.lock().await;
     let queue_was_empty = handler.queue().is_empty();

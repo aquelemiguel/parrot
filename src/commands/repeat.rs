@@ -27,10 +27,10 @@ pub async fn repeat(
 
     match toggler(&track) {
         Ok(_) if was_looping => {
-            create_response(&ctx.http, interaction, ParrotMessage::LoopDisabled).await
+            create_response(&ctx.http, interaction, ParrotMessage::LoopDisable).await
         }
         Ok(_) if !was_looping => {
-            create_response(&ctx.http, interaction, ParrotMessage::LoopEnabled).await
+            create_response(&ctx.http, interaction, ParrotMessage::LoopEnable).await
         }
         _ => Err(ParrotError::Other(FAIL_LOOP)),
     }

@@ -21,5 +21,5 @@ pub async fn pause(
     verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
     verify(queue.pause(), ParrotError::Other("Failed to pause"))?;
 
-    create_response(&ctx.http, interaction, ParrotMessage::Paused).await
+    create_response(&ctx.http, interaction, ParrotMessage::Pause).await
 }

@@ -50,7 +50,7 @@ pub async fn create_skip_response(
             create_response(
                 &ctx.http,
                 interaction,
-                ParrotMessage::SkippedTo {
+                ParrotMessage::SkipTo {
                     title: track.metadata().title.as_ref().unwrap().to_owned(),
                     url: track.metadata().source_url.as_ref().unwrap().to_owned(),
                 },
@@ -59,9 +59,9 @@ pub async fn create_skip_response(
         }
         None => {
             if tracks_to_skip > 1 {
-                create_response(&ctx.http, interaction, ParrotMessage::SkippedAll).await
+                create_response(&ctx.http, interaction, ParrotMessage::SkipAll).await
             } else {
-                create_response(&ctx.http, interaction, ParrotMessage::Skipped).await
+                create_response(&ctx.http, interaction, ParrotMessage::Skip).await
             }
         }
     }
