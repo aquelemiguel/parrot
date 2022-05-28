@@ -1,6 +1,6 @@
 use crate::{
-    errors::ParrotError, handlers::track_end::update_queue_messages, strings::SHUFFLED_SUCCESS,
-    utils::create_response,
+    errors::ParrotError, handlers::track_end::update_queue_messages, messaging::Response,
+    utils::create_response_,
 };
 use rand::Rng;
 use serenity::{
@@ -28,7 +28,7 @@ pub async fn shuffle(
     let queue = handler.queue().current_queue();
     drop(handler);
 
-    create_response(&ctx.http, interaction, SHUFFLED_SUCCESS).await?;
+    create_response_(&ctx.http, interaction, Response::Shuffled).await?;
     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
     Ok(())
 }

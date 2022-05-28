@@ -1,8 +1,8 @@
 use crate::{
     errors::{verify, ParrotError},
     handlers::track_end::update_queue_messages,
-    strings::STOPPED,
-    utils::create_response,
+    messaging::Response,
+    utils::create_response_,
 };
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
@@ -26,7 +26,7 @@ pub async fn stop(
     let queue = handler.queue().current_queue();
     drop(handler);
 
-    create_response(&ctx.http, interaction, STOPPED).await?;
+    create_response_(&ctx.http, interaction, Response::Stop).await?;
     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
     Ok(())
 }
