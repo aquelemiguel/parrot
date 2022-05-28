@@ -50,10 +50,10 @@ pub async fn voteskip(
         create_response_(
             &ctx.http,
             interaction,
-            Response::VoteSkip(
-                interaction.user.id.mention(),
-                skip_threshold - cache.current_skip_votes.len(),
-            ),
+            Response::VoteSkip {
+                mention: interaction.user.id.mention(),
+                missing: skip_threshold - cache.current_skip_votes.len(),
+            },
         )
         .await
     }

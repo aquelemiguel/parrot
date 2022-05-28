@@ -2,8 +2,8 @@ use crate::{
     connection::get_voice_channel_for_user,
     errors::ParrotError,
     handlers::{IdleHandler, TrackEndHandler},
-    strings::JOINING,
-    utils::create_response,
+    messaging::Response,
+    utils::create_response_,
 };
 use serenity::{
     client::Context,
@@ -67,8 +67,14 @@ pub async fn summon(
     }
 
     if send_reply {
-        let content = format!("{} **{}**!", JOINING, channel_id.mention());
-        return create_response(&ctx.http, interaction, &content).await;
+        return create_response_(
+            &ctx.http,
+            interaction,
+            Response::Summon {
+                mention: channel_id.mention(),
+            },
+        )
+        .await;
     }
 
     Ok(())

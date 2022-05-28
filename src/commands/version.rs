@@ -1,25 +1,19 @@
-use crate::{
-    errors::ParrotError,
-    strings::{VERSION, VERSION_LATEST},
-    utils::create_response,
-};
+use crate::{errors::ParrotError, messaging::Response, utils::create_response_};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
 };
-
-const RELEASES_LINK: &str = "https://github.com/aquelemiguel/parrot/releases";
 
 pub async fn version(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
 ) -> Result<(), ParrotError> {
     let current = option_env!("CARGO_PKG_VERSION").unwrap_or_else(|| "Unknown");
-    let current = format!(
-        "{} [{}]({}/tag/v{})",
-        VERSION, current, RELEASES_LINK, current
-    );
-    let latest = format!("{}({}/latest)", VERSION_LATEST, RELEASES_LINK);
-    let content = format!("{}\n{}", current, latest);
-
-    create_response(&ctx.http, interaction, &content).await
+    create_response_(
+        &ctx.http,
+        interaction,
+        Response::Version {
+            current: current.to_owned(),
+        },
+    )
+    .await
 }

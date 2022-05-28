@@ -4,6 +4,8 @@ use serenity::model::misc::Mention;
 
 use crate::strings::*;
 
+const RELEASES_LINK: &str = "https://github.com/aquelemiguel/parrot/releases";
+
 #[derive(Debug)]
 pub enum Response {
     AutopauseOn,
@@ -18,7 +20,13 @@ pub enum Response {
     Resume,
     Shuffled,
     Stop,
-    VoteSkip(Mention, usize),
+    VoteSkip { mention: Mention, missing: usize },
+    Seek { timestamp: String },
+    Skipped,
+    SkippedAll,
+    SkippedTo { title: String, url: String },
+    Summon { mention: Mention },
+    Version { current: String },
 }
 
 impl Display for Response {
@@ -36,9 +44,20 @@ impl Display for Response {
             Self::Resume => f.write_str(RESUMED),
             Self::Shuffled => f.write_str(SHUFFLED_SUCCESS),
             Self::Stop => f.write_str(STOPPED),
-            Self::VoteSkip(mention, missing) => f.write_str(&format!(
+            Self::VoteSkip { mention, missing } => f.write_str(&format!(
                 "{}{} {} {} {}",
                 SKIP_VOTE_EMOJI, mention, SKIP_VOTE_USER, missing, SKIP_VOTE_MISSING
+            )),
+            Self::Seek { timestamp } => f.write_str(&format!("{} **{}**!", SEEKED, timestamp)),
+            Self::Skipped => f.write_str(SKIPPED),
+            Self::SkippedAll => f.write_str(SKIPPED_ALL),
+            Self::SkippedTo { title, url } => {
+                f.write_str(&format!("{} [**{}**]({})!", SKIPPED_TO, title, url))
+            }
+            Self::Summon { mention } => f.write_str(&format!("{} **{}**!", JOINING, mention)),
+            Self::Version { current } => f.write_str(&format!(
+                "{} [{}]({}/tag/v{})\n{}({}/latest)",
+                VERSION, current, RELEASES_LINK, current, VERSION_LATEST, RELEASES_LINK
             )),
         }
     }
