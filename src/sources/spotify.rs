@@ -1,7 +1,7 @@
 use crate::{
     commands::play::QueryType,
     errors::ParrotError,
-    strings::{SPOTIFY_INVALID_QUERY, SPOTIFY_PLAYLIST_FAILED},
+    messaging::messages::{SPOTIFY_INVALID_QUERY, SPOTIFY_PLAYLIST_FAILED},
 };
 use lazy_static::lazy_static;
 use regex::Regex;

@@ -1,6 +1,6 @@
 use crate::{
     errors::{verify, ParrotError},
-    messaging::Response,
+    messaging::message::ParrotMessage,
     utils::create_response,
 };
 use serenity::{
@@ -50,7 +50,7 @@ pub async fn create_skip_response(
             create_response(
                 &ctx.http,
                 interaction,
-                Response::SkippedTo {
+                ParrotMessage::SkippedTo {
                     title: track.metadata().title.as_ref().unwrap().to_owned(),
                     url: track.metadata().source_url.as_ref().unwrap().to_owned(),
                 },
@@ -59,9 +59,9 @@ pub async fn create_skip_response(
         }
         None => {
             if tracks_to_skip > 1 {
-                create_response(&ctx.http, interaction, Response::SkippedAll).await
+                create_response(&ctx.http, interaction, ParrotMessage::SkippedAll).await
             } else {
-                create_response(&ctx.http, interaction, Response::Skipped).await
+                create_response(&ctx.http, interaction, ParrotMessage::Skipped).await
             }
         }
     }

@@ -2,12 +2,12 @@ use std::fmt::Display;
 
 use serenity::model::misc::Mention;
 
-use crate::strings::*;
+use crate::messaging::messages::*;
 
 const RELEASES_LINK: &str = "https://github.com/aquelemiguel/parrot/releases";
 
 #[derive(Debug)]
-pub enum Response {
+pub enum ParrotMessage {
     AutopauseOn,
     AutopauseOff,
     LoopEnabled,
@@ -30,7 +30,7 @@ pub enum Response {
     Error,
 }
 
-impl Display for Response {
+impl Display for ParrotMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::AutopauseOn => f.write_str(AUTOPAUSE_ON),

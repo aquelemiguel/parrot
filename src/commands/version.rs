@@ -1,4 +1,4 @@
-use crate::{errors::ParrotError, messaging::Response, utils::create_response};
+use crate::{errors::ParrotError, messaging::message::ParrotMessage, utils::create_response};
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
 };
@@ -11,7 +11,7 @@ pub async fn version(
     create_response(
         &ctx.http,
         interaction,
-        Response::Version {
+        ParrotMessage::Version {
             current: current.to_owned(),
         },
     )

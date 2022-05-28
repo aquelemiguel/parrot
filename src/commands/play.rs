@@ -2,14 +2,14 @@ use crate::{
     commands::{skip::force_skip_top_track, summon::summon},
     errors::{verify, ParrotError},
     handlers::track_end::update_queue_messages,
-    messaging::Response,
+    messaging::message::ParrotMessage,
+    messaging::messages::{
+        PLAY_ALL_FAILED, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SPOTIFY_AUTH_FAILED, TRACK_DURATION,
+        TRACK_TIME_TO_PLAY,
+    },
     sources::{
         spotify::{Spotify, SPOTIFY},
         youtube::{YouTube, YouTubeRestartable},
-    },
-    strings::{
-        PLAY_ALL_FAILED, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SPOTIFY_AUTH_FAILED, TRACK_DURATION,
-        TRACK_TIME_TO_PLAY,
     },
     utils::{
         create_now_playing_embed, create_response, edit_embed_response, edit_response,
@@ -96,7 +96,7 @@ pub async fn play(
 
     // reply with a temporary message while we fetch the source
     // needed because interactions must be replied within 3s and queueing takes longer
-    create_response(&ctx.http, interaction, Response::Searching).await?;
+    create_response(&ctx.http, interaction, ParrotMessage::Searching).await?;
 
     let handler = call.lock().await;
     let queue_was_empty = handler.queue().is_empty();

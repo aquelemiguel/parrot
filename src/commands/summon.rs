@@ -2,7 +2,7 @@ use crate::{
     connection::get_voice_channel_for_user,
     errors::ParrotError,
     handlers::{IdleHandler, TrackEndHandler},
-    messaging::Response,
+    messaging::message::ParrotMessage,
     utils::create_response,
 };
 use serenity::{
@@ -70,7 +70,7 @@ pub async fn summon(
         return create_response(
             &ctx.http,
             interaction,
-            Response::Summon {
+            ParrotMessage::Summon {
                 mention: channel_id.mention(),
             },
         )

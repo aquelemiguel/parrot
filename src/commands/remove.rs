@@ -1,8 +1,8 @@
 use crate::{
     errors::{verify, ParrotError},
     handlers::track_end::update_queue_messages,
-    messaging::Response,
-    strings::REMOVED_QUEUE,
+    messaging::message::ParrotMessage,
+    messaging::messages::REMOVED_QUEUE,
     utils::create_embed_response,
     utils::create_response,
 };
@@ -72,7 +72,7 @@ pub async fn remove(
         let embed = create_remove_enqueued_embed(track).await;
         create_embed_response(&ctx.http, interaction, embed).await?;
     } else {
-        create_response(&ctx.http, interaction, Response::RemoveMultiple).await?;
+        create_response(&ctx.http, interaction, ParrotMessage::RemoveMultiple).await?;
     }
 
     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;

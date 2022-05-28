@@ -1,6 +1,6 @@
 use crate::{
     errors::{verify, ParrotError},
-    messaging::Response,
+    messaging::message::ParrotMessage,
     utils::create_response,
 };
 use serenity::{
@@ -21,5 +21,5 @@ pub async fn pause(
     verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
     verify(queue.pause(), ParrotError::Other("Failed to pause"))?;
 
-    create_response(&ctx.http, interaction, Response::Paused).await
+    create_response(&ctx.http, interaction, ParrotMessage::Paused).await
 }

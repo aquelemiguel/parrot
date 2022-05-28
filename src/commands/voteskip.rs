@@ -3,7 +3,7 @@ use crate::{
     connection::get_voice_channel_for_user,
     errors::{verify, ParrotError},
     guild::cache::GuildCacheMap,
-    messaging::Response,
+    messaging::message::ParrotMessage,
     utils::create_response,
 };
 use serenity::{
@@ -50,7 +50,7 @@ pub async fn voteskip(
         create_response(
             &ctx.http,
             interaction,
-            Response::VoteSkip {
+            ParrotMessage::VoteSkip {
                 mention: interaction.user.id.mention(),
                 missing: skip_threshold - cache.current_skip_votes.len(),
             },

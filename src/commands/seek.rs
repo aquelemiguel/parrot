@@ -1,7 +1,7 @@
 use crate::{
     errors::{verify, ParrotError},
-    messaging::Response,
-    strings::{FAIL_MINUTES_PARSING, FAIL_SECONDS_PARSING},
+    messaging::message::ParrotMessage,
+    messaging::messages::{FAIL_MINUTES_PARSING, FAIL_SECONDS_PARSING},
     utils::create_response,
 };
 use serenity::{
@@ -43,7 +43,7 @@ pub async fn seek(
     create_response(
         &ctx.http,
         interaction,
-        Response::Seek {
+        ParrotMessage::Seek {
             timestamp: timestamp_str.to_owned(),
         },
     )
