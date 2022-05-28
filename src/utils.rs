@@ -13,7 +13,7 @@ use std::{sync::Arc, time::Duration};
 
 use crate::{errors::ParrotError, messaging::Response, strings::QUEUE_NOW_PLAYING};
 
-pub async fn create_response_(
+pub async fn create_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     response_type: Response,
@@ -23,7 +23,8 @@ pub async fn create_response_(
     create_embed_response(http, interaction, embed).await
 }
 
-pub async fn create_response(
+#[deprecated(since = "1.4.3", note = "please use `create_response` instead")]
+pub async fn create_response_free(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     content: &str,

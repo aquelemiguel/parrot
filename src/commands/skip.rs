@@ -1,7 +1,7 @@
 use crate::{
     errors::{verify, ParrotError},
     messaging::Response,
-    utils::create_response_,
+    utils::create_response,
 };
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
@@ -47,7 +47,7 @@ pub async fn create_skip_response(
 ) -> Result<(), ParrotError> {
     match handler.queue().current() {
         Some(track) => {
-            create_response_(
+            create_response(
                 &ctx.http,
                 interaction,
                 Response::SkippedTo {
@@ -59,9 +59,9 @@ pub async fn create_skip_response(
         }
         None => {
             if tracks_to_skip > 1 {
-                create_response_(&ctx.http, interaction, Response::SkippedAll).await
+                create_response(&ctx.http, interaction, Response::SkippedAll).await
             } else {
-                create_response_(&ctx.http, interaction, Response::Skipped).await
+                create_response(&ctx.http, interaction, Response::Skipped).await
             }
         }
     }

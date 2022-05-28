@@ -1,6 +1,6 @@
 use crate::{
     errors::ParrotError, guild::settings::GuildSettingsMap, messaging::Response,
-    utils::create_response_,
+    utils::create_response,
 };
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
@@ -18,8 +18,8 @@ pub async fn autopause(
     guild_settings.autopause = !guild_settings.autopause;
 
     if guild_settings.autopause {
-        create_response_(&ctx.http, interaction, Response::AutopauseOn).await
+        create_response(&ctx.http, interaction, Response::AutopauseOn).await
     } else {
-        create_response_(&ctx.http, interaction, Response::AutopauseOff).await
+        create_response(&ctx.http, interaction, Response::AutopauseOff).await
     }
 }

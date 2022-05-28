@@ -1,7 +1,7 @@
 use crate::{
     errors::{verify, ParrotError},
     messaging::Response,
-    utils::create_response_,
+    utils::create_response,
 };
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
@@ -21,5 +21,5 @@ pub async fn resume(
     verify(!queue.is_empty(), ParrotError::NothingPlaying)?;
     verify(queue.resume(), ParrotError::Other("Failed resuming track"))?;
 
-    create_response_(&ctx.http, interaction, Response::Resume).await
+    create_response(&ctx.http, interaction, Response::Resume).await
 }

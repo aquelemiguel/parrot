@@ -27,6 +27,7 @@ pub enum Response {
     SkippedTo { title: String, url: String },
     Summon { mention: Mention },
     Version { current: String },
+    Error,
 }
 
 impl Display for Response {
@@ -59,6 +60,7 @@ impl Display for Response {
                 "{} [{}]({}/tag/v{})\n{}({}/latest)",
                 VERSION, current, RELEASES_LINK, current, VERSION_LATEST, RELEASES_LINK
             )),
+            Self::Error => f.write_str(ERROR),
         }
     }
 }

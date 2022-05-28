@@ -4,7 +4,7 @@ use crate::{
     errors::{verify, ParrotError},
     guild::cache::GuildCacheMap,
     messaging::Response,
-    utils::create_response_,
+    utils::create_response,
 };
 use serenity::{
     client::Context,
@@ -47,7 +47,7 @@ pub async fn voteskip(
         force_skip_top_track(&handler).await?;
         create_skip_response(ctx, interaction, &handler, 1).await
     } else {
-        create_response_(
+        create_response(
             &ctx.http,
             interaction,
             Response::VoteSkip {

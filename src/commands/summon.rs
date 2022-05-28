@@ -3,7 +3,7 @@ use crate::{
     errors::ParrotError,
     handlers::{IdleHandler, TrackEndHandler},
     messaging::Response,
-    utils::create_response_,
+    utils::create_response,
 };
 use serenity::{
     client::Context,
@@ -67,7 +67,7 @@ pub async fn summon(
     }
 
     if send_reply {
-        return create_response_(
+        return create_response(
             &ctx.http,
             interaction,
             Response::Summon {

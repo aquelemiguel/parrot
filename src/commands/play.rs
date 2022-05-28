@@ -12,7 +12,7 @@ use crate::{
         TRACK_TIME_TO_PLAY,
     },
     utils::{
-        create_now_playing_embed, create_response_, edit_embed_response, edit_response,
+        create_now_playing_embed, create_response, edit_embed_response, edit_response,
         get_human_readable_timestamp,
     },
 };
@@ -96,7 +96,7 @@ pub async fn play(
 
     // reply with a temporary message while we fetch the source
     // needed because interactions must be replied within 3s and queueing takes longer
-    create_response_(&ctx.http, interaction, Response::Searching).await?;
+    create_response(&ctx.http, interaction, Response::Searching).await?;
 
     let handler = call.lock().await;
     let queue_was_empty = handler.queue().is_empty();

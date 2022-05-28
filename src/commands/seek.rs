@@ -2,7 +2,7 @@ use crate::{
     errors::{verify, ParrotError},
     messaging::Response,
     strings::{FAIL_MINUTES_PARSING, FAIL_SECONDS_PARSING},
-    utils::create_response_,
+    utils::create_response,
 };
 use serenity::{
     client::Context, model::interactions::application_command::ApplicationCommandInteraction,
@@ -40,7 +40,7 @@ pub async fn seek(
 
     track.seek_time(Duration::from_secs(timestamp)).unwrap();
 
-    create_response_(
+    create_response(
         &ctx.http,
         interaction,
         Response::Seek {
