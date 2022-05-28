@@ -1,9 +1,8 @@
 use std::fmt::Display;
 
-use crate::strings::{
-    AUTOPAUSE_OFF, AUTOPAUSE_ON, CLEARED, LEAVING, LOOP_DISABLED, LOOP_ENABLED, PAUSED,
-    REMOVED_QUEUE_MULTIPLE, RESUMED, SEARCHING, SHUFFLED_SUCCESS, STOPPED,
-};
+use serenity::model::misc::Mention;
+
+use crate::strings::*;
 
 #[derive(Debug)]
 pub enum Response {
@@ -19,6 +18,7 @@ pub enum Response {
     Resume,
     Shuffled,
     Stop,
+    VoteSkip(Mention, usize),
 }
 
 impl Display for Response {
@@ -36,6 +36,10 @@ impl Display for Response {
             Self::Resume => f.write_str(RESUMED),
             Self::Shuffled => f.write_str(SHUFFLED_SUCCESS),
             Self::Stop => f.write_str(STOPPED),
+            Self::VoteSkip(mention, missing) => f.write_str(&format!(
+                "{}{} {} {} {}",
+                SKIP_VOTE_EMOJI, mention, SKIP_VOTE_USER, missing, SKIP_VOTE_MISSING
+            )),
         }
     }
 }

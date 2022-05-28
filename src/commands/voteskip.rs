@@ -3,8 +3,8 @@ use crate::{
     connection::get_voice_channel_for_user,
     errors::{verify, ParrotError},
     guild::cache::GuildCacheMap,
-    strings::{SKIP_VOTE_EMOJI, SKIP_VOTE_MISSING, SKIP_VOTE_USER},
-    utils::create_response,
+    messaging::Response,
+    utils::create_response_,
 };
 use serenity::{
     client::Context,
@@ -47,16 +47,12 @@ pub async fn voteskip(
         force_skip_top_track(&handler).await?;
         create_skip_response(ctx, interaction, &handler, 1).await
     } else {
-        create_response(
+        create_response_(
             &ctx.http,
             interaction,
-            &format!(
-                "{}{} {} {} {}",
-                SKIP_VOTE_EMOJI,
+            Response::VoteSkip(
                 interaction.user.id.mention(),
-                SKIP_VOTE_USER,
                 skip_threshold - cache.current_skip_votes.len(),
-                SKIP_VOTE_MISSING
             ),
         )
         .await
