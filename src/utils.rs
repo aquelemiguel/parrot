@@ -25,7 +25,7 @@ pub async fn create_response(
     create_embed_response(http, interaction, embed).await
 }
 
-pub async fn create_response_free(
+pub async fn create_response_text(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     content: &str,
