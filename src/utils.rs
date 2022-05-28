@@ -11,7 +11,17 @@ use serenity::{
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
 
-use crate::{errors::ParrotError, strings::QUEUE_NOW_PLAYING};
+use crate::{errors::ParrotError, messaging::Response, strings::QUEUE_NOW_PLAYING};
+
+pub async fn create_response_(
+    http: &Arc<Http>,
+    interaction: &mut ApplicationCommandInteraction,
+    response_type: Response,
+) -> Result<(), ParrotError> {
+    let mut embed = CreateEmbed::default();
+    embed.description(format!("{response_type}"));
+    create_embed_response(http, interaction, embed).await
+}
 
 pub async fn create_response(
     http: &Arc<Http>,
