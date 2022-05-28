@@ -23,7 +23,6 @@ pub async fn create_response(
     create_embed_response(http, interaction, embed).await
 }
 
-#[deprecated(since = "1.4.3", note = "please use `create_response` instead")]
 pub async fn create_response_free(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
