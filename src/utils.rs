@@ -11,9 +11,19 @@ use serenity::{
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
 
-use crate::{errors::ParrotError, strings::QUEUE_NOW_PLAYING};
+use crate::{errors::ParrotError, messaging::message::ParrotMessage};
 
 pub async fn create_response(
+    http: &Arc<Http>,
+    interaction: &mut ApplicationCommandInteraction,
+    message: ParrotMessage,
+) -> Result<(), ParrotError> {
+    let mut embed = CreateEmbed::default();
+    embed.description(format!("{message}"));
+    create_embed_response(http, interaction, embed).await
+}
+
+pub async fn create_response_text(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     content: &str,
@@ -24,6 +34,16 @@ pub async fn create_response(
 }
 
 pub async fn edit_response(
+    http: &Arc<Http>,
+    interaction: &mut ApplicationCommandInteraction,
+    message: ParrotMessage,
+) -> Result<Message, ParrotError> {
+    let mut embed = CreateEmbed::default();
+    embed.description(format!("{message}"));
+    edit_embed_response(http, interaction, embed).await
+}
+
+pub async fn edit_response_text(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
     content: &str,
@@ -64,7 +84,7 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
     let metadata = track.metadata().clone();
 
     embed.field(
-        QUEUE_NOW_PLAYING,
+        ParrotMessage::NowPlaying,
         format!(
             "[**{}**]({})",
             metadata.title.unwrap(),

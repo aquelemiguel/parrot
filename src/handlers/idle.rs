@@ -8,7 +8,7 @@ use std::sync::{
     Arc,
 };
 
-use crate::strings::IDLE_ALERT;
+use crate::messaging::messages::IDLE_ALERT;
 
 pub struct IdleHandler {
     pub http: Arc<Http>,

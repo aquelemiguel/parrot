@@ -1,6 +1,7 @@
 pub const AUTOPAUSE_OFF: &str = "🤖 Autopause OFF!";
 pub const AUTOPAUSE_ON: &str = "🤖 Autopause ON!";
 pub const CLEARED: &str = "🗑️ Cleared!";
+pub const ERROR: &str = "Fatality! Something went wrong ☹️";
 pub const FAIL_ALREADY_HERE: &str = "⚠️ I'm already here!";
 pub const FAIL_ANOTHER_CHANNEL: &str = "⚠️ I'm already connected to";
 pub const FAIL_AUTHOR_DISCONNECTED: &str = "⚠️ You are not connected to";

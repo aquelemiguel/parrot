@@ -2,7 +2,7 @@ use crate::{
     errors::ParrotError,
     guild::cache::GuildCacheMap,
     handlers::track_end::ModifyQueueHandler,
-    strings::{
+    messaging::messages::{
         QUEUE_EXPIRED, QUEUE_NOTHING_IS_PLAYING, QUEUE_NOW_PLAYING, QUEUE_NO_SONGS, QUEUE_PAGE,
         QUEUE_PAGE_OF, QUEUE_UP_NEXT,
     },

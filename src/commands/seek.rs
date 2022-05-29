@@ -1,6 +1,7 @@
 use crate::{
     errors::{verify, ParrotError},
-    strings::{FAIL_MINUTES_PARSING, FAIL_SECONDS_PARSING, SEEKED},
+    messaging::message::ParrotMessage,
+    messaging::messages::{FAIL_MINUTES_PARSING, FAIL_SECONDS_PARSING},
     utils::create_response,
 };
 use serenity::{
@@ -19,8 +20,8 @@ pub async fn seek(
     let args = interaction.data.options.clone();
     let seek_time = args.first().unwrap().value.as_ref().unwrap();
 
-    let timestamp = seek_time.as_str().unwrap();
-    let mut units_iter = timestamp.split(':');
+    let timestamp_str = seek_time.as_str().unwrap();
+    let mut units_iter = timestamp_str.split(':');
 
     let minutes = units_iter.next().and_then(|c| c.parse::<u64>().ok());
     let minutes = verify(minutes, ParrotError::Other(FAIL_MINUTES_PARSING))?;
@@ -42,7 +43,9 @@ pub async fn seek(
     create_response(
         &ctx.http,
         interaction,
-        &format!("{} **{}**!", SEEKED, seek_time),
+        ParrotMessage::Seek {
+            timestamp: timestamp_str.to_owned(),
+        },
     )
     .await
 }

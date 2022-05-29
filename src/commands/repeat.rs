@@ -1,6 +1,5 @@
 use crate::{
-    errors::ParrotError,
-    strings::{FAIL_LOOP, LOOP_DISABLED, LOOP_ENABLED},
+    errors::ParrotError, messaging::message::ParrotMessage, messaging::messages::FAIL_LOOP,
     utils::create_response,
 };
 use serenity::{
@@ -27,8 +26,12 @@ pub async fn repeat(
     };
 
     match toggler(&track) {
-        Ok(_) if was_looping => create_response(&ctx.http, interaction, LOOP_DISABLED).await,
-        Ok(_) if !was_looping => create_response(&ctx.http, interaction, LOOP_ENABLED).await,
+        Ok(_) if was_looping => {
+            create_response(&ctx.http, interaction, ParrotMessage::LoopDisable).await
+        }
+        Ok(_) if !was_looping => {
+            create_response(&ctx.http, interaction, ParrotMessage::LoopEnable).await
+        }
         _ => Err(ParrotError::Other(FAIL_LOOP)),
     }
 }

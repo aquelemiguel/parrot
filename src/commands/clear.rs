@@ -1,7 +1,7 @@
 use crate::{
     errors::{verify, ParrotError},
     handlers::track_end::update_queue_messages,
-    strings::CLEARED,
+    messaging::message::ParrotMessage,
     utils::create_response,
 };
 use serenity::{
@@ -29,7 +29,7 @@ pub async fn clear(
     let queue = handler.queue().current_queue();
     drop(handler);
 
-    create_response(&ctx.http, interaction, CLEARED).await?;
+    create_response(&ctx.http, interaction, ParrotMessage::Clear).await?;
     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
     Ok(())
 }

@@ -1,7 +1,5 @@
 use crate::{
-    errors::ParrotError,
-    guild::settings::GuildSettingsMap,
-    strings::{AUTOPAUSE_OFF, AUTOPAUSE_ON},
+    errors::ParrotError, guild::settings::GuildSettingsMap, messaging::message::ParrotMessage,
     utils::create_response,
 };
 use serenity::{
@@ -19,10 +17,9 @@ pub async fn autopause(
     let guild_settings = settings.entry(guild_id).or_default();
     guild_settings.autopause = !guild_settings.autopause;
 
-    let message = if guild_settings.autopause {
-        AUTOPAUSE_ON.to_string()
+    if guild_settings.autopause {
+        create_response(&ctx.http, interaction, ParrotMessage::AutopauseOn).await
     } else {
-        AUTOPAUSE_OFF.to_string()
-    };
-    create_response(&ctx.http, interaction, &message).await
+        create_response(&ctx.http, interaction, ParrotMessage::AutopauseOff).await
+    }
 }
