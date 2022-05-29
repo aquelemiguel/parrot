@@ -8,14 +8,17 @@ const RELEASES_LINK: &str = "https://github.com/aquelemiguel/parrot/releases";
 
 #[derive(Debug)]
 pub enum ParrotMessage {
-    AutopauseOn,
     AutopauseOff,
+    AutopauseOn,
     Clear,
     Error,
     Leaving,
-    LoopEnable,
     LoopDisable,
+    LoopEnable,
+    NowPlaying,
     Pause,
+    PlaylistQueued,
+    PlayAllFailed,
     RemoveMultiple,
     Resume,
     Search,
@@ -33,13 +36,17 @@ pub enum ParrotMessage {
 impl Display for ParrotMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::AutopauseOn => f.write_str(AUTOPAUSE_ON),
             Self::AutopauseOff => f.write_str(AUTOPAUSE_OFF),
-            Self::LoopEnable => f.write_str(LOOP_ENABLED),
-            Self::LoopDisable => f.write_str(LOOP_DISABLED),
-            Self::Pause => f.write_str(PAUSED),
+            Self::AutopauseOn => f.write_str(AUTOPAUSE_ON),
             Self::Clear => f.write_str(CLEARED),
+            Self::Error => f.write_str(ERROR),
             Self::Leaving => f.write_str(LEAVING),
+            Self::LoopDisable => f.write_str(LOOP_DISABLED),
+            Self::LoopEnable => f.write_str(LOOP_ENABLED),
+            Self::NowPlaying => f.write_str(QUEUE_NOW_PLAYING),
+            Self::Pause => f.write_str(PAUSED),
+            Self::PlaylistQueued => f.write_str(PLAY_PLAYLIST),
+            Self::PlayAllFailed => f.write_str(PLAY_ALL_FAILED),
             Self::Search => f.write_str(SEARCHING),
             Self::RemoveMultiple => f.write_str(REMOVED_QUEUE_MULTIPLE),
             Self::Resume => f.write_str(RESUMED),
@@ -60,7 +67,6 @@ impl Display for ParrotMessage {
                 "{} [{}]({}/tag/v{})\n{}({}/latest)",
                 VERSION, current, RELEASES_LINK, current, VERSION_LATEST, RELEASES_LINK
             )),
-            Self::Error => f.write_str(ERROR),
         }
     }
 }
