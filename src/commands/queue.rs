@@ -11,6 +11,7 @@ use crate::{
 use serenity::{
     builder::{CreateButton, CreateComponents, CreateEmbed},
     client::Context,
+    futures::StreamExt,
     model::{
         channel::Message,
         id::GuildId,
@@ -88,7 +89,7 @@ pub async fn queue(
     let mut cib = message
         .await_component_interactions(&ctx)
         .timeout(Duration::from_secs(EMBED_TIMEOUT))
-        .await;
+        .build();
 
     while let Some(mci) = cib.next().await {
         let btn_id = &mci.data.custom_id;
