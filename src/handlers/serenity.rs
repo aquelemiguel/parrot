@@ -14,13 +14,12 @@ use serenity::{
     async_trait,
     client::{Context, EventHandler},
     model::{
-        gateway::Ready,
-        id::GuildId,
         application::command::{Command, CommandOptionType},
         application::interaction::{
-            application_command::ApplicationCommandInteraction,
-            Interaction,
+            application_command::ApplicationCommandInteraction, Interaction,
         },
+        gateway::Ready,
+        id::GuildId,
         prelude::{Activity, VoiceState},
     },
     prelude::Mentionable,
@@ -52,12 +51,7 @@ impl EventHandler for SerenityHandler {
         }
     }
 
-    async fn voice_state_update(
-        &self,
-        ctx: Context,
-        _old: Option<VoiceState>,
-        new: VoiceState,
-    ) {
+    async fn voice_state_update(&self, ctx: Context, _old: Option<VoiceState>, new: VoiceState) {
         // do nothing if this is a voice update event for a user, not a bot
         if new.user_id != ctx.cache.current_user_id() {
             return;

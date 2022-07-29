@@ -8,7 +8,9 @@ use crate::{
 };
 use serenity::{
     client::Context,
-    model::{id::GuildId, application::interaction::application_command::ApplicationCommandInteraction},
+    model::{
+        application::interaction::application_command::ApplicationCommandInteraction, id::GuildId,
+    },
     prelude::{Mentionable, RwLock, TypeMap},
 };
 use std::{collections::HashSet, sync::Arc};

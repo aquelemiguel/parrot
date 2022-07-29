@@ -13,15 +13,14 @@ use serenity::{
     client::Context,
     futures::StreamExt,
     model::{
-        channel::Message,
-        id::GuildId,
         application::{
             component::ButtonStyle,
             interaction::{
-                application_command::ApplicationCommandInteraction,
-                InteractionResponseType,
+                application_command::ApplicationCommandInteraction, InteractionResponseType,
             },
         },
+        channel::Message,
+        id::GuildId,
     },
     prelude::{RwLock, TypeMap},
 };
@@ -215,7 +214,8 @@ fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
         let url = t.metadata().source_url.as_ref().unwrap();
         let duration = get_human_readable_timestamp(t.metadata().duration);
 
-        let _ = writeln!(description,
+        let _ = writeln!(
+            description,
             "`{}.` [{}]({}) • `{}`",
             i + start_idx + 1,
             title,

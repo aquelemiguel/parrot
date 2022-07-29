@@ -3,7 +3,8 @@ use crate::{
     utils::create_response,
 };
 use serenity::{
-    client::Context, model::application::interaction::application_command::ApplicationCommandInteraction,
+    client::Context,
+    model::application::interaction::application_command::ApplicationCommandInteraction,
 };
 use songbird::tracks::{LoopState, TrackHandle};
 

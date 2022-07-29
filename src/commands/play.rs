@@ -17,7 +17,8 @@ use crate::{
 };
 use serenity::{
     builder::CreateEmbed, client::Context,
-    model::application::interaction::application_command::ApplicationCommandInteraction, prelude::Mutex,
+    model::application::interaction::application_command::ApplicationCommandInteraction,
+    prelude::Mutex,
 };
 use songbird::{input::Restartable, tracks::TrackHandle, Call};
 use std::{cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};

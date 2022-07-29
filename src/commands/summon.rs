@@ -7,7 +7,9 @@ use crate::{
 };
 use serenity::{
     client::Context,
-    model::{id::ChannelId, application::interaction::application_command::ApplicationCommandInteraction},
+    model::{
+        application::interaction::application_command::ApplicationCommandInteraction, id::ChannelId,
+    },
     prelude::Mentionable,
 };
 use songbird::{Event, TrackEvent};

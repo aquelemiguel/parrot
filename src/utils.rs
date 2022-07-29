@@ -2,10 +2,10 @@ use serenity::{
     builder::CreateEmbed,
     http::Http,
     model::{
-        channel::Message,
         application::interaction::{
             application_command::ApplicationCommandInteraction, InteractionResponseType,
         },
+        channel::Message,
     },
 };
 use songbird::tracks::TrackHandle;
@@ -74,11 +74,7 @@ pub async fn edit_embed_response(
     embed: CreateEmbed,
 ) -> Result<Message, ParrotError> {
     interaction
-        .edit_original_interaction_response(&http, |message| {
-            message
-                .content(" ")
-                .add_embed(embed)
-        })
+        .edit_original_interaction_response(&http, |message| message.content(" ").add_embed(embed))
         .await
         .map_err(Into::into)
 }
