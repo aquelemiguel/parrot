@@ -13,18 +13,21 @@ use serenity::{
     client::Context,
     futures::StreamExt,
     model::{
+        application::{
+            component::ButtonStyle,
+            interaction::{
+                application_command::ApplicationCommandInteraction, InteractionResponseType,
+            },
+        },
         channel::Message,
         id::GuildId,
-        interactions::{
-            application_command::ApplicationCommandInteraction, message_component::ButtonStyle,
-            InteractionResponseType,
-        },
     },
     prelude::{RwLock, TypeMap},
 };
 use songbird::{tracks::TrackHandle, Event, TrackEvent};
 use std::{
     cmp::{max, min},
+    fmt::Write,
     ops::Add,
     sync::Arc,
     time::Duration,
@@ -86,7 +89,7 @@ pub async fn queue(
     let mut cib = message
         .await_component_interactions(&ctx)
         .timeout(Duration::from_secs(EMBED_TIMEOUT))
-        .await;
+        .build();
 
     while let Some(mci) = cib.next().await {
         let btn_id = &mci.data.custom_id;
@@ -151,8 +154,8 @@ pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
         String::from(QUEUE_NOTHING_IS_PLAYING)
     };
 
-    embed.field(QUEUE_NOW_PLAYING, description, false);
-    embed.field(QUEUE_UP_NEXT, build_queue_page(tracks, page), false);
+    embed.field(QUEUE_NOW_PLAYING, &description, false);
+    embed.field(QUEUE_UP_NEXT, &build_queue_page(tracks, page), false);
 
     embed.footer(|f| {
         f.text(format!(
@@ -211,13 +214,14 @@ fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
         let url = t.metadata().source_url.as_ref().unwrap();
         let duration = get_human_readable_timestamp(t.metadata().duration);
 
-        description.push_str(&format!(
-            "`{}.` [{}]({}) • `{}`\n",
+        let _ = writeln!(
+            description,
+            "`{}.` [{}]({}) • `{}`",
             i + start_idx + 1,
             title,
             url,
             duration
-        ));
+        );
     }
 
     description

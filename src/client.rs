@@ -1,4 +1,6 @@
-use songbird::SerenityInit;
+use serenity::model::gateway::GatewayIntents;
+use songbird::serenity::SerenityInit;
+
 use std::{collections::HashMap, env, error::Error};
 
 use crate::{
@@ -21,7 +23,9 @@ impl Client {
             .expect("Fatality! DISCORD_APP_ID not set!")
             .parse()?;
 
-        let client = serenity::Client::builder(token)
+        let gateway_intents = GatewayIntents::non_privileged();
+
+        let client = serenity::Client::builder(token, gateway_intents)
             .event_handler(SerenityHandler)
             .application_id(application_id)
             .register_songbird()

@@ -8,7 +8,9 @@ use crate::{
 };
 use serenity::{
     client::Context,
-    model::{id::GuildId, interactions::application_command::ApplicationCommandInteraction},
+    model::{
+        application::interaction::application_command::ApplicationCommandInteraction, id::GuildId,
+    },
     prelude::{Mentionable, RwLock, TypeMap},
 };
 use std::{collections::HashSet, sync::Arc};
@@ -19,8 +21,8 @@ pub async fn voteskip(
 ) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let bot_channel_id = get_voice_channel_for_user(
-        &ctx.cache.guild(guild_id).await.unwrap(),
-        &ctx.cache.current_user_id().await,
+        &ctx.cache.guild(guild_id).unwrap(),
+        &ctx.cache.current_user_id(),
     )
     .unwrap();
     let manager = songbird::get(ctx).await.unwrap();
@@ -37,7 +39,7 @@ pub async fn voteskip(
     let cache = cache_map.entry(guild_id).or_default();
     cache.current_skip_votes.insert(interaction.user.id);
 
-    let guild_users = ctx.cache.guild(guild_id).await.unwrap().voice_states;
+    let guild_users = ctx.cache.guild(guild_id).unwrap().voice_states;
     let channel_guild_users = guild_users
         .into_values()
         .filter(|v| v.channel_id.unwrap() == bot_channel_id);
