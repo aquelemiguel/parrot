@@ -284,7 +284,7 @@ impl SerenityHandler {
         let guild = ctx.cache.guild(guild_id).unwrap();
 
         // get songbird voice client
-        let manager = songbird::get(&ctx).await.unwrap();
+        let manager = songbird::get(ctx).await.unwrap();
 
         // parrot might have been disconnected manually
         if let Some(call) = manager.get(guild.id) {
