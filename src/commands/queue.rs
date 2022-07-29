@@ -28,6 +28,7 @@ use serenity::{
 use songbird::{tracks::TrackHandle, Event, TrackEvent};
 use std::{
     cmp::{max, min},
+    fmt::Write,
     ops::Add,
     sync::Arc,
     time::Duration,
@@ -214,13 +215,13 @@ fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
         let url = t.metadata().source_url.as_ref().unwrap();
         let duration = get_human_readable_timestamp(t.metadata().duration);
 
-        description.push_str(&format!(
-            "`{}.` [{}]({}) • `{}`\n",
+        let _ = writeln!(description,
+            "`{}.` [{}]({}) • `{}`",
             i + start_idx + 1,
             title,
             url,
             duration
-        ));
+        );
     }
 
     description
