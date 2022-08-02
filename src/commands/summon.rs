@@ -7,7 +7,9 @@ use crate::{
 };
 use serenity::{
     client::Context,
-    model::{id::ChannelId, interactions::application_command::ApplicationCommandInteraction},
+    model::{
+        application::interaction::application_command::ApplicationCommandInteraction, id::ChannelId,
+    },
     prelude::Mentionable,
 };
 use songbird::{Event, TrackEvent};
@@ -19,7 +21,7 @@ pub async fn summon(
     send_reply: bool,
 ) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
-    let guild = ctx.cache.guild(guild_id).await.unwrap();
+    let guild = ctx.cache.guild(guild_id).unwrap();
 
     let manager = songbird::get(ctx).await.unwrap();
     let channel_opt = get_voice_channel_for_user(&guild, &interaction.user.id);

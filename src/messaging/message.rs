@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use serenity::model::misc::Mention;
+use serenity::model::mention::Mention;
 
 use crate::messaging::messages::*;
 

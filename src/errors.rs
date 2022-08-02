@@ -4,7 +4,7 @@ use crate::messaging::messages::{
     TRACK_INAPPROPRIATE, TRACK_NOT_FOUND,
 };
 use rspotify::ClientError as RSpotifyClientError;
-use serenity::{model::misc::Mention, prelude::SerenityError};
+use serenity::{model::mention::Mention, prelude::SerenityError};
 use songbird::input::error::Error as InputError;
 use std::fmt::{Debug, Display};
 use std::{error::Error, fmt};

@@ -4,7 +4,8 @@ use crate::{
 };
 use rand::Rng;
 use serenity::{
-    client::Context, model::interactions::application_command::ApplicationCommandInteraction,
+    client::Context,
+    model::application::interaction::application_command::ApplicationCommandInteraction,
 };
 
 pub async fn shuffle(
