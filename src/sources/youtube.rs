@@ -187,7 +187,7 @@ async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
     let o_vec = youtube_dl_output.stderr;
 
     // read until newline byte
-    let end = (&o_vec)
+    let end = (o_vec)
         .iter()
         .position(|el| *el == NEWLINE_BYTE)
         .unwrap_or(o_vec.len());
