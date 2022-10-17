@@ -68,14 +68,20 @@ pub async fn create_embed_response(
     interaction: &mut ApplicationCommandInteraction,
     embed: CreateEmbed,
 ) -> Result<(), ParrotError> {
-    interaction
+    let response: Result<(), ParrotError> = interaction
         .create_interaction_response(&http, |response| {
             response
                 .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|message| message.add_embed(embed))
+                .interaction_response_data(|message| message.add_embed(embed.clone()))
         })
         .await
-        .map_err(Into::into)
+        .map_err(Into::into);
+    match response {
+        Ok(val) => Ok(val),
+        Err(..) => edit_embed_response(http, interaction, embed)
+            .await
+            .map(|_| ()),
+    }
 }
 
 pub async fn create_embed_followup(
