@@ -33,16 +33,6 @@ pub async fn create_response_text(
     create_embed_response(http, interaction, embed).await
 }
 
-pub async fn create_followup_text(
-    http: &Arc<Http>,
-    interaction: &mut ApplicationCommandInteraction,
-    content: &str,
-) -> Result<Message, ParrotError> {
-    let mut embed = CreateEmbed::default();
-    embed.description(content);
-    create_embed_followup(http, interaction, embed).await
-}
-
 pub async fn edit_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
@@ -82,17 +72,6 @@ pub async fn create_embed_response(
             .await
             .map(|_| ()),
     }
-}
-
-pub async fn create_embed_followup(
-    http: &Arc<Http>,
-    interaction: &mut ApplicationCommandInteraction,
-    embed: CreateEmbed,
-) -> Result<Message, ParrotError> {
-    interaction
-        .create_followup_message(&http, |followup| followup.add_embed(embed))
-        .await
-        .map_err(Into::into)
 }
 
 pub async fn edit_embed_response(
