@@ -21,7 +21,7 @@ version = "0.3.0"
 features = ["builtin-queue", "yt-dlp"]
 
 [dependencies.serenity]
-version = "0.11.4"
+version = "0.11.5"
 default-features = false
 features = ["cache", "collector", "client", "gateway", "model", "rustls_backend", "unstable_discord_api", "voice"]
 
