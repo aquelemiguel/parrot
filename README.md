@@ -16,6 +16,7 @@
 ## Deployment
 
 ### Usage
+
 Just [create a bot account](https://github.com/aquelemiguel/parrot/wiki/Create-Your-Discord-Bot), and copy its **token** and **application id** to a `.env` with the `DISCORD_TOKEN` and `DISCORD_APP_ID` environment variables respectively.
 
 ### Docker
@@ -30,6 +31,7 @@ Make sure you've installed Rust. You can install Rust and its package manager, `
 After installing the requirements below, simply run `cargo run`.
 
 ### Linux/MacOS
+
 The commands below installs a C compiler, GNU autotools and FFmpeg, as well as [yt-dlp](https://github.com/yt-dlp/yt-dlp) through Python's package manager, pip.
 
 #### Linux
@@ -50,11 +52,12 @@ pip install -U yt-dlp
 
 If you are using the MSVC toolchain, a prebuilt DLL for Opus is already provided for you.  
 You will only need to download [FFmpeg](https://ffmpeg.org/download.html), and install [yt-dlp](https://github.com/yt-dlp/yt-dlp) which can be done through Python's package manager, pip.
+
 ```shell
 pip install -U yt-dlp
 ```
 
-If you are using Windows Subsystem for Linux (WSL), you should follow the [Linux/MacOS](#linux--macos) guide, and, in addition to the other required packages, install pkg-config, which you may do by running:
+If you are using Windows Subsystem for Linux (WSL), you should follow the [Linux/MacOS](#linuxmacos) guide, and, in addition to the other required packages, install pkg-config, which you may do by running:
 
 ```shell
 apt install pkg-config
