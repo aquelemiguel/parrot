@@ -1,12 +1,13 @@
 use serenity::{
     builder::CreateEmbed,
-    http::Http,
+    http::{Http, HttpError},
     model::{
         application::interaction::{
             application_command::ApplicationCommandInteraction, InteractionResponseType,
         },
         channel::Message,
     },
+    Error,
 };
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
@@ -31,16 +32,6 @@ pub async fn create_response_text(
     let mut embed = CreateEmbed::default();
     embed.description(content);
     create_embed_response(http, interaction, embed).await
-}
-
-pub async fn create_followup_text(
-    http: &Arc<Http>,
-    interaction: &mut ApplicationCommandInteraction,
-    content: &str,
-) -> Result<Message, ParrotError> {
-    let mut embed = CreateEmbed::default();
-    embed.description(content);
-    create_embed_followup(http, interaction, embed).await
 }
 
 pub async fn edit_response(
@@ -68,25 +59,29 @@ pub async fn create_embed_response(
     interaction: &mut ApplicationCommandInteraction,
     embed: CreateEmbed,
 ) -> Result<(), ParrotError> {
-    interaction
+    match interaction
         .create_interaction_response(&http, |response| {
             response
                 .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|message| message.add_embed(embed))
+                .interaction_response_data(|message| message.add_embed(embed.clone()))
         })
         .await
         .map_err(Into::into)
-}
-
-pub async fn create_embed_followup(
-    http: &Arc<Http>,
-    interaction: &mut ApplicationCommandInteraction,
-    embed: CreateEmbed,
-) -> Result<Message, ParrotError> {
-    interaction
-        .create_followup_message(&http, |followup| followup.add_embed(embed))
-        .await
-        .map_err(Into::into)
+    {
+        Ok(val) => Ok(val),
+        Err(err) => match err {
+            ParrotError::Serenity(Error::Http(ref e)) => match &**e {
+                HttpError::UnsuccessfulRequest(req) => match req.error.code {
+                    40060 => edit_embed_response(http, interaction, embed)
+                        .await
+                        .map(|_| ()),
+                    _ => Err(err),
+                },
+                _ => Err(err),
+            },
+            _ => Err(err),
+        },
+    }
 }
 
 pub async fn edit_embed_response(
