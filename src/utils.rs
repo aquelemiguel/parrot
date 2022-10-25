@@ -7,6 +7,7 @@ use serenity::{
         },
         channel::Message,
     },
+    prelude::SerenityError,
 };
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
@@ -58,19 +59,21 @@ pub async fn create_embed_response(
     interaction: &mut ApplicationCommandInteraction,
     embed: CreateEmbed,
 ) -> Result<(), ParrotError> {
-    let response: Result<(), ParrotError> = interaction
+    match interaction
         .create_interaction_response(&http, |response| {
             response
                 .kind(InteractionResponseType::ChannelMessageWithSource)
                 .interaction_response_data(|message| message.add_embed(embed.clone()))
         })
         .await
-        .map_err(Into::into);
-    match response {
+    {
         Ok(val) => Ok(val),
-        Err(..) => edit_embed_response(http, interaction, embed)
-            .await
-            .map(|_| ()),
+        Err(err) => match err {
+            SerenityError::Http(..) => edit_embed_response(http, interaction, embed)
+                .await
+                .map(|_| ()),
+            _ => Err(err).map_err(Into::into),
+        },
     }
 }
 
