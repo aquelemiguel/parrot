@@ -1,13 +1,13 @@
 use serenity::{
     builder::CreateEmbed,
-    http::Http,
+    http::{Http, HttpError},
     model::{
         application::interaction::{
             application_command::ApplicationCommandInteraction, InteractionResponseType,
         },
         channel::Message,
     },
-    prelude::SerenityError,
+    Error,
 };
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
@@ -66,13 +66,20 @@ pub async fn create_embed_response(
                 .interaction_response_data(|message| message.add_embed(embed.clone()))
         })
         .await
+        .map_err(Into::into)
     {
         Ok(val) => Ok(val),
         Err(err) => match err {
-            SerenityError::Http(..) => edit_embed_response(http, interaction, embed)
-                .await
-                .map(|_| ()),
-            _ => Err(err).map_err(Into::into),
+            ParrotError::Serenity(Error::Http(ref e)) => match &**e {
+                HttpError::UnsuccessfulRequest(req) => match req.error.code {
+                    40060 => edit_embed_response(http, interaction, embed)
+                        .await
+                        .map(|_| ()),
+                    _ => Err(err),
+                },
+                _ => Err(err),
+            },
+            _ => Err(err),
         },
     }
 }
