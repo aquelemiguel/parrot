@@ -365,8 +365,13 @@ async fn insert_track(
     let queue_size = handler.queue().len();
     drop(handler);
 
+    if queue_size <= 1 {
+        let queue = enqueue_track(call, query_type).await?;
+        return Ok(queue);
+    }
+
     verify(
-        idx != 0 && idx < queue_size,
+        idx > 0 && idx <= queue_size,
         ParrotError::NotInRange("index", idx as isize, 1, queue_size as isize),
     )?;
 
