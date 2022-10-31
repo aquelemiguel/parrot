@@ -78,8 +78,6 @@ pub async fn play(
     summon(ctx, interaction, false).await?;
     let call = manager.get(guild_id).unwrap();
 
-    println!("{:?}", Url::parse(url).unwrap());
-
     // determine whether this is a link or a query string
     let query_type = match Url::parse(url) {
         Ok(url_data) => match url_data.host_str() {

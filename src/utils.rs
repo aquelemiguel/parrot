@@ -111,7 +111,7 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
 
     match metadata.channel {
         Some(channel) => embed.field("Channel", format!(">>> {}", channel), true),
-        None => embed.field("Channel", "-", true),
+        None => embed.field("Channel", ">>> N/A", true),
     };
 
     embed.thumbnail(&metadata.thumbnail.unwrap());
