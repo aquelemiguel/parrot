@@ -22,6 +22,7 @@ use serenity::{
 };
 use songbird::{input::Restartable, tracks::TrackHandle, Call};
 use std::{cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
+use url::Url;
 
 #[derive(Clone, Copy)]
 pub enum Mode {
@@ -77,16 +78,20 @@ pub async fn play(
     summon(ctx, interaction, false).await?;
     let call = manager.get(guild_id).unwrap();
 
-    let query_type = if url.contains("spotify.com") {
-        let spotify = SPOTIFY.lock().await;
-        let spotify = verify(spotify.as_ref(), ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
+    println!("{:?}", Url::parse(url).unwrap());
 
-        let query = Spotify::extract(spotify, url).await?;
-        Some(query)
-    } else if url.contains("youtube.com") {
-        YouTube::extract(url)
-    } else {
-        Some(QueryType::Keywords(url.to_string()))
+    // determine whether this is a link or a query string
+    let query_type = match Url::parse(url) {
+        Ok(url_data) => match url_data.host_str() {
+            Some("open.spotify.com") => {
+                let spotify = SPOTIFY.lock().await;
+                let spotify = verify(spotify.as_ref(), ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
+                Some(Spotify::extract(spotify, url).await?)
+            }
+            Some(_) => YouTube::extract(url),
+            None => None,
+        },
+        Err(_) => Some(QueryType::Keywords(url.to_string())),
     };
 
     let query_type = verify(
