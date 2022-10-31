@@ -11,6 +11,7 @@ use serenity::{
 };
 use songbird::tracks::TrackHandle;
 use std::{sync::Arc, time::Duration};
+use url::Url;
 
 use crate::{errors::ParrotError, messaging::message::ParrotMessage};
 
@@ -99,23 +100,41 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
     let mut embed = CreateEmbed::default();
     let metadata = track.metadata().clone();
 
-    embed.field(
-        ParrotMessage::NowPlaying,
-        format!(
-            "[**{}**]({})",
-            metadata.title.unwrap(),
-            metadata.source_url.unwrap()
-        ),
-        false,
-    );
-    embed.thumbnail(&metadata.thumbnail.unwrap());
+    embed.author(|author| author.name(ParrotMessage::NowPlaying));
+    embed.title(metadata.title.unwrap());
+    embed.url(metadata.source_url.as_ref().unwrap());
 
     let position = get_human_readable_timestamp(Some(track.get_info().await.unwrap().position));
     let duration = get_human_readable_timestamp(metadata.duration);
 
-    let footer_text = format!("{} / {}", position, duration);
-    embed.footer(|footer| footer.text(footer_text));
+    embed.field("Progress", format!(">>> {} / {}", position, duration), true);
+
+    match metadata.channel {
+        Some(channel) => embed.field("Channel", format!(">>> {}", channel), true),
+        None => embed.field("Channel", "-", true),
+    };
+
+    embed.thumbnail(&metadata.thumbnail.unwrap());
+
+    let source_url = metadata.source_url.as_ref().unwrap();
+
+    let (footer_text, footer_icon_url) = get_footer_info(source_url);
+    embed.footer(|f| f.text(footer_text).icon_url(footer_icon_url));
+
     embed
+}
+
+pub fn get_footer_info(url: &str) -> (String, String) {
+    let url_data = Url::parse(url).unwrap();
+    let domain = url_data.host_str().unwrap();
+
+    // remove www prefix because it looks ugly
+    let domain = domain.replace("www.", "");
+
+    (
+        format!("Streaming via {}", domain),
+        format!("https://www.google.com/s2/favicons?domain={}", domain),
+    )
 }
 
 pub fn get_human_readable_timestamp(duration: Option<Duration>) -> String {
