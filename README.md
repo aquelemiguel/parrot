@@ -17,7 +17,7 @@
 
 ### Usage
 
-Just [create a bot account](https://github.com/aquelemiguel/parrot/wiki/Create-Your-Discord-Bot), and copy its **token** and **application id** to a `.env` with the `DISCORD_TOKEN` and `DISCORD_APP_ID` environment variables respectively.
+Just [create a bot account](https://github.com/aquelemiguel/parrot/wiki/Create-Your-Discord-Bot), and copy its **token** and **application id** to a `.env` with the `DISCORD_TOKEN` and `DISCORD_APP_ID` environment variables respectively. Optionally, you may also define `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`. We recommend using our ![.env.example](https://github.com/aquelemiguel/parrot/blob/main/.env.example) as a starting point.
 
 ### Docker
 
