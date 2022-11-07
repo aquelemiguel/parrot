@@ -32,7 +32,7 @@ After installing the requirements below, simply run `cargo run`.
 
 ### Linux/MacOS
 
-The commands below installs a C compiler, GNU autotools and FFmpeg, as well as [yt-dlp](https://github.com/yt-dlp/yt-dlp) through Python's package manager, pip.
+The commands below install a C compiler, GNU autotools and FFmpeg, as well as [yt-dlp](https://github.com/yt-dlp/yt-dlp) through Python's package manager, pip.
 
 #### Linux
 
@@ -65,7 +65,7 @@ apt install pkg-config
 
 ## Testing
 
-Tests are available inside the `src/tests` folder. They can be ran via `cargo test`. It's recommended that you run the tests before submitting your Pull Request.
+Tests are available inside the `src/tests` folder. They can be run via `cargo test`. It's recommended that you run the tests before submitting your Pull Request.
 Increasing the test coverage is also welcome.
 
 ### Docker
