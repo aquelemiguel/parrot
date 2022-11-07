@@ -130,7 +130,7 @@ async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
     ];
 
     let mut yt = Command::new("yt-dlp")
-        .args(&ytdl_args)
+        .args(ytdl_args)
         .stdin(Stdio::null())
         .stderr(Stdio::piped())
         .stdout(Stdio::piped())
@@ -179,7 +179,7 @@ async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
     ];
 
     let youtube_dl_output = TokioCommand::new("yt-dlp")
-        .args(&ytdl_args)
+        .args(ytdl_args)
         .stdin(Stdio::null())
         .output()
         .await?;
