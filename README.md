@@ -22,7 +22,7 @@ Just [create a bot account](https://github.com/aquelemiguel/parrot/wiki/Create-Y
 ### Docker
 
 ```shell
-docker run -d --env-file .env ghcr.io/aquelemiguel/parrot:latest
+docker run -d --env-file .env --restart unless-stopped --name parrot ghcr.io/aquelemiguel/parrot:latest
 ```
 
 ## Development
