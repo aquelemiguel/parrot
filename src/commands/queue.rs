@@ -87,7 +87,7 @@ pub async fn queue(
     drop(handler);
 
     let mut cib = message
-        .await_component_interactions(&ctx)
+        .await_component_interactions(ctx)
         .timeout(Duration::from_secs(EMBED_TIMEOUT))
         .build();
 
