@@ -63,23 +63,23 @@ impl YouTubeRestartable {
             .spawn()
             .unwrap();
 
-        if let Some(stdout) = &mut child.stdout {
-            let reader = BufReader::new(stdout);
+        let Some(stdout) = &mut child.stdout else {
+            return None;
+        };
 
-            let lines = reader.lines().flatten().map(|line| {
-                let entry: Value = serde_json::from_str(&line).unwrap();
-                entry
-                    .get("webpage_url")
-                    .unwrap()
-                    .as_str()
-                    .unwrap()
-                    .to_string()
-            });
+        let reader = BufReader::new(stdout);
 
-            Some(lines.collect())
-        } else {
-            None
-        }
+        let lines = reader.lines().flatten().map(|line| {
+            let entry: Value = serde_json::from_str(&line).unwrap();
+            entry
+                .get("webpage_url")
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string()
+        });
+
+        Some(lines.collect())
     }
 }
 
@@ -98,12 +98,12 @@ where
     async fn call_restart(&mut self, time: Option<Duration>) -> SongbirdResult<Input> {
         let (yt, metadata) = ytdl(self.uri.as_ref()).await?;
 
-        if let Some(time) = time {
-            let ts = format!("{:.3}", time.as_secs_f64());
-            ffmpeg(yt, metadata, &["-ss", &ts]).await
-        } else {
-            ffmpeg(yt, metadata, &[]).await
-        }
+        let Some(time) = time else {
+            return ffmpeg(yt, metadata, &[]).await;
+        };
+
+        let ts = format!("{:.3}", time.as_secs_f64());
+        ffmpeg(yt, metadata, &["-ss", &ts]).await
     }
 
     async fn lazy_init(&mut self) -> SongbirdResult<(Option<Metadata>, Codec, Container)> {
