@@ -7,17 +7,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/aquelemiguel/parrot/actions/workflows/main.yml"><img src="https://github.com/aquelemiguel/parrot/actions/workflows/main.yml/badge.svg"></a>
+  <a href="https://github.com/aquelemiguel/parrot/actions/workflows/ci_workflow.yml"><img src="https://github.com/aquelemiguel/parrot/actions/workflows/ci_workflow.yml/badge.svg"></a>
   <a href="https://deps.rs/repo/github/aquelemiguel/parrot"><img src="https://deps.rs/repo/github/aquelemiguel/parrot/status.svg"></a>
   <a href="https://github.com/aquelemiguel/parrot/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-  <a href="https://github.com/aquelemiguel/parrot/"><img src="https://img.shields.io/badge/rustc-1.58-blue.svg"></a>
+  <a href="https://github.com/aquelemiguel/parrot/"><img src="https://img.shields.io/badge/rustc-1.65-blue.svg"></a>
 </p>
 
 ## Deployment
 
 ### Usage
 
-Just [create a bot account](https://github.com/aquelemiguel/parrot/wiki/Create-Your-Discord-Bot), and copy its **token** and **application id** to a `.env` with the `DISCORD_TOKEN` and `DISCORD_APP_ID` environment variables respectively. Optionally, you may also define `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`. We recommend using our ![.env.example](https://github.com/aquelemiguel/parrot/blob/main/.env.example) as a starting point.
+Just [create a bot account](https://github.com/aquelemiguel/parrot/wiki/Create-Your-Discord-Bot), and copy its **token** and **application id** to a `.env` with the `DISCORD_TOKEN` and `DISCORD_APP_ID` environment variables respectively. Optionally, you may also define `SPOTIFY_CLIENT_ID` and `SPOTIFY_CLIENT_SECRET`. We recommend using our [.env.example](https://github.com/aquelemiguel/parrot/blob/main/.env.example) as a starting point.
 
 ### Docker
 
