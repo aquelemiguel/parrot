@@ -36,18 +36,24 @@ jobs:
       - name: Bump Cargo.lock
         run: cargo build
 
+      - name: Get latest version
+        id: get_version
+        run: echo ::set-output name=VERSION::$(cargo pkgid | cut -d# -f2)
+
       - name: Create bump PR
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: bump version to ${{ github.event.inputs.version }}'
-          title: 'chore: bump version to ${{ github.event.inputs.version }}'
+          commit-message: 'chore: bump version to ${{ steps.get_version.outputs.VERSION }}'
+          title: 'chore: bump version to ${{ steps.get_version.outputs.VERSION }}'
           body: |
-            Bump version to ${{ github.event.inputs.version }}
+            Bump version to ${{ steps.get_version.outputs.VERSION }}
 
             - [x] Bump version in Cargo.toml
             - [x] Bump version in Cargo.lock
           committer: GitHub <noreply@github.com>
           author: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
-          branch: bump/${{ github.event.inputs.version }}
+          branch: bump/${{ steps.get_version.outputs.VERSION }}
           base: main
+          delete-branch: true
+          labels: ':parrot: release'
