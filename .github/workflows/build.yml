@@ -1,13 +1,14 @@
 name: Main Workflow
 
-on: [push, pull_request]
+on:
+  workflow_call:
 
 jobs:
   build:
     name: Build
     strategy:
       matrix:
-        rust-version: ["1.65", "stable"]
+        rust-version: ['1.65', 'stable']
     runs-on: ubuntu-latest
     steps:
       - name: Repository Checkout
