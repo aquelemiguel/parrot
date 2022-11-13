@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::{
     errors::ParrotError,
     guild::settings::GuildSettingsMap,
@@ -9,9 +11,14 @@ use crate::{
 use serenity::{
     builder::{CreateComponents, CreateInputText},
     client::Context,
+    collector::ModalInteractionCollectorBuilder,
+    futures::StreamExt,
     model::{
         application::interaction::application_command::ApplicationCommandInteraction,
-        prelude::{component::InputTextStyle, interaction::InteractionResponseType},
+        prelude::{
+            component::{ActionRowComponent, InputTextStyle},
+            interaction::InteractionResponseType,
+        },
     },
 };
 
@@ -42,6 +49,8 @@ pub async fn allow(
         .collect::<Vec<String>>()
         .join(";");
 
+    drop(data);
+
     let mut allowed_input = CreateInputText::default();
 
     allowed_input
@@ -70,27 +79,66 @@ pub async fn allow(
 
     interaction
         .create_interaction_response(&ctx.http, |r| {
-            r.interaction_response_data(|m| {
-                m.title(DOMAIN_FORM_TITLE)
-                    .custom_id("manage_domains")
-                    .set_components(components)
+            r.kind(InteractionResponseType::Modal);
+            r.interaction_response_data(|d| {
+                d.title(DOMAIN_FORM_TITLE);
+                d.custom_id("manage_domains");
+                d.set_components(components)
             })
-            .kind(InteractionResponseType::Modal)
         })
-        .await
-        .unwrap();
+        .await?;
 
-    let Ok(message) = interaction.get_interaction_response(&ctx.http).await else {
-        return Err(ParrotError::Other("failed to send modal"));
-    };
+    // collect the submitted data...
+    let collector = ModalInteractionCollectorBuilder::new(ctx)
+        .filter(|int| int.data.custom_id == "manage_domains") // only keep submissions from the domain modal
+        .build();
 
-    message
-        .await_modal_interaction(&ctx.shard)
-        .message_id(message.id)
-        .filter(|res| {
-            println!("{:?}", res.data.components);
-            true
+    collector
+        .then(|int| async move {
+            let mut data = ctx.data.write().await;
+            let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+
+            let inputs: Vec<_> = int
+                .data
+                .components
+                .iter()
+                .flat_map(|r| r.components.iter())
+                .collect();
+
+            for input in inputs.iter() {
+                if let ActionRowComponent::InputText(it) = input {
+                    if it.custom_id == "allowed_domains" {
+                        let domains: HashSet<String> =
+                            it.value.split(';').map(|s| s.to_string()).collect();
+
+                        settings
+                            .entry(guild_id)
+                            .and_modify(|e| e.allowed_domains = domains.clone());
+
+                        println!("Updated allowed to {:?}", domains);
+                    }
+
+                    if it.custom_id == "banned_domains" {
+                        let domains: HashSet<String> =
+                            it.value.split(';').map(|s| s.to_string()).collect();
+
+                        settings
+                            .entry(guild_id)
+                            .and_modify(|e| e.banned_domains = domains.clone());
+
+                        println!("Updated banned to {:?}", domains);
+                    }
+                }
+            }
+
+            // it's now safe to close the modal, so send a response to it
+            int.create_interaction_response(&ctx.http, |r| {
+                r.kind(InteractionResponseType::DeferredUpdateMessage)
+            })
+            .await
+            .ok();
         })
+        .collect::<Vec<_>>() // streams do nothing unless polled
         .await;
 
     Ok(())
