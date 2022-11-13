@@ -44,10 +44,12 @@ impl EventHandler for SerenityHandler {
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::ApplicationCommand(mut command) = interaction {
-            if let Err(err) = self.run_command(&ctx, &mut command).await {
-                self.handle_error(&ctx, &mut command, err).await
-            }
+        let Interaction::ApplicationCommand(mut command) = interaction else {
+            return;
+        };
+
+        if let Err(err) = self.run_command(&ctx, &mut command).await {
+            self.handle_error(&ctx, &mut command, err).await
         }
     }
 
@@ -356,14 +358,16 @@ impl SerenityHandler {
     }
 
     async fn self_deafen(&self, ctx: &Context, guild: Option<GuildId>, new: VoiceState) {
-        if let Ok(user) = ctx.http.get_current_user().await {
-            if user.id == new.user_id && !new.deaf {
-                guild
-                    .unwrap()
-                    .edit_member(&ctx.http, new.user_id, |n| n.deafen(true))
-                    .await
-                    .unwrap();
-            }
+        let Ok(user) = ctx.http.get_current_user().await else {
+            return;
+        };
+
+        if user.id == new.user_id && !new.deaf {
+            guild
+                .unwrap()
+                .edit_member(&ctx.http, new.user_id, |n| n.deafen(true))
+                .await
+                .unwrap();
         }
     }
 
