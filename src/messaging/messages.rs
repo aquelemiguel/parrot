@@ -1,6 +1,12 @@
 pub const AUTOPAUSE_OFF: &str = "🤖 Autopause OFF!";
 pub const AUTOPAUSE_ON: &str = "🤖 Autopause ON!";
 pub const CLEARED: &str = "🗑️ Cleared!";
+
+pub const DOMAIN_FORM_ALLOWED_TITLE: &str = "Allowed domains";
+pub const DOMAIN_FORM_BANNED_TITLE: &str = "Banned domains";
+pub const DOMAIN_FORM_PLACEHOLDER: &str = "Separate domains by semicolon. Include all with wildcard '*'. e.g.: \"youtube.com;twitter.com\"";
+pub const DOMAIN_FORM_TITLE: &str = "Manage domains";
+
 pub const ERROR: &str = "Fatality! Something went wrong ☹️";
 pub const FAIL_ALREADY_HERE: &str = "⚠️ I'm already here!";
 pub const FAIL_ANOTHER_CHANNEL: &str = "⚠️ I'm already connected to";

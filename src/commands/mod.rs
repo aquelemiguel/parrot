@@ -1,3 +1,4 @@
+pub mod allow;
 pub mod autopause;
 pub mod clear;
 pub mod leave;

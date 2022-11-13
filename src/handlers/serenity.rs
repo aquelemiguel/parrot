@@ -1,8 +1,8 @@
 use crate::{
     commands::{
-        autopause::*, clear::*, leave::*, now_playing::*, pause::*, play::*, queue::*, remove::*,
-        repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
-        voteskip::*,
+        allow::*, autopause::*, clear::*, leave::*, now_playing::*, pause::*, play::*, queue::*,
+        remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
+        version::*, voteskip::*,
     },
     connection::{check_voice_connections, Connection},
     errors::ParrotError,
@@ -76,6 +76,11 @@ impl SerenityHandler {
     async fn create_commands(&self, ctx: &Context) -> Vec<Command> {
         Command::set_global_application_commands(&ctx.http, |commands| {
             commands
+                .create_application_command(|command| {
+                    command
+                        .name("allow")
+                        .description("Manage streaming from different sources")
+                })
                 .create_application_command(|command| {
                     command
                         .name("autopause")
@@ -328,12 +333,13 @@ impl SerenityHandler {
         }?;
 
         match command_name {
+            "allow" => allow(ctx, command).await,
             "autopause" => autopause(ctx, command).await,
             "clear" => clear(ctx, command).await,
             "leave" => leave(ctx, command).await,
             "np" => now_playing(ctx, command).await,
             "pause" => pause(ctx, command).await,
-            "play" => play(ctx, command).await,
+            "play" | "superplay" => play(ctx, command).await,
             "queue" => queue(ctx, command).await,
             "remove" => remove(ctx, command).await,
             "repeat" => repeat(ctx, command).await,
@@ -341,7 +347,6 @@ impl SerenityHandler {
             "seek" => seek(ctx, command).await,
             "shuffle" => shuffle(ctx, command).await,
             "skip" => skip(ctx, command).await,
-            "superplay" => play(ctx, command).await,
             "stop" => stop(ctx, command).await,
             "summon" => summon(ctx, command, true).await,
             "version" => version(ctx, command).await,
