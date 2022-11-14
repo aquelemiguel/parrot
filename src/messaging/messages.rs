@@ -29,6 +29,8 @@ pub const LOOP_DISABLED: &str = "🔁 Disabled loop!";
 pub const LOOP_ENABLED: &str = "🔁 Enabled loop!";
 pub const NOTHING_IS_PLAYING: &str = "🔈 Nothing is playing!";
 pub const PAUSED: &str = "⏸️ Paused!";
+pub const PLAY_FAILED_BLOCKED_DOMAIN: &str =
+    "**is either not allowed in this server or is not supported!** \n\nTo explicitely allow this domain, ask a moderator to run the `/managesources` command. [Click to see a list of supported sources.](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md)";
 pub const PLAY_ALL_FAILED: &str =
     "⚠️ Cannot fetch playlist via keywords! Try passing this command an URL.";
 pub const PLAY_PLAYLIST: &str = "📃 Added playlist to queue!";

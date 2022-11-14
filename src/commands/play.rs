@@ -1,6 +1,7 @@
 use crate::{
     commands::{skip::force_skip_top_track, summon::summon},
     errors::{verify, ParrotError},
+    guild::settings::GuildSettingsMap,
     handlers::track_end::update_queue_messages,
     messaging::message::ParrotMessage,
     messaging::messages::{
@@ -11,8 +12,8 @@ use crate::{
         youtube::{YouTube, YouTubeRestartable},
     },
     utils::{
-        create_now_playing_embed, create_response, edit_embed_response, edit_response,
-        get_human_readable_timestamp,
+        create_now_playing_embed, create_response, create_response_text, edit_embed_response,
+        edit_response, get_human_readable_timestamp,
     },
 };
 use serenity::{
@@ -86,10 +87,52 @@ pub async fn play(
                 let spotify = verify(spotify.as_ref(), ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
                 Some(Spotify::extract(spotify, url).await?)
             }
-            Some(_) => YouTube::extract(url),
+            Some(other) => {
+                let mut data = ctx.data.write().await;
+                let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+                let guild_settings = settings.entry(guild_id).or_default();
+
+                let other = other.to_string().replace("www.", "");
+
+                if guild_settings.banned_domains.contains(&other)
+                    || (guild_settings.banned_domains.is_empty()
+                        && !guild_settings.allowed_domains.contains(&other))
+                {
+                    return create_response(
+                        &ctx.http,
+                        interaction,
+                        ParrotMessage::PlayDomainBanned {
+                            domain: other.to_string(),
+                        },
+                    )
+                    .await;
+                }
+
+                YouTube::extract(url)
+            }
             None => None,
         },
-        Err(_) => Some(QueryType::Keywords(url.to_string())),
+        Err(_) => {
+            let mut data = ctx.data.write().await;
+            let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+            let guild_settings = settings.entry(guild_id).or_default();
+
+            if guild_settings.banned_domains.contains("youtube.com")
+                || (guild_settings.banned_domains.is_empty()
+                    && !guild_settings.allowed_domains.contains("youtube.com"))
+            {
+                return create_response(
+                    &ctx.http,
+                    interaction,
+                    ParrotMessage::PlayDomainBanned {
+                        domain: "youtube.com".to_string(),
+                    },
+                )
+                .await;
+            }
+
+            Some(QueryType::Keywords(url.to_string()))
+        }
     };
 
     let query_type = verify(
