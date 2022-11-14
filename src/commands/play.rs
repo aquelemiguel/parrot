@@ -12,8 +12,8 @@ use crate::{
         youtube::{YouTube, YouTubeRestartable},
     },
     utils::{
-        create_now_playing_embed, create_response, create_response_text, edit_embed_response,
-        edit_response, get_human_readable_timestamp,
+        create_now_playing_embed, create_response, edit_embed_response, edit_response,
+        get_human_readable_timestamp,
     },
 };
 use serenity::{
