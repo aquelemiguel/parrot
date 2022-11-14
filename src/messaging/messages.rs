@@ -4,7 +4,10 @@ pub const CLEARED: &str = "🗑️ Cleared!";
 
 pub const DOMAIN_FORM_ALLOWED_TITLE: &str = "Allowed domains";
 pub const DOMAIN_FORM_BANNED_TITLE: &str = "Banned domains";
-pub const DOMAIN_FORM_PLACEHOLDER: &str = "Separate domains by semicolon. Include all with wildcard '*'. e.g.: \"youtube.com;twitter.com\"";
+pub const DOMAIN_FORM_ALLOWED_PLACEHOLDER: &str =
+    "Add domains separated by \';\'. If left blank, all (except for banned) are allowed by default.";
+pub const DOMAIN_FORM_BANNED_PLACEHOLDER: &str =
+    "Add domains separated by \';\'. If left blank, all (except for allowed) are blocked by default.";
 pub const DOMAIN_FORM_TITLE: &str = "Manage domains";
 
 pub const ERROR: &str = "Fatality! Something went wrong ☹️";

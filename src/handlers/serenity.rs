@@ -80,16 +80,6 @@ impl SerenityHandler {
             commands
                 .create_application_command(|command| {
                     command
-                        .name("allow")
-                        .description("Manage streaming from different sources")
-                })
-                .create_application_command(|command| {
-                    command
-                        .name("autopause")
-                        .description("Toggles whether to pause after a song ends")
-                })
-                .create_application_command(|command| {
-                    command
                         .name("clear")
                         .description("Clears the queue")
                 })
@@ -97,6 +87,11 @@ impl SerenityHandler {
                     command
                         .name("leave")
                         .description("Leave the voice channel the bot is connected to")
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("managesources")
+                        .description("Manage streaming from different sources")
                 })
                 .create_application_command(|command| {
                     command
@@ -335,10 +330,10 @@ impl SerenityHandler {
         }?;
 
         match command_name {
-            "allow" => allow(ctx, command).await,
             "autopause" => autopause(ctx, command).await,
             "clear" => clear(ctx, command).await,
             "leave" => leave(ctx, command).await,
+            "managesources" => allow(ctx, command).await,
             "np" => now_playing(ctx, command).await,
             "pause" => pause(ctx, command).await,
             "play" | "superplay" => play(ctx, command).await,

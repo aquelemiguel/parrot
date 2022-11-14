@@ -1,11 +1,9 @@
-use std::collections::HashSet;
-
 use crate::{
     errors::ParrotError,
-    guild::settings::GuildSettingsMap,
+    guild::settings::{GuildSettingsMap, Update},
     messaging::messages::{
-        DOMAIN_FORM_ALLOWED_TITLE, DOMAIN_FORM_BANNED_TITLE, DOMAIN_FORM_PLACEHOLDER,
-        DOMAIN_FORM_TITLE,
+        DOMAIN_FORM_ALLOWED_PLACEHOLDER, DOMAIN_FORM_ALLOWED_TITLE, DOMAIN_FORM_BANNED_PLACEHOLDER,
+        DOMAIN_FORM_BANNED_TITLE, DOMAIN_FORM_TITLE,
     },
 };
 use serenity::{
@@ -57,7 +55,7 @@ pub async fn allow(
         .label(DOMAIN_FORM_ALLOWED_TITLE)
         .custom_id("allowed_domains")
         .style(InputTextStyle::Paragraph)
-        .placeholder(DOMAIN_FORM_PLACEHOLDER)
+        .placeholder(DOMAIN_FORM_ALLOWED_PLACEHOLDER)
         .value(allowed_str)
         .required(false);
 
@@ -67,7 +65,7 @@ pub async fn allow(
         .label(DOMAIN_FORM_BANNED_TITLE)
         .custom_id("banned_domains")
         .style(InputTextStyle::Paragraph)
-        .placeholder(DOMAIN_FORM_PLACEHOLDER)
+        .placeholder(DOMAIN_FORM_BANNED_PLACEHOLDER)
         .value(banned_str)
         .required(false);
 
@@ -105,31 +103,21 @@ pub async fn allow(
                 .flat_map(|r| r.components.iter())
                 .collect();
 
+            let guild_settings = settings.get_mut(&guild_id).unwrap();
+
             for input in inputs.iter() {
                 if let ActionRowComponent::InputText(it) = input {
                     if it.custom_id == "allowed_domains" {
-                        let domains: HashSet<String> =
-                            it.value.split(';').map(|s| s.to_string()).collect();
-
-                        settings
-                            .entry(guild_id)
-                            .and_modify(|e| e.allowed_domains = domains.clone());
-
-                        println!("Updated allowed to {:?}", domains);
+                        guild_settings.set_allowed_domains(&it.value);
                     }
 
                     if it.custom_id == "banned_domains" {
-                        let domains: HashSet<String> =
-                            it.value.split(';').map(|s| s.to_string()).collect();
-
-                        settings
-                            .entry(guild_id)
-                            .and_modify(|e| e.banned_domains = domains.clone());
-
-                        println!("Updated banned to {:?}", domains);
+                        guild_settings.set_banned_domains(&it.value);
                     }
                 }
             }
+
+            guild_settings.update_domains();
 
             // it's now safe to close the modal, so send a response to it
             int.create_interaction_response(&ctx.http, |r| {
