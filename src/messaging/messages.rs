@@ -8,7 +8,7 @@ pub const DOMAIN_FORM_ALLOWED_PLACEHOLDER: &str =
     "Add domains separated by \';\'. If left blank, all (except for banned) are allowed by default.";
 pub const DOMAIN_FORM_BANNED_PLACEHOLDER: &str =
     "Add domains separated by \';\'. If left blank, all (except for allowed) are blocked by default.";
-pub const DOMAIN_FORM_TITLE: &str = "Manage domains";
+pub const DOMAIN_FORM_TITLE: &str = "Manage sources";
 
 pub const ERROR: &str = "Fatality! Something went wrong ☹️";
 pub const FAIL_ALREADY_HERE: &str = "⚠️ I'm already here!";

@@ -1,8 +1,8 @@
 use crate::{
     commands::{
-        allow::*, autopause::*, clear::*, leave::*, now_playing::*, pause::*, play::*, queue::*,
-        remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*,
-        version::*, voteskip::*,
+        autopause::*, clear::*, leave::*, manage_sources::*, now_playing::*, pause::*, play::*,
+        queue::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*,
+        summon::*, version::*, voteskip::*,
     },
     connection::{check_voice_connections, Connection},
     errors::ParrotError,
