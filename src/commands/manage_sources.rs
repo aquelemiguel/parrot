@@ -29,7 +29,6 @@ pub async fn allow(
     let mut data = ctx.data.write().await;
     let settings = data.get_mut::<GuildSettingsMap>().unwrap();
 
-    // fetch the allowed domains and transform to a comma-separated string
     let guild_settings = settings.entry(guild_id).or_default();
 
     // transform the domain sets from the settings into a string
@@ -50,7 +49,6 @@ pub async fn allow(
     drop(data);
 
     let mut allowed_input = CreateInputText::default();
-
     allowed_input
         .label(DOMAIN_FORM_ALLOWED_TITLE)
         .custom_id("allowed_domains")
@@ -60,7 +58,6 @@ pub async fn allow(
         .required(false);
 
     let mut banned_input = CreateInputText::default();
-
     banned_input
         .label(DOMAIN_FORM_BANNED_TITLE)
         .custom_id("banned_domains")
@@ -70,7 +67,6 @@ pub async fn allow(
         .required(false);
 
     let mut components = CreateComponents::default();
-
     components
         .create_action_row(|r| r.add_input_text(allowed_input))
         .create_action_row(|r| r.add_input_text(banned_input));
@@ -86,9 +82,9 @@ pub async fn allow(
         })
         .await?;
 
-    // collect the submitted data...
+    // collect the submitted data
     let collector = ModalInteractionCollectorBuilder::new(ctx)
-        .filter(|int| int.data.custom_id == "manage_domains") // only keep submissions from the domain modal
+        .filter(|int| int.data.custom_id == "manage_domains")
         .build();
 
     collector
@@ -126,7 +122,7 @@ pub async fn allow(
             .await
             .ok();
         })
-        .collect::<Vec<_>>() // streams do nothing unless polled
+        .collect::<Vec<_>>()
         .await;
 
     Ok(())
