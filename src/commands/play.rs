@@ -12,8 +12,8 @@ use crate::{
         youtube::{YouTube, YouTubeRestartable},
     },
     utils::{
-        create_now_playing_embed, create_response, edit_embed_response, edit_response,
-        get_human_readable_timestamp,
+        compare_domains, create_now_playing_embed, create_response, edit_embed_response,
+        edit_response, get_human_readable_timestamp,
     },
 };
 use serenity::{
@@ -92,12 +92,17 @@ pub async fn play(
                 let settings = data.get_mut::<GuildSettingsMap>().unwrap();
                 let guild_settings = settings.entry(guild_id).or_default();
 
-                let other = other.to_string().replace("www.", "");
+                let is_allowed = guild_settings
+                    .allowed_domains
+                    .iter()
+                    .any(|d| compare_domains(d, other));
 
-                if guild_settings.banned_domains.contains(&other)
-                    || (guild_settings.banned_domains.is_empty()
-                        && !guild_settings.allowed_domains.contains(&other))
-                {
+                let is_banned = guild_settings
+                    .banned_domains
+                    .iter()
+                    .any(|d| compare_domains(d, other));
+
+                if is_banned || (guild_settings.banned_domains.is_empty() && !is_allowed) {
                     return create_response(
                         &ctx.http,
                         interaction,

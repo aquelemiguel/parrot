@@ -154,3 +154,7 @@ pub fn get_human_readable_timestamp(duration: Option<Duration>) -> String {
         None => "∞".to_string(),
     }
 }
+
+pub fn compare_domains(domain: &str, subdomain: &str) -> bool {
+    subdomain == domain || subdomain.ends_with(domain)
+}
