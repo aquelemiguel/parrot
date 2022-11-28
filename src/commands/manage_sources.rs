@@ -1,6 +1,6 @@
 use crate::{
     errors::ParrotError,
-    guild::settings::{GuildSettingsMap, Update},
+    guild::settings::GuildSettingsMap,
     messaging::messages::{
         DOMAIN_FORM_ALLOWED_PLACEHOLDER, DOMAIN_FORM_ALLOWED_TITLE, DOMAIN_FORM_BANNED_PLACEHOLDER,
         DOMAIN_FORM_BANNED_TITLE, DOMAIN_FORM_TITLE,

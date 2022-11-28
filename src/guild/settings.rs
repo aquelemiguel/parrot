@@ -2,31 +2,32 @@ use std::collections::{HashMap, HashSet};
 
 use serenity::{model::id::GuildId, prelude::TypeMapKey};
 
+const DEFAULT_ALLOWED_DOMAINS: [&str; 1] = ["youtube.com"];
+
 pub struct GuildSettings {
     pub autopause: bool,
     pub allowed_domains: HashSet<String>,
     pub banned_domains: HashSet<String>,
 }
 
-pub trait Update {
-    fn set_allowed_domains(&mut self, allowed_str: &str);
-    fn set_banned_domains(&mut self, banned_str: &str);
-    fn update_domains(&mut self);
-}
-
 impl Default for GuildSettings {
     fn default() -> GuildSettings {
+        let allowed_domains: HashSet<String> = DEFAULT_ALLOWED_DOMAINS
+            .iter()
+            .map(|d| d.to_string())
+            .collect();
+
         GuildSettings {
             autopause: false,
-            allowed_domains: HashSet::from(["youtube.com".to_string()]),
+            allowed_domains,
             banned_domains: HashSet::new(),
         }
     }
 }
 
-impl Update for GuildSettings {
-    fn set_allowed_domains(&mut self, allowed_str: &str) {
-        let allowed: HashSet<String> = allowed_str
+impl GuildSettings {
+    pub fn set_allowed_domains(&mut self, allowed_str: &str) {
+        let allowed = allowed_str
             .split(';')
             .filter(|s| !s.is_empty())
             .map(|s| s.to_string())
@@ -35,8 +36,8 @@ impl Update for GuildSettings {
         self.allowed_domains = allowed;
     }
 
-    fn set_banned_domains(&mut self, banned_str: &str) {
-        let banned: HashSet<String> = banned_str
+    pub fn set_banned_domains(&mut self, banned_str: &str) {
+        let banned = banned_str
             .split(';')
             .filter(|s| !s.is_empty())
             .map(|s| s.to_string())
@@ -45,7 +46,7 @@ impl Update for GuildSettings {
         self.banned_domains = banned;
     }
 
-    fn update_domains(&mut self) {
+    pub fn update_domains(&mut self) {
         if !self.allowed_domains.is_empty() && !self.banned_domains.is_empty() {
             self.banned_domains.clear();
         }
