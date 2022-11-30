@@ -1,6 +1,7 @@
 use crate::{
     commands::{skip::force_skip_top_track, summon::summon},
     errors::{verify, ParrotError},
+    guild::settings::GuildSettingsMap,
     handlers::track_end::update_queue_messages,
     messaging::message::ParrotMessage,
     messaging::messages::{
@@ -11,8 +12,8 @@ use crate::{
         youtube::{YouTube, YouTubeRestartable},
     },
     utils::{
-        create_now_playing_embed, create_response, edit_embed_response, edit_response,
-        get_human_readable_timestamp,
+        compare_domains, create_now_playing_embed, create_response, edit_embed_response,
+        edit_response, get_human_readable_timestamp,
     },
 };
 use serenity::{
@@ -22,6 +23,7 @@ use serenity::{
 };
 use songbird::{input::Restartable, tracks::TrackHandle, Call};
 use std::{cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
+use url::Url;
 
 #[derive(Clone, Copy)]
 pub enum Mode {
@@ -77,16 +79,65 @@ pub async fn play(
     summon(ctx, interaction, false).await?;
     let call = manager.get(guild_id).unwrap();
 
-    let query_type = if url.contains("spotify.com") {
-        let spotify = SPOTIFY.lock().await;
-        let spotify = verify(spotify.as_ref(), ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
+    // determine whether this is a link or a query string
+    let query_type = match Url::parse(url) {
+        Ok(url_data) => match url_data.host_str() {
+            Some("open.spotify.com") => {
+                let spotify = SPOTIFY.lock().await;
+                let spotify = verify(spotify.as_ref(), ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
+                Some(Spotify::extract(spotify, url).await?)
+            }
+            Some(other) => {
+                let mut data = ctx.data.write().await;
+                let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+                let guild_settings = settings.entry(guild_id).or_default();
 
-        let query = Spotify::extract(spotify, url).await?;
-        Some(query)
-    } else if url.contains("youtube.com") {
-        YouTube::extract(url)
-    } else {
-        Some(QueryType::Keywords(url.to_string()))
+                let is_allowed = guild_settings
+                    .allowed_domains
+                    .iter()
+                    .any(|d| compare_domains(d, other));
+
+                let is_banned = guild_settings
+                    .banned_domains
+                    .iter()
+                    .any(|d| compare_domains(d, other));
+
+                if is_banned || (guild_settings.banned_domains.is_empty() && !is_allowed) {
+                    return create_response(
+                        &ctx.http,
+                        interaction,
+                        ParrotMessage::PlayDomainBanned {
+                            domain: other.to_string(),
+                        },
+                    )
+                    .await;
+                }
+
+                YouTube::extract(url)
+            }
+            None => None,
+        },
+        Err(_) => {
+            let mut data = ctx.data.write().await;
+            let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+            let guild_settings = settings.entry(guild_id).or_default();
+
+            if guild_settings.banned_domains.contains("youtube.com")
+                || (guild_settings.banned_domains.is_empty()
+                    && !guild_settings.allowed_domains.contains("youtube.com"))
+            {
+                return create_response(
+                    &ctx.http,
+                    interaction,
+                    ParrotMessage::PlayDomainBanned {
+                        domain: "youtube.com".to_string(),
+                    },
+                )
+                .await;
+            }
+
+            Some(QueryType::Keywords(url.to_string()))
+        }
     };
 
     let query_type = verify(

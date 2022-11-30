@@ -17,8 +17,9 @@ pub enum ParrotMessage {
     LoopEnable,
     NowPlaying,
     Pause,
-    PlaylistQueued,
     PlayAllFailed,
+    PlayDomainBanned { domain: String },
+    PlaylistQueued,
     RemoveMultiple,
     Resume,
     Search,
@@ -47,6 +48,9 @@ impl Display for ParrotMessage {
             Self::Pause => f.write_str(PAUSED),
             Self::PlaylistQueued => f.write_str(PLAY_PLAYLIST),
             Self::PlayAllFailed => f.write_str(PLAY_ALL_FAILED),
+            Self::PlayDomainBanned { domain } => {
+                f.write_str(&format!("⚠️ **{}** {}", domain, PLAY_FAILED_BLOCKED_DOMAIN))
+            }
             Self::Search => f.write_str(SEARCHING),
             Self::RemoveMultiple => f.write_str(REMOVED_QUEUE_MULTIPLE),
             Self::Resume => f.write_str(RESUMED),

@@ -1,8 +1,8 @@
 use crate::{
     commands::{
-        autopause::*, clear::*, leave::*, now_playing::*, pause::*, play::*, queue::*, remove::*,
-        repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*, summon::*, version::*,
-        voteskip::*,
+        autopause::*, clear::*, leave::*, manage_sources::*, now_playing::*, pause::*, play::*,
+        queue::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*,
+        summon::*, version::*, voteskip::*,
     },
     connection::{check_voice_connections, Connection},
     errors::ParrotError,
@@ -80,11 +80,6 @@ impl SerenityHandler {
             commands
                 .create_application_command(|command| {
                     command
-                        .name("autopause")
-                        .description("Toggles whether to pause after a song ends")
-                })
-                .create_application_command(|command| {
-                    command
                         .name("clear")
                         .description("Clears the queue")
                 })
@@ -92,6 +87,11 @@ impl SerenityHandler {
                     command
                         .name("leave")
                         .description("Leave the voice channel the bot is connected to")
+                })
+                .create_application_command(|command| {
+                    command
+                        .name("managesources")
+                        .description("Manage streaming from different sources")
                 })
                 .create_application_command(|command| {
                     command
@@ -333,9 +333,10 @@ impl SerenityHandler {
             "autopause" => autopause(ctx, command).await,
             "clear" => clear(ctx, command).await,
             "leave" => leave(ctx, command).await,
+            "managesources" => allow(ctx, command).await,
             "np" => now_playing(ctx, command).await,
             "pause" => pause(ctx, command).await,
-            "play" => play(ctx, command).await,
+            "play" | "superplay" => play(ctx, command).await,
             "queue" => queue(ctx, command).await,
             "remove" => remove(ctx, command).await,
             "repeat" => repeat(ctx, command).await,
@@ -343,7 +344,6 @@ impl SerenityHandler {
             "seek" => seek(ctx, command).await,
             "shuffle" => shuffle(ctx, command).await,
             "skip" => skip(ctx, command).await,
-            "superplay" => play(ctx, command).await,
             "stop" => stop(ctx, command).await,
             "summon" => summon(ctx, command, true).await,
             "version" => version(ctx, command).await,
