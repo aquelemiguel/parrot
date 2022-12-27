@@ -80,6 +80,11 @@ impl SerenityHandler {
             commands
                 .create_application_command(|command| {
                     command
+                        .name("autopause")
+                        .description("Toggles whether to pause after a song ends")
+                })
+                .create_application_command(|command| {
+                    command
                         .name("clear")
                         .description("Clears the queue")
                 })
