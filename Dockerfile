@@ -11,10 +11,11 @@ WORKDIR "/parrot"
 RUN mkdir src
 RUN echo "fn main() {}" > src/main.rs
 COPY Cargo.toml ./
-RUN cargo build --release
+COPY Cargo.lock ./
+RUN cargo build --release --locked
 
 COPY . .
-RUN cargo build --release
+RUN cargo build --release --locked
 
 # Release image
 # Necessary dependencies to run Parrot
