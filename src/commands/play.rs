@@ -76,7 +76,7 @@ pub async fn play(
     let manager = songbird::get(ctx).await.unwrap();
 
     // try to join a voice channel if not in one just yet
-    summon(ctx, interaction, false).await?;
+    summon(ctx, interaction, false, false).await?;
     let call = manager.get(guild_id).unwrap();
 
     // determine whether this is a link or a query string

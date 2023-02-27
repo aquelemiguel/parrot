@@ -1,6 +1,7 @@
 use crate::{
     connection::get_voice_channel_for_user,
     errors::ParrotError,
+    guild::settings::{GuildSettings, GuildSettingsMap},
     handlers::{IdleHandler, TrackEndHandler},
     messaging::message::ParrotMessage,
     utils::create_response,
@@ -13,12 +14,13 @@ use serenity::{
     prelude::Mentionable,
 };
 use songbird::{Event, TrackEvent};
-use std::time::Duration;
+use std::{path::Path, time::Duration};
 
 pub async fn summon(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
     send_reply: bool,
+    load_settings: bool,
 ) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let guild = ctx.cache.guild(guild_id).unwrap();
@@ -66,6 +68,14 @@ pub async fn summon(
                 ctx_data: ctx.data.clone(),
             },
         );
+    }
+
+    // load existing guild settings to memory
+    if load_settings && Path::new("test.json").exists() {
+        let guild_settings = GuildSettings::from_file("test.json")?;
+        let mut data = ctx.data.write().await;
+        let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+        settings.insert(guild_id, guild_settings);
     }
 
     if send_reply {

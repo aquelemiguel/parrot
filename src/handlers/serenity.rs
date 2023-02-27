@@ -350,7 +350,7 @@ impl SerenityHandler {
             "shuffle" => shuffle(ctx, command).await,
             "skip" => skip(ctx, command).await,
             "stop" => stop(ctx, command).await,
-            "summon" => summon(ctx, command, true).await,
+            "summon" => summon(ctx, command, true, true).await,
             "version" => version(ctx, command).await,
             "voteskip" => voteskip(ctx, command).await,
             _ => unreachable!(),
