@@ -1,9 +1,17 @@
-use std::collections::{HashMap, HashSet};
+use serde::{Deserialize, Serialize};
+use std::{
+    collections::{HashMap, HashSet},
+    fs::File,
+    io::{BufReader, BufWriter},
+};
 
 use serenity::{model::id::GuildId, prelude::TypeMapKey};
 
+use crate::errors::ParrotError;
+
 const DEFAULT_ALLOWED_DOMAINS: [&str; 1] = ["youtube.com"];
 
+#[derive(Deserialize, Serialize)]
 pub struct GuildSettings {
     pub autopause: bool,
     pub allowed_domains: HashSet<String>,
@@ -26,6 +34,20 @@ impl Default for GuildSettings {
 }
 
 impl GuildSettings {
+    pub fn from_file(path: &str) -> Result<GuildSettings, ParrotError> {
+        let file = File::open(path)?;
+        let reader = BufReader::new(file);
+        let guild_settings = serde_json::from_reader(reader)?;
+        Ok(guild_settings)
+    }
+
+    pub fn save(&self, path: &str) -> Result<(), ParrotError> {
+        let file = File::create(path)?;
+        let writer = BufWriter::new(file);
+        serde_json::to_writer(writer, self)?;
+        Ok(())
+    }
+
     pub fn set_allowed_domains(&mut self, allowed_str: &str) {
         let allowed = allowed_str
             .split(';')

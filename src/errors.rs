@@ -24,6 +24,8 @@ pub enum ParrotError {
     AlreadyConnected(Mention),
     Serenity(SerenityError),
     RSpotify(RSpotifyClientError),
+    IO(std::io::Error),
+    Serde(serde_json::Error),
 }
 
 /// `ParrotError` implements the [`Debug`] and [`Display`] traits
@@ -66,6 +68,8 @@ impl Display for ParrotError {
             },
             Self::Serenity(err) => f.write_str(&format!("{err}")),
             Self::RSpotify(err) => f.write_str(&format!("{err}")),
+            Self::IO(err) => f.write_str(&format!("{err}")),
+            Self::Serde(err) => f.write_str(&format!("{err}")),
         }
     }
 }
@@ -89,6 +93,20 @@ impl PartialEq for ParrotError {
             (Self::Serenity(l0), Self::Serenity(r0)) => format!("{l0:?}") == format!("{r0:?}"),
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
         }
+    }
+}
+
+/// Provides an implementation to convert a [`std::io::Error`] to a [`ParrotError`].
+impl From<std::io::Error> for ParrotError {
+    fn from(err: std::io::Error) -> Self {
+        Self::IO(err)
+    }
+}
+
+/// Provides an implementation to convert a [`serde_json::Error`] to a [`ParrotError`].
+impl From<serde_json::Error> for ParrotError {
+    fn from(err: serde_json::Error) -> Self {
+        Self::Serde(err)
     }
 }
 
