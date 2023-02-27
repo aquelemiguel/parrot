@@ -71,13 +71,13 @@ pub async fn summon(
     }
 
     // load existing guild settings to memory
-    if load_settings && Path::new("test.json").exists() {
+    if load_settings {
         let mut data = ctx.data.write().await;
         let settings = data.get_mut::<GuildSettingsMap>().unwrap();
         let guild_settings = settings
             .entry(guild_id)
             .or_insert(GuildSettings::new(guild_id));
-        guild_settings.load()?;
+        guild_settings.load_if_exists()?;
     }
 
     if send_reply {

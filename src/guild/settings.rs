@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
-    fs::File,
+    fs::OpenOptions,
     io::{BufReader, BufWriter},
+    path::Path,
 };
 
 use serenity::{model::id::GuildId, prelude::TypeMapKey};
@@ -35,17 +36,21 @@ impl GuildSettings {
         }
     }
 
-    pub fn load(&self) -> Result<GuildSettings, ParrotError> {
+    pub fn load_if_exists(&self) -> Result<(), ParrotError> {
         let path = format!("{}/{}.json", SETTINGS_PATH, self.guild_id);
-        let file = File::open(path)?;
+        if !Path::new(&path).exists() {
+            return Ok(());
+        }
+
+        let file = OpenOptions::new().read(true).open(path)?;
         let reader = BufReader::new(file);
-        let guild_settings = serde_json::from_reader(reader)?;
-        Ok(guild_settings)
+        serde_json::from_reader(reader)?;
+        Ok(())
     }
 
     pub fn save(&self) -> Result<(), ParrotError> {
         let path = format!("{}/{}.json", SETTINGS_PATH, self.guild_id);
-        let file = File::create(path)?;
+        let file = OpenOptions::new().create(true).write(true).open(path)?;
         let writer = BufWriter::new(file);
         serde_json::to_writer(writer, self)?;
         Ok(())
