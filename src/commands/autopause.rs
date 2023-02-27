@@ -16,7 +16,8 @@ pub async fn autopause(
     let settings = data.get_mut::<GuildSettingsMap>().unwrap();
 
     let guild_settings = settings.entry(guild_id).or_default();
-    guild_settings.autopause = !guild_settings.autopause;
+    guild_settings.toggle_autopause();
+    guild_settings.save()?;
 
     if guild_settings.autopause {
         create_response(&ctx.http, interaction, ParrotMessage::AutopauseOn).await

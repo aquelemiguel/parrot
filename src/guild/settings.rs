@@ -41,11 +41,16 @@ impl GuildSettings {
         Ok(guild_settings)
     }
 
-    pub fn save(&self, path: &str) -> Result<(), ParrotError> {
+    pub fn save(&self) -> Result<(), ParrotError> {
+        let path = "test.json";
         let file = File::create(path)?;
         let writer = BufWriter::new(file);
         serde_json::to_writer(writer, self)?;
         Ok(())
+    }
+
+    pub fn toggle_autopause(&mut self) {
+        self.autopause = !self.autopause;
     }
 
     pub fn set_allowed_domains(&mut self, allowed_str: &str) {
