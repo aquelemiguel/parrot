@@ -31,7 +31,7 @@ pub async fn allow(
 
     let guild_settings = settings
         .entry(guild_id)
-        .or_insert(GuildSettings::new(guild_id));
+        .or_insert_with(|| GuildSettings::new(guild_id));
 
     // transform the domain sets from the settings into a string
     let allowed_str = guild_settings

@@ -19,7 +19,7 @@ pub async fn autopause(
 
     let guild_settings = settings
         .entry(guild_id)
-        .or_insert(GuildSettings::new(guild_id));
+        .or_insert_with(|| GuildSettings::new(guild_id));
     guild_settings.toggle_autopause();
     guild_settings.save()?;
 

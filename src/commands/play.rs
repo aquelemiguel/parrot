@@ -92,7 +92,7 @@ pub async fn play(
                 let settings = data.get_mut::<GuildSettingsMap>().unwrap();
                 let guild_settings = settings
                     .entry(guild_id)
-                    .or_insert(GuildSettings::new(guild_id));
+                    .or_insert_with(|| GuildSettings::new(guild_id));
 
                 let is_allowed = guild_settings
                     .allowed_domains
@@ -124,7 +124,7 @@ pub async fn play(
             let settings = data.get_mut::<GuildSettingsMap>().unwrap();
             let guild_settings = settings
                 .entry(guild_id)
-                .or_insert(GuildSettings::new(guild_id));
+                .or_insert_with(|| GuildSettings::new(guild_id));
 
             if guild_settings.banned_domains.contains("youtube.com")
                 || (guild_settings.banned_domains.is_empty()

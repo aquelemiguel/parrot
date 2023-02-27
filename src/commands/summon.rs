@@ -76,7 +76,7 @@ pub async fn summon(
         let settings = data.get_mut::<GuildSettingsMap>().unwrap();
         let guild_settings = settings
             .entry(guild_id)
-            .or_insert(GuildSettings::new(guild_id));
+            .or_insert_with(|| GuildSettings::new(guild_id));
         guild_settings.load_if_exists()?;
     }
 
