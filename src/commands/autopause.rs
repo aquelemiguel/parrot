@@ -1,5 +1,7 @@
 use crate::{
-    errors::ParrotError, guild::settings::GuildSettingsMap, messaging::message::ParrotMessage,
+    errors::ParrotError,
+    guild::settings::{GuildSettings, GuildSettingsMap},
+    messaging::message::ParrotMessage,
     utils::create_response,
 };
 use serenity::{
@@ -15,7 +17,9 @@ pub async fn autopause(
     let mut data = ctx.data.write().await;
     let settings = data.get_mut::<GuildSettingsMap>().unwrap();
 
-    let guild_settings = settings.entry(guild_id).or_default();
+    let guild_settings = settings
+        .entry(guild_id)
+        .or_insert(GuildSettings::new(guild_id));
     guild_settings.toggle_autopause();
     guild_settings.save()?;
 

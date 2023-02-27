@@ -9,32 +9,34 @@ use serenity::{model::id::GuildId, prelude::TypeMapKey};
 
 use crate::errors::ParrotError;
 
+const SETTINGS_PATH: &str = "settings";
 const DEFAULT_ALLOWED_DOMAINS: [&str; 1] = ["youtube.com"];
 
 #[derive(Deserialize, Serialize)]
 pub struct GuildSettings {
+    pub guild_id: GuildId,
     pub autopause: bool,
     pub allowed_domains: HashSet<String>,
     pub banned_domains: HashSet<String>,
 }
 
-impl Default for GuildSettings {
-    fn default() -> GuildSettings {
+impl GuildSettings {
+    pub fn new(guild_id: GuildId) -> GuildSettings {
         let allowed_domains: HashSet<String> = DEFAULT_ALLOWED_DOMAINS
             .iter()
             .map(|d| d.to_string())
             .collect();
 
         GuildSettings {
+            guild_id,
             autopause: false,
             allowed_domains,
             banned_domains: HashSet::new(),
         }
     }
-}
 
-impl GuildSettings {
-    pub fn from_file(path: &str) -> Result<GuildSettings, ParrotError> {
+    pub fn load(&self) -> Result<GuildSettings, ParrotError> {
+        let path = format!("{}/{}.json", SETTINGS_PATH, self.guild_id);
         let file = File::open(path)?;
         let reader = BufReader::new(file);
         let guild_settings = serde_json::from_reader(reader)?;
@@ -42,7 +44,7 @@ impl GuildSettings {
     }
 
     pub fn save(&self) -> Result<(), ParrotError> {
-        let path = "test.json";
+        let path = format!("{}/{}.json", SETTINGS_PATH, self.guild_id);
         let file = File::create(path)?;
         let writer = BufWriter::new(file);
         serde_json::to_writer(writer, self)?;
