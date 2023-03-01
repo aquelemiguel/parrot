@@ -1,24 +1,23 @@
 use lazy_static::lazy_static;
-use std::collections::HashMap;
+use std::{collections::HashMap, env};
 
-use crate::messaging::message::ParrotMessage;
+const DEFAULT_LOCALES_PATH: &str = "data/locales";
 
 lazy_static! {
+    static ref LOCALES_PATH: String =
+        env::var("DEFAULT_LOCALES_PATH").unwrap_or(DEFAULT_LOCALES_PATH.to_string());
     static ref LOCALES: HashMap<String, HashMap<String, String>> = HashMap::new();
 }
 
-impl ParrotMessage {
-    pub fn localize(&self, locale: &str) -> String {
-        let self_str = format!("{self}");
-        if !LOCALES.contains_key(locale) {
-            return self_str;
-        }
-
-        let mappings = &LOCALES[locale];
-        if !mappings.contains_key(&self_str) {
-            return self_str;
-        }
-
-        mappings[&self_str].clone()
+pub fn localize(key: &str, locale: &str) -> String {
+    if !LOCALES.contains_key(locale) {
+        return key.to_owned();
     }
+
+    let mappings = &LOCALES[locale];
+    if !mappings.contains_key(key) {
+        return key.to_owned();
+    }
+
+    mappings[key].clone()
 }

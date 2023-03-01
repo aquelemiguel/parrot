@@ -1,6 +1,14 @@
-pub const AUTOPAUSE_OFF: &str = "🤖 Autopause OFF!";
-pub const AUTOPAUSE_ON: &str = "🤖 Autopause ON!";
-pub const CLEARED: &str = "🗑️ Cleared!";
+use std::{collections::HashMap, iter::FromIterator};
+
+use lazy_static::lazy_static;
+
+lazy_static! {
+    static ref MESSAGES: HashMap<&'static str, &'static str> = HashMap::from_iter([
+        ("AUTOPAUSE_OFF", "🤖 Autopause OFF!"),
+        ("AUTOPAUSE_ON", "🤖 Autopause ON!"),
+        ("CLEARED", "🗑️ Cleared!"),
+    ]);
+}
 
 pub const DOMAIN_FORM_ALLOWED_TITLE: &str = "Allowed domains";
 pub const DOMAIN_FORM_BANNED_TITLE: &str = "Banned domains";

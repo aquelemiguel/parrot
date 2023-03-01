@@ -24,7 +24,7 @@ pub async fn create_response(
     message: ParrotMessage,
 ) -> Result<(), ParrotError> {
     let mut embed = CreateEmbed::default();
-    embed.description(format!("{message}"));
+    embed.description(message.localize("en_us"));
     create_embed_response(http, interaction, embed).await
 }
 
@@ -34,7 +34,7 @@ pub async fn edit_response(
     message: ParrotMessage,
 ) -> Result<Message, ParrotError> {
     let mut embed = CreateEmbed::default();
-    embed.description(format!("{message}"));
+    embed.description(message.localize("en_us"));
     edit_embed_response(http, interaction, embed).await
 }
 
@@ -92,8 +92,9 @@ pub async fn edit_embed_response(
 pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
     let mut embed = CreateEmbed::default();
     let metadata = track.metadata().clone();
+    let message = ParrotMessage::NowPlaying;
 
-    embed.author(|author| author.name(ParrotMessage::NowPlaying));
+    embed.author(|author| author.name(message.localize("en_us")));
     embed.title(metadata.title.unwrap());
     embed.url(metadata.source_url.as_ref().unwrap());
 

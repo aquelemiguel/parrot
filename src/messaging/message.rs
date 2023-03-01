@@ -1,7 +1,6 @@
 use serenity::model::mention::Mention;
-use std::fmt::Display;
 
-use crate::messaging::messages::*;
+use crate::messaging::{locale::localize, messages::*};
 
 const RELEASES_LINK: &str = "https://github.com/aquelemiguel/parrot/releases";
 
@@ -32,43 +31,59 @@ pub enum ParrotMessage {
     VoteSkip { mention: Mention, missing: usize },
 }
 
-impl Display for ParrotMessage {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl ParrotMessage {
+    pub fn localize(&self, locale: &str) -> String {
         match self {
-            Self::AutopauseOff => f.write_str(AUTOPAUSE_OFF),
-            Self::AutopauseOn => f.write_str(AUTOPAUSE_ON),
-            Self::Clear => f.write_str(CLEARED),
-            Self::Error => f.write_str(ERROR),
-            Self::Leaving => f.write_str(LEAVING),
-            Self::LoopDisable => f.write_str(LOOP_DISABLED),
-            Self::LoopEnable => f.write_str(LOOP_ENABLED),
-            Self::NowPlaying => f.write_str(QUEUE_NOW_PLAYING),
-            Self::Pause => f.write_str(PAUSED),
-            Self::PlaylistQueued => f.write_str(PLAY_PLAYLIST),
-            Self::PlayAllFailed => f.write_str(PLAY_ALL_FAILED),
+            Self::AutopauseOff => localize("AUTOPAUSE_OFF", locale),
+            Self::AutopauseOn => localize("AUTOPAUSE_ON", locale),
+            Self::Clear => localize("CLEARED", locale),
+            Self::Error => localize("ERROR", locale),
+            Self::Leaving => localize("LEAVING", locale),
+            Self::LoopDisable => localize("LOOP_DISABLED", locale),
+            Self::LoopEnable => localize("LOOP_ENABLED", locale),
+            Self::NowPlaying => localize("QUEUE_NOW_PLAYING", locale),
+            Self::Pause => localize("PAUSED", locale),
+            Self::PlaylistQueued => localize("PLAY_PLAYLIST", locale),
+            Self::PlayAllFailed => localize("PLAY_ALL_FAILED", locale),
             Self::PlayDomainBanned { domain } => {
-                f.write_str(&format!("⚠️ **{}** {}", domain, PLAY_FAILED_BLOCKED_DOMAIN))
+                format!(
+                    "⚠️ **{}** {}",
+                    domain,
+                    localize("PLAY_FAILED_BLOCKED_DOMAIN", locale)
+                )
             }
-            Self::Search => f.write_str(SEARCHING),
-            Self::RemoveMultiple => f.write_str(REMOVED_QUEUE_MULTIPLE),
-            Self::Resume => f.write_str(RESUMED),
-            Self::Shuffle => f.write_str(SHUFFLED_SUCCESS),
-            Self::Stop => f.write_str(STOPPED),
-            Self::VoteSkip { mention, missing } => f.write_str(&format!(
+            Self::Search => localize("SEARCHING", locale),
+            Self::RemoveMultiple => localize("REMOVED_QUEUE_MULTIPLE", locale),
+            Self::Resume => localize("RESUMED", locale),
+            Self::Shuffle => localize("SHUFFLED_SUCCESS", locale),
+            Self::Stop => localize("STOPPED", locale),
+            Self::VoteSkip { mention, missing } => format!(
                 "{}{} {} {} {}",
-                SKIP_VOTE_EMOJI, mention, SKIP_VOTE_USER, missing, SKIP_VOTE_MISSING
-            )),
-            Self::Seek { timestamp } => f.write_str(&format!("{} **{}**!", SEEKED, timestamp)),
-            Self::Skip => f.write_str(SKIPPED),
-            Self::SkipAll => f.write_str(SKIPPED_ALL),
-            Self::SkipTo { title, url } => {
-                f.write_str(&format!("{} [**{}**]({})!", SKIPPED_TO, title, url))
-            }
-            Self::Summon { mention } => f.write_str(&format!("{} **{}**!", JOINING, mention)),
-            Self::Version { current } => f.write_str(&format!(
+                localize(SKIP_VOTE_EMOJI, locale),
+                mention,
+                localize(SKIP_VOTE_USER, locale),
+                missing,
+                localize(SKIP_VOTE_MISSING, locale)
+            ),
+            Self::Seek { timestamp } => format!("{} **{}**!", localize(SEEKED, locale), timestamp),
+            Self::Skip => localize("SKIPPED", locale),
+            Self::SkipAll => localize("SKIPPED_ALL", locale),
+            Self::SkipTo { title, url } => format!(
+                "{} [**{}**]({})!",
+                localize("SKIPPED_TO", locale),
+                title,
+                url
+            ),
+            Self::Summon { mention } => format!("{} **{}**!", localize("JOINING", locale), mention),
+            Self::Version { current } => format!(
                 "{} [{}]({}/tag/v{})\n{}({}/latest)",
-                VERSION, current, RELEASES_LINK, current, VERSION_LATEST, RELEASES_LINK
-            )),
+                localize(VERSION, locale),
+                current,
+                RELEASES_LINK,
+                current,
+                VERSION_LATEST,
+                RELEASES_LINK
+            ),
         }
     }
 }
