@@ -1,10 +1,11 @@
 use crate::{
     errors::{verify, ParrotError},
     handlers::track_end::update_queue_messages,
-    messaging::message::ParrotMessage,
     messaging::messages::REMOVED_QUEUE,
-    utils::create_embed_response,
-    utils::create_response,
+    messaging::{
+        interaction::{create_embed_response, create_response},
+        message::ParrotMessage,
+    },
 };
 use serenity::{
     builder::CreateEmbed, client::Context,

@@ -1,6 +1,7 @@
 use crate::{
-    errors::ParrotError, guild::settings::GuildSettingsMap, messaging::message::ParrotMessage,
-    utils::create_response,
+    errors::ParrotError,
+    guild::settings::GuildSettingsMap,
+    messaging::{interaction::create_response, message::ParrotMessage},
 };
 use serenity::{
     client::Context,

@@ -3,18 +3,20 @@ use crate::{
     errors::{verify, ParrotError},
     guild::settings::GuildSettingsMap,
     handlers::track_end::update_queue_messages,
-    messaging::message::ParrotMessage,
     messaging::messages::{
         PLAY_QUEUE, PLAY_TOP, SPOTIFY_AUTH_FAILED, TRACK_DURATION, TRACK_TIME_TO_PLAY,
+    },
+    messaging::{
+        interaction::{
+            create_now_playing_embed, create_response, edit_embed_response, edit_response,
+        },
+        message::ParrotMessage,
     },
     sources::{
         spotify::{Spotify, SPOTIFY},
         youtube::{YouTube, YouTubeRestartable},
     },
-    utils::{
-        compare_domains, create_now_playing_embed, create_response, edit_embed_response,
-        edit_response, get_human_readable_timestamp,
-    },
+    utils::{compare_domains, get_human_readable_timestamp},
 };
 use serenity::{
     builder::CreateEmbed, client::Context,

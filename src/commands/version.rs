@@ -1,4 +1,7 @@
-use crate::{errors::ParrotError, messaging::message::ParrotMessage, utils::create_response};
+use crate::{
+    errors::ParrotError,
+    messaging::{interaction::create_response, message::ParrotMessage},
+};
 use serenity::{
     client::Context,
     model::application::interaction::application_command::ApplicationCommandInteraction,

@@ -1,7 +1,6 @@
 use crate::{
     errors::{verify, ParrotError},
-    messaging::message::ParrotMessage,
-    utils::create_response,
+    messaging::{interaction::create_response, message::ParrotMessage},
 };
 use serenity::{
     client::Context,

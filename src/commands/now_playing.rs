@@ -1,6 +1,6 @@
 use crate::{
     errors::ParrotError,
-    utils::{create_embed_response, create_now_playing_embed},
+    messaging::interaction::{create_embed_response, create_now_playing_embed},
 };
 use serenity::{
     client::Context,

@@ -2,8 +2,7 @@ use crate::{
     connection::get_voice_channel_for_user,
     errors::ParrotError,
     handlers::{IdleHandler, TrackEndHandler},
-    messaging::message::ParrotMessage,
-    utils::create_response,
+    messaging::{interaction::create_response, message::ParrotMessage},
 };
 use serenity::{
     client::Context,

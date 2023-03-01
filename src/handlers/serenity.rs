@@ -7,8 +7,8 @@ use crate::{
     connection::{check_voice_connections, Connection},
     errors::ParrotError,
     handlers::track_end::update_queue_messages,
+    messaging::interaction::create_response_text,
     sources::spotify::{Spotify, SPOTIFY},
-    utils::create_response_text,
 };
 use serenity::{
     async_trait,

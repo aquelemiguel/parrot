@@ -1,6 +1,7 @@
 use crate::{
-    errors::ParrotError, handlers::track_end::update_queue_messages,
-    messaging::message::ParrotMessage, utils::create_response,
+    errors::ParrotError,
+    handlers::track_end::update_queue_messages,
+    messaging::{interaction::create_response, message::ParrotMessage},
 };
 use rand::Rng;
 use serenity::{
