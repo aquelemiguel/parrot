@@ -19,7 +19,7 @@ lazy_static! {
         env::var("SETTINGS_PATH").unwrap_or(DEFAULT_SETTINGS_PATH.to_string());
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct GuildSettings {
     pub guild_id: GuildId,
     pub autopause: bool,
