@@ -1,16 +1,18 @@
 name: Docker Workflow
+
 on:
   push:
-    branches: [main]
-    tags: ["v*.*.*"]
-  pull_request:
-    branches: [main]
+    tags: ['v*.*.*']
+
+  workflow_call:
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   build:
-    name: Build
+    name: Build & Push Docker Image
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -33,45 +35,9 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
       - name: Build & Push Docker Image
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
-          push: ${{ github.event_name == 'push' }}
+          push: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/') }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-  deploy:
-    name: Development Team Deployment
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy with New Image
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script_stop: true
-          script: docker run -d --pull "always" --env-file .env ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-      - name: Check New Image Status With Removal of Old Images
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script_stop: true
-          script: if [ "$(docker ps | grep ghcr.io/${{ github.repository }}:${{ github.ref_name }})" ]; then docker kill $(docker ps -q | grep -v -E $(docker ps -aq --filter ancestor=ghcr.io/${{ github.repository }}:${{ github.ref_name }} | paste -sd "|" -));  fi
-      - name: Remove Exited Containers
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: docker rm $(docker ps --filter status=exited -q)
-      - name: Docker Prune
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: docker system prune -a -f

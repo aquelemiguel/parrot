@@ -1,6 +1,7 @@
 pub mod autopause;
 pub mod clear;
 pub mod leave;
+pub mod manage_sources;
 pub mod now_playing;
 pub mod pause;
 pub mod play;

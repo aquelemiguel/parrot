@@ -1,13 +1,13 @@
 use crate::{
     commands::play::QueryType,
     errors::ParrotError,
-    strings::{SPOTIFY_INVALID_QUERY, SPOTIFY_PLAYLIST_FAILED},
+    messaging::messages::{SPOTIFY_INVALID_QUERY, SPOTIFY_PLAYLIST_FAILED},
 };
 use lazy_static::lazy_static;
 use regex::Regex;
 use rspotify::{
     clients::BaseClient,
-    model::{AlbumId, Id, PlayableItem, PlaylistId, SimplifiedArtist, TrackId},
+    model::{AlbumId, PlayableItem, PlaylistId, SimplifiedArtist, TrackId},
     ClientCredsSpotify, Credentials,
 };
 use std::{env, str::FromStr};
@@ -52,7 +52,7 @@ impl Spotify {
 
         let creds = Credentials::new(&spotify_client_id, &spotify_client_secret);
 
-        let mut spotify = ClientCredsSpotify::new(creds);
+        let spotify = ClientCredsSpotify::new(creds);
         spotify.request_token().await?;
 
         Ok(spotify)
@@ -94,7 +94,7 @@ impl Spotify {
             .map_err(|_| ParrotError::Other("track ID contains invalid characters"))?;
 
         let track = spotify
-            .track(&track_id)
+            .track(track_id)
             .await
             .map_err(|_| ParrotError::Other("failed to fetch track"))?;
 
@@ -112,7 +112,7 @@ impl Spotify {
             .map_err(|_| ParrotError::Other("album ID contains invalid characters"))?;
 
         let album = spotify
-            .album(&album_id)
+            .album(album_id)
             .await
             .map_err(|_| ParrotError::Other("failed to fetch album"))?;
 
@@ -136,7 +136,7 @@ impl Spotify {
             .map_err(|_| ParrotError::Other("playlist ID contains invalid characters"))?;
 
         let playlist = spotify
-            .playlist(&playlist_id, None, None)
+            .playlist(playlist_id, None, None)
             .await
             .map_err(|_| ParrotError::Other(SPOTIFY_PLAYLIST_FAILED))?;
 

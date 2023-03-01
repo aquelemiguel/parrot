@@ -63,23 +63,23 @@ impl YouTubeRestartable {
             .spawn()
             .unwrap();
 
-        if let Some(stdout) = &mut child.stdout {
-            let reader = BufReader::new(stdout);
+        let Some(stdout) = &mut child.stdout else {
+            return None;
+        };
 
-            let lines = reader.lines().flatten().map(|line| {
-                let entry: Value = serde_json::from_str(&line).unwrap();
-                entry
-                    .get("webpage_url")
-                    .unwrap()
-                    .as_str()
-                    .unwrap()
-                    .to_string()
-            });
+        let reader = BufReader::new(stdout);
 
-            Some(lines.collect())
-        } else {
-            None
-        }
+        let lines = reader.lines().flatten().map(|line| {
+            let entry: Value = serde_json::from_str(&line).unwrap();
+            entry
+                .get("webpage_url")
+                .unwrap()
+                .as_str()
+                .unwrap()
+                .to_string()
+        });
+
+        Some(lines.collect())
     }
 }
 
@@ -98,12 +98,12 @@ where
     async fn call_restart(&mut self, time: Option<Duration>) -> SongbirdResult<Input> {
         let (yt, metadata) = ytdl(self.uri.as_ref()).await?;
 
-        if let Some(time) = time {
-            let ts = format!("{:.3}", time.as_secs_f64());
-            ffmpeg(yt, metadata, &["-ss", &ts]).await
-        } else {
-            ffmpeg(yt, metadata, &[]).await
-        }
+        let Some(time) = time else {
+            return ffmpeg(yt, metadata, &[]).await;
+        };
+
+        let ts = format!("{:.3}", time.as_secs_f64());
+        ffmpeg(yt, metadata, &["-ss", &ts]).await
     }
 
     async fn lazy_init(&mut self) -> SongbirdResult<(Option<Metadata>, Codec, Container)> {
@@ -130,7 +130,7 @@ async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
     ];
 
     let mut yt = Command::new("yt-dlp")
-        .args(&ytdl_args)
+        .args(ytdl_args)
         .stdin(Stdio::null())
         .stderr(Stdio::piped())
         .stdout(Stdio::piped())
@@ -179,7 +179,7 @@ async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
     ];
 
     let youtube_dl_output = TokioCommand::new("yt-dlp")
-        .args(&ytdl_args)
+        .args(ytdl_args)
         .stdin(Stdio::null())
         .output()
         .await?;
@@ -187,7 +187,7 @@ async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
     let o_vec = youtube_dl_output.stderr;
 
     // read until newline byte
-    let end = (&o_vec)
+    let end = (o_vec)
         .iter()
         .position(|el| *el == NEWLINE_BYTE)
         .unwrap_or(o_vec.len());

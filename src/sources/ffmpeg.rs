@@ -23,7 +23,7 @@ pub async fn ffmpeg(mut source: Child, metadata: Metadata, pre_args: &[&str]) ->
 
     let ffmpeg = Command::new("ffmpeg")
         .args(pre_args)
-        .args(&ffmpeg_args)
+        .args(ffmpeg_args)
         .stdin(taken_stdout)
         .stderr(Stdio::null())
         .stdout(Stdio::piped())

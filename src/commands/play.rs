@@ -1,30 +1,29 @@
 use crate::{
     commands::{skip::force_skip_top_track, summon::summon},
     errors::{verify, ParrotError},
+    guild::settings::{GuildSettings, GuildSettingsMap},
     handlers::track_end::update_queue_messages,
+    messaging::message::ParrotMessage,
+    messaging::messages::{
+        PLAY_QUEUE, PLAY_TOP, SPOTIFY_AUTH_FAILED, TRACK_DURATION, TRACK_TIME_TO_PLAY,
+    },
     sources::{
         spotify::{Spotify, SPOTIFY},
         youtube::{YouTube, YouTubeRestartable},
     },
-    strings::{
-        PLAY_ALL_FAILED, PLAY_PLAYLIST, PLAY_QUEUE, PLAY_TOP, SEARCHING, SPOTIFY_AUTH_FAILED,
-        TRACK_DURATION, TRACK_TIME_TO_PLAY,
-    },
     utils::{
-        create_now_playing_embed, create_response, edit_embed_response, edit_response,
-        get_human_readable_timestamp,
+        compare_domains, create_now_playing_embed, create_response, edit_embed_response,
+        edit_response, get_human_readable_timestamp,
     },
 };
 use serenity::{
     builder::CreateEmbed, client::Context,
-    model::interactions::application_command::ApplicationCommandInteraction, prelude::Mutex,
+    model::application::interaction::application_command::ApplicationCommandInteraction,
+    prelude::Mutex,
 };
-use songbird::{
-    input::{error::Error, Restartable},
-    tracks::TrackHandle,
-    Call,
-};
+use songbird::{input::Restartable, tracks::TrackHandle, Call};
 use std::{cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
+use url::Url;
 
 #[derive(Clone, Copy)]
 pub enum Mode {
@@ -77,19 +76,72 @@ pub async fn play(
     let manager = songbird::get(ctx).await.unwrap();
 
     // try to join a voice channel if not in one just yet
-    summon(ctx, interaction, false).await?;
+    summon(ctx, interaction, false, false).await?;
     let call = manager.get(guild_id).unwrap();
 
-    let query_type = if url.contains("spotify.com") {
-        let spotify = SPOTIFY.lock().await;
-        let spotify = verify(spotify.as_ref(), ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
+    // determine whether this is a link or a query string
+    let query_type = match Url::parse(url) {
+        Ok(url_data) => match url_data.host_str() {
+            Some("open.spotify.com") => {
+                let spotify = SPOTIFY.lock().await;
+                let spotify = verify(spotify.as_ref(), ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
+                Some(Spotify::extract(spotify, url).await?)
+            }
+            Some(other) => {
+                let mut data = ctx.data.write().await;
+                let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+                let guild_settings = settings
+                    .entry(guild_id)
+                    .or_insert_with(|| GuildSettings::new(guild_id));
 
-        let query = Spotify::extract(spotify, url).await?;
-        Some(query)
-    } else if url.contains("youtube.com") {
-        YouTube::extract(url)
-    } else {
-        Some(QueryType::Keywords(url.to_string()))
+                let is_allowed = guild_settings
+                    .allowed_domains
+                    .iter()
+                    .any(|d| compare_domains(d, other));
+
+                let is_banned = guild_settings
+                    .banned_domains
+                    .iter()
+                    .any(|d| compare_domains(d, other));
+
+                if is_banned || (guild_settings.banned_domains.is_empty() && !is_allowed) {
+                    return create_response(
+                        &ctx.http,
+                        interaction,
+                        ParrotMessage::PlayDomainBanned {
+                            domain: other.to_string(),
+                        },
+                    )
+                    .await;
+                }
+
+                YouTube::extract(url)
+            }
+            None => None,
+        },
+        Err(_) => {
+            let mut data = ctx.data.write().await;
+            let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+            let guild_settings = settings
+                .entry(guild_id)
+                .or_insert_with(|| GuildSettings::new(guild_id));
+
+            if guild_settings.banned_domains.contains("youtube.com")
+                || (guild_settings.banned_domains.is_empty()
+                    && !guild_settings.allowed_domains.contains("youtube.com"))
+            {
+                return create_response(
+                    &ctx.http,
+                    interaction,
+                    ParrotMessage::PlayDomainBanned {
+                        domain: "youtube.com".to_string(),
+                    },
+                )
+                .await;
+            }
+
+            Some(QueryType::Keywords(url.to_string()))
+        }
     };
 
     let query_type = verify(
@@ -99,7 +151,7 @@ pub async fn play(
 
     // reply with a temporary message while we fetch the source
     // needed because interactions must be replied within 3s and queueing takes longer
-    create_response(&ctx.http, interaction, SEARCHING).await?;
+    create_response(&ctx.http, interaction, ParrotMessage::Search).await?;
 
     let handler = call.lock().await;
     let queue_was_empty = handler.queue().is_empty();
@@ -108,7 +160,7 @@ pub async fn play(
     match mode {
         Mode::End => match query_type.clone() {
             QueryType::Keywords(_) | QueryType::VideoLink(_) => {
-                let queue = enqueue_track(&call, &query_type).await.unwrap();
+                let queue = enqueue_track(&call, &query_type).await?;
                 update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
             }
             QueryType::PlaylistLink(url) => {
@@ -117,24 +169,22 @@ pub async fn play(
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for url in urls.iter() {
-                    let queue = enqueue_track(&call, &QueryType::VideoLink(url.to_string()))
-                        .await
-                        .unwrap();
+                    let queue =
+                        enqueue_track(&call, &QueryType::VideoLink(url.to_string())).await?;
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
             QueryType::KeywordList(keywords_list) => {
                 for keywords in keywords_list.iter() {
-                    let queue = enqueue_track(&call, &QueryType::Keywords(keywords.to_string()))
-                        .await
-                        .unwrap();
+                    let queue =
+                        enqueue_track(&call, &QueryType::Keywords(keywords.to_string())).await?;
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
         },
         Mode::Next => match query_type.clone() {
             QueryType::Keywords(_) | QueryType::VideoLink(_) => {
-                let queue = insert_track(&call, &query_type, 1).await.unwrap();
+                let queue = insert_track(&call, &query_type, 1).await?;
                 update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
             }
             QueryType::PlaylistLink(url) => {
@@ -143,28 +193,25 @@ pub async fn play(
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for (idx, url) in urls.into_iter().enumerate() {
-                    let queue = insert_track(&call, &QueryType::VideoLink(url), idx + 1)
-                        .await
-                        .unwrap();
+                    let queue = insert_track(&call, &QueryType::VideoLink(url), idx + 1).await?;
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
             QueryType::KeywordList(keywords_list) => {
                 for (idx, keywords) in keywords_list.into_iter().enumerate() {
-                    let queue = insert_track(&call, &QueryType::Keywords(keywords), idx + 1)
-                        .await
-                        .unwrap();
+                    let queue =
+                        insert_track(&call, &QueryType::Keywords(keywords), idx + 1).await?;
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
         },
         Mode::Jump => match query_type.clone() {
             QueryType::Keywords(_) | QueryType::VideoLink(_) => {
-                let mut queue = enqueue_track(&call, &query_type).await.unwrap();
+                let mut queue = enqueue_track(&call, &query_type).await?;
 
                 if !queue_was_empty {
                     rotate_tracks(&call, 1).await.ok();
-                    queue = force_skip_top_track(&call.lock().await).await.unwrap();
+                    queue = force_skip_top_track(&call.lock().await).await?;
                 }
 
                 update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
@@ -177,12 +224,11 @@ pub async fn play(
                 let mut insert_idx = 1;
 
                 for (i, url) in urls.into_iter().enumerate() {
-                    let mut queue = insert_track(&call, &QueryType::VideoLink(url), insert_idx)
-                        .await
-                        .unwrap();
+                    let mut queue =
+                        insert_track(&call, &QueryType::VideoLink(url), insert_idx).await?;
 
                     if i == 0 && !queue_was_empty {
-                        queue = force_skip_top_track(&call.lock().await).await.unwrap();
+                        queue = force_skip_top_track(&call.lock().await).await?;
                     } else {
                         insert_idx += 1;
                     }
@@ -194,12 +240,11 @@ pub async fn play(
                 let mut insert_idx = 1;
 
                 for (i, keywords) in keywords_list.into_iter().enumerate() {
-                    let mut queue = insert_track(&call, &QueryType::Keywords(keywords), insert_idx)
-                        .await
-                        .unwrap();
+                    let mut queue =
+                        insert_track(&call, &QueryType::Keywords(keywords), insert_idx).await?;
 
                     if i == 0 && !queue_was_empty {
-                        queue = force_skip_top_track(&call.lock().await).await.unwrap();
+                        queue = force_skip_top_track(&call.lock().await).await?;
                     } else {
                         insert_idx += 1;
                     }
@@ -215,22 +260,18 @@ pub async fn play(
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for url in urls.into_iter() {
-                    let queue = enqueue_track(&call, &QueryType::VideoLink(url))
-                        .await
-                        .unwrap();
+                    let queue = enqueue_track(&call, &QueryType::VideoLink(url)).await?;
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
             QueryType::KeywordList(keywords_list) => {
                 for keywords in keywords_list.into_iter() {
-                    let queue = enqueue_track(&call, &QueryType::Keywords(keywords))
-                        .await
-                        .unwrap();
+                    let queue = enqueue_track(&call, &QueryType::Keywords(keywords)).await?;
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
             _ => {
-                edit_response(&ctx.http, interaction, PLAY_ALL_FAILED).await?;
+                edit_response(&ctx.http, interaction, ParrotMessage::PlayAllFailed).await?;
                 return Ok(());
             }
         },
@@ -260,7 +301,7 @@ pub async fn play(
                     edit_embed_response(&ctx.http, interaction, embed).await?;
                 }
                 (QueryType::PlaylistLink(_) | QueryType::KeywordList(_), _) => {
-                    edit_response(&ctx.http, interaction, PLAY_PLAYLIST).await?;
+                    edit_response(&ctx.http, interaction, ParrotMessage::PlaylistQueued).await?;
                 }
                 (_, _) => {}
             }
@@ -319,11 +360,11 @@ async fn create_queued_embed(
     let mut embed = CreateEmbed::default();
     let metadata = track.metadata().clone();
 
-    embed.thumbnail(metadata.thumbnail.unwrap());
+    embed.thumbnail(&metadata.thumbnail.unwrap());
 
     embed.field(
         title,
-        format!(
+        &format!(
             "[**{}**]({})",
             metadata.title.unwrap(),
             metadata.source_url.unwrap()
@@ -343,10 +384,16 @@ async fn create_queued_embed(
     embed
 }
 
-async fn get_track_source(query_type: QueryType) -> Result<Restartable, Error> {
+async fn get_track_source(query_type: QueryType) -> Result<Restartable, ParrotError> {
     match query_type {
-        QueryType::VideoLink(query) => YouTubeRestartable::ytdl(query, true).await,
-        QueryType::Keywords(query) => YouTubeRestartable::ytdl_search(query, true).await,
+        QueryType::VideoLink(query) => YouTubeRestartable::ytdl(query, true)
+            .await
+            .map_err(ParrotError::TrackFail),
+
+        QueryType::Keywords(query) => YouTubeRestartable::ytdl_search(query, true)
+            .await
+            .map_err(ParrotError::TrackFail),
+
         _ => unreachable!(),
     }
 }
@@ -354,7 +401,7 @@ async fn get_track_source(query_type: QueryType) -> Result<Restartable, Error> {
 async fn enqueue_track(
     call: &Arc<Mutex<Call>>,
     query_type: &QueryType,
-) -> Result<Vec<TrackHandle>, Box<dyn StdError>> {
+) -> Result<Vec<TrackHandle>, ParrotError> {
     // safeguard against ytdl dying on a private/deleted video and killing the playlist
     let source = get_track_source(query_type.clone()).await?;
 
@@ -368,13 +415,18 @@ async fn insert_track(
     call: &Arc<Mutex<Call>>,
     query_type: &QueryType,
     idx: usize,
-) -> Result<Vec<TrackHandle>, Box<dyn StdError>> {
+) -> Result<Vec<TrackHandle>, ParrotError> {
     let handler = call.lock().await;
     let queue_size = handler.queue().len();
     drop(handler);
 
+    if queue_size <= 1 {
+        let queue = enqueue_track(call, query_type).await?;
+        return Ok(queue);
+    }
+
     verify(
-        idx != 0 && idx < queue_size,
+        idx > 0 && idx <= queue_size,
         ParrotError::NotInRange("index", idx as isize, 1, queue_size as isize),
     )?;
 

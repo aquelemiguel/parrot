@@ -1,13 +1,14 @@
 use crate::{
     errors::{verify, ParrotError},
     handlers::track_end::update_queue_messages,
-    strings::{REMOVED_QUEUE, REMOVED_QUEUE_MULTIPLE},
+    messaging::message::ParrotMessage,
+    messaging::messages::REMOVED_QUEUE,
     utils::create_embed_response,
     utils::create_response,
 };
 use serenity::{
     builder::CreateEmbed, client::Context,
-    model::interactions::application_command::ApplicationCommandInteraction,
+    model::application::interaction::application_command::ApplicationCommandInteraction,
 };
 use songbird::tracks::TrackHandle;
 use std::cmp::min;
@@ -71,7 +72,7 @@ pub async fn remove(
         let embed = create_remove_enqueued_embed(track).await;
         create_embed_response(&ctx.http, interaction, embed).await?;
     } else {
-        create_response(&ctx.http, interaction, REMOVED_QUEUE_MULTIPLE).await?;
+        create_response(&ctx.http, interaction, ParrotMessage::RemoveMultiple).await?;
     }
 
     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
@@ -84,14 +85,14 @@ async fn create_remove_enqueued_embed(track: &TrackHandle) -> CreateEmbed {
 
     embed.field(
         REMOVED_QUEUE,
-        format!(
+        &format!(
             "[**{}**]({})",
             metadata.title.unwrap(),
             metadata.source_url.unwrap()
         ),
         false,
     );
-    embed.thumbnail(metadata.thumbnail.unwrap());
+    embed.thumbnail(&metadata.thumbnail.unwrap());
 
     embed
 }

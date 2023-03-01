@@ -1,13 +1,16 @@
 use crate::{
     connection::get_voice_channel_for_user,
     errors::ParrotError,
+    guild::settings::{GuildSettings, GuildSettingsMap},
     handlers::{IdleHandler, TrackEndHandler},
-    strings::JOINING,
+    messaging::message::ParrotMessage,
     utils::create_response,
 };
 use serenity::{
     client::Context,
-    model::{id::ChannelId, interactions::application_command::ApplicationCommandInteraction},
+    model::{
+        application::interaction::application_command::ApplicationCommandInteraction, id::ChannelId,
+    },
     prelude::Mentionable,
 };
 use songbird::{Event, TrackEvent};
@@ -17,9 +20,10 @@ pub async fn summon(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
     send_reply: bool,
+    load_settings: bool,
 ) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
-    let guild = ctx.cache.guild(guild_id).await.unwrap();
+    let guild = ctx.cache.guild(guild_id).unwrap();
 
     let manager = songbird::get(ctx).await.unwrap();
     let channel_opt = get_voice_channel_for_user(&guild, &interaction.user.id);
@@ -66,9 +70,25 @@ pub async fn summon(
         );
     }
 
+    // load existing guild settings to memory
+    if load_settings {
+        let mut data = ctx.data.write().await;
+        let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+        let guild_settings = settings
+            .entry(guild_id)
+            .or_insert_with(|| GuildSettings::new(guild_id));
+        guild_settings.load_if_exists()?;
+    }
+
     if send_reply {
-        let content = format!("{} **{}**!", JOINING, channel_id.mention());
-        return create_response(&ctx.http, interaction, &content).await;
+        return create_response(
+            &ctx.http,
+            interaction,
+            ParrotMessage::Summon {
+                mention: channel_id.mention(),
+            },
+        )
+        .await;
     }
 
     Ok(())

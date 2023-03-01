@@ -3,7 +3,7 @@
 FROM rust:slim-bullseye as build
 
 RUN apt-get update && apt-get install -y \
-    build-essential autoconf automake libtool libssl-dev pkg-config
+    build-essential autoconf automake cmake libtool libssl-dev pkg-config
 
 WORKDIR "/parrot"
 
@@ -11,10 +11,11 @@ WORKDIR "/parrot"
 RUN mkdir src
 RUN echo "fn main() {}" > src/main.rs
 COPY Cargo.toml ./
-RUN cargo build --release
+COPY Cargo.lock ./
+RUN cargo build --release --locked
 
 COPY . .
-RUN cargo build --release
+RUN cargo build --release --locked
 
 # Release image
 # Necessary dependencies to run Parrot
