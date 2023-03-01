@@ -1,17 +1,23 @@
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use serenity::{model::id::GuildId, prelude::TypeMapKey};
 use std::{
     collections::{HashMap, HashSet},
+    env,
     fs::{create_dir_all, OpenOptions},
     io::{BufReader, BufWriter},
     path::Path,
 };
 
-use serenity::{model::id::GuildId, prelude::TypeMapKey};
-
 use crate::errors::ParrotError;
 
 const DEFAULT_SETTINGS_PATH: &str = "data/settings";
 const DEFAULT_ALLOWED_DOMAINS: [&str; 1] = ["youtube.com"];
+
+lazy_static! {
+    static ref SETTINGS_PATH: String =
+        env::var("SETTINGS_PATH").unwrap_or(DEFAULT_SETTINGS_PATH.to_string());
+}
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct GuildSettings {
@@ -37,7 +43,7 @@ impl GuildSettings {
     }
 
     pub fn load_if_exists(&mut self) -> Result<(), ParrotError> {
-        let path = format!("{}/{}.json", DEFAULT_SETTINGS_PATH, self.guild_id);
+        let path = format!("{}/{}.json", SETTINGS_PATH.as_str(), self.guild_id);
         if !Path::new(&path).exists() {
             return Ok(());
         }
@@ -45,7 +51,7 @@ impl GuildSettings {
     }
 
     pub fn load(&mut self) -> Result<(), ParrotError> {
-        let path = format!("{}/{}.json", DEFAULT_SETTINGS_PATH, self.guild_id);
+        let path = format!("{}/{}.json", SETTINGS_PATH.as_str(), self.guild_id);
         let file = OpenOptions::new().read(true).open(path)?;
         let reader = BufReader::new(file);
         *self = serde_json::from_reader::<_, GuildSettings>(reader)?;
@@ -53,8 +59,8 @@ impl GuildSettings {
     }
 
     pub fn save(&self) -> Result<(), ParrotError> {
-        create_dir_all(DEFAULT_SETTINGS_PATH)?;
-        let path = format!("{}/{}.json", DEFAULT_SETTINGS_PATH, self.guild_id);
+        create_dir_all(SETTINGS_PATH.as_str())?;
+        let path = format!("{}/{}.json", SETTINGS_PATH.as_str(), self.guild_id);
         let file = OpenOptions::new().write(true).create(true).open(path)?;
         let writer = BufWriter::new(file);
         serde_json::to_writer(writer, self)?;
