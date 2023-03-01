@@ -1,10 +1,10 @@
-use std::collections::{HashMap, HashSet};
-
 use serenity::{model::id::GuildId, prelude::TypeMapKey};
+use std::collections::{HashMap, HashSet};
 
 const DEFAULT_ALLOWED_DOMAINS: [&str; 1] = ["youtube.com"];
 
 pub struct GuildSettings {
+    pub locale: String,
     pub autopause: bool,
     pub allowed_domains: HashSet<String>,
     pub banned_domains: HashSet<String>,
@@ -18,6 +18,7 @@ impl Default for GuildSettings {
             .collect();
 
         GuildSettings {
+            locale: "en_us".to_owned(),
             autopause: false,
             allowed_domains,
             banned_domains: HashSet::new(),

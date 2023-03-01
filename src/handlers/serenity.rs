@@ -1,7 +1,7 @@
 use crate::{
     commands::{
-        autopause::*, clear::*, leave::*, manage_sources::*, now_playing::*, pause::*, play::*,
-        queue::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*,
+        autopause::*, clear::*, language::*, leave::*, manage_sources::*, now_playing::*, pause::*,
+        play::*, queue::*, remove::*, repeat::*, resume::*, seek::*, shuffle::*, skip::*, stop::*,
         summon::*, version::*, voteskip::*,
     },
     connection::{check_voice_connections, Connection},
@@ -337,6 +337,7 @@ impl SerenityHandler {
         match command_name {
             "autopause" => autopause(ctx, command).await,
             "clear" => clear(ctx, command).await,
+            "language" => language(ctx, command).await,
             "leave" => leave(ctx, command).await,
             "managesources" => allow(ctx, command).await,
             "np" => now_playing(ctx, command).await,
