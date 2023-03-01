@@ -1,6 +1,8 @@
 use lazy_static::lazy_static;
 use std::{collections::HashMap, env};
 
+use crate::messaging::messages::MESSAGES;
+
 const DEFAULT_LOCALES_PATH: &str = "data/locales";
 
 lazy_static! {
@@ -10,13 +12,15 @@ lazy_static! {
 }
 
 pub fn localize(key: &str, locale: &str) -> String {
+    let default = *MESSAGES.get(key).unwrap_or(&key);
+
     if !LOCALES.contains_key(locale) {
-        return key.to_owned();
+        return default.to_owned();
     }
 
     let mappings = &LOCALES[locale];
     if !mappings.contains_key(key) {
-        return key.to_owned();
+        return default.to_owned();
     }
 
     mappings[key].clone()

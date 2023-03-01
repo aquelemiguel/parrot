@@ -3,10 +3,11 @@ use std::{collections::HashMap, iter::FromIterator};
 use lazy_static::lazy_static;
 
 lazy_static! {
-    static ref MESSAGES: HashMap<&'static str, &'static str> = HashMap::from_iter([
+    pub static ref MESSAGES: HashMap<&'static str, &'static str> = HashMap::from_iter([
         ("AUTOPAUSE_OFF", "🤖 Autopause OFF!"),
         ("AUTOPAUSE_ON", "🤖 Autopause ON!"),
         ("CLEARED", "🗑️ Cleared!"),
+        ("JOINING", "Joining"),
     ]);
 }
 
