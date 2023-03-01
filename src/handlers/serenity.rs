@@ -7,7 +7,7 @@ use crate::{
     connection::{check_voice_connections, Connection},
     errors::ParrotError,
     handlers::track_end::update_queue_messages,
-    messaging::interaction::create_response_text,
+    messaging::{interaction::create_response, message::ParrotMessage},
     sources::spotify::{Spotify, SPOTIFY},
 };
 use serenity::{
@@ -377,7 +377,8 @@ impl SerenityHandler {
         interaction: &mut ApplicationCommandInteraction,
         err: ParrotError,
     ) {
-        create_response_text(&ctx.http, interaction, &format!("{err}"))
+        println!("[ERROR]: {}", err);
+        create_response(&ctx.http, interaction, ParrotMessage::Error)
             .await
             .expect("failed to create response");
     }

@@ -28,16 +28,6 @@ pub async fn create_response(
     create_embed_response(http, interaction, embed).await
 }
 
-pub async fn create_response_text(
-    http: &Arc<Http>,
-    interaction: &mut ApplicationCommandInteraction,
-    content: &str,
-) -> Result<(), ParrotError> {
-    let mut embed = CreateEmbed::default();
-    embed.description(content);
-    create_embed_response(http, interaction, embed).await
-}
-
 pub async fn edit_response(
     http: &Arc<Http>,
     interaction: &mut ApplicationCommandInteraction,
