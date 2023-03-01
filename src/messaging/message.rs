@@ -1,12 +1,10 @@
-use std::fmt::Display;
-
 use serenity::model::mention::Mention;
+use std::fmt::Display;
 
 use crate::messaging::messages::*;
 
 const RELEASES_LINK: &str = "https://github.com/aquelemiguel/parrot/releases";
 
-#[derive(Debug)]
 pub enum ParrotMessage {
     AutopauseOff,
     AutopauseOn,
