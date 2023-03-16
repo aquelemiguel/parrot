@@ -279,21 +279,21 @@ impl SerenityHandler {
     }
 
     async fn load_guilds_settings(&self, ctx: &Context, ready: &Ready) {
+        println!("[INFO] Loading guilds' settings");
         let mut data = ctx.data.write().await;
         for guild in &ready.guilds {
-            if !guild.unavailable {
-                let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+            println!("[DEBUG] Loading guild settings for {:?}", guild);
+            let settings = data.get_mut::<GuildSettingsMap>().unwrap();
 
-                let guild_settings = settings
-                    .entry(guild.id)
-                    .or_insert_with(|| GuildSettings::new(guild.id));
+            let guild_settings = settings
+                .entry(guild.id)
+                .or_insert_with(|| GuildSettings::new(guild.id));
 
-                if let Err(err) = guild_settings.load_if_exists() {
-                    println!(
-                        "[ERROR] Failed to load guild {} settings due to {}",
-                        guild.id, err
-                    );
-                }
+            if let Err(err) = guild_settings.load_if_exists() {
+                println!(
+                    "[ERROR] Failed to load guild {} settings due to {}",
+                    guild.id, err
+                );
             }
         }
     }
