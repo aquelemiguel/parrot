@@ -6,6 +6,7 @@ use crate::{
     },
     connection::{check_voice_connections, Connection},
     errors::ParrotError,
+    guild::settings::{GuildSettings, GuildSettingsMap},
     handlers::track_end::update_queue_messages,
     sources::spotify::{Spotify, SPOTIFY},
     utils::create_response_text,
@@ -36,11 +37,14 @@ impl EventHandler for SerenityHandler {
         let activity = Activity::listening("/play");
         ctx.set_activity(activity).await;
 
-        // attempt to authenticate to spotify
+        // attempts to authenticate to spotify
         *SPOTIFY.lock().await = Spotify::auth().await;
 
         // creates the global application commands
         self.create_commands(&ctx).await;
+
+        // loads serialized guild settings
+        self.load_guilds_settings(&ctx, &ready).await;
     }
 
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
@@ -272,6 +276,26 @@ impl SerenityHandler {
         })
         .await
         .expect("failed to create command")
+    }
+
+    async fn load_guilds_settings(&self, ctx: &Context, ready: &Ready) {
+        println!("[INFO] Loading guilds' settings");
+        let mut data = ctx.data.write().await;
+        for guild in &ready.guilds {
+            println!("[DEBUG] Loading guild settings for {:?}", guild);
+            let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+
+            let guild_settings = settings
+                .entry(guild.id)
+                .or_insert_with(|| GuildSettings::new(guild.id));
+
+            if let Err(err) = guild_settings.load_if_exists() {
+                println!(
+                    "[ERROR] Failed to load guild {} settings due to {}",
+                    guild.id, err
+                );
+            }
+        }
     }
 
     async fn run_command(

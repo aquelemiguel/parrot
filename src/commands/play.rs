@@ -1,7 +1,7 @@
 use crate::{
     commands::{skip::force_skip_top_track, summon::summon},
     errors::{verify, ParrotError},
-    guild::settings::GuildSettingsMap,
+    guild::settings::{GuildSettings, GuildSettingsMap},
     handlers::track_end::update_queue_messages,
     messaging::message::ParrotMessage,
     messaging::messages::{
@@ -90,7 +90,9 @@ pub async fn play(
             Some(other) => {
                 let mut data = ctx.data.write().await;
                 let settings = data.get_mut::<GuildSettingsMap>().unwrap();
-                let guild_settings = settings.entry(guild_id).or_default();
+                let guild_settings = settings
+                    .entry(guild_id)
+                    .or_insert_with(|| GuildSettings::new(guild_id));
 
                 let is_allowed = guild_settings
                     .allowed_domains
@@ -120,7 +122,9 @@ pub async fn play(
         Err(_) => {
             let mut data = ctx.data.write().await;
             let settings = data.get_mut::<GuildSettingsMap>().unwrap();
-            let guild_settings = settings.entry(guild_id).or_default();
+            let guild_settings = settings
+                .entry(guild_id)
+                .or_insert_with(|| GuildSettings::new(guild_id));
 
             if guild_settings.banned_domains.contains("youtube.com")
                 || (guild_settings.banned_domains.is_empty()

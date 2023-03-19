@@ -1,6 +1,6 @@
 use crate::{
     errors::ParrotError,
-    guild::settings::GuildSettingsMap,
+    guild::settings::{GuildSettings, GuildSettingsMap},
     messaging::messages::{
         DOMAIN_FORM_ALLOWED_PLACEHOLDER, DOMAIN_FORM_ALLOWED_TITLE, DOMAIN_FORM_BANNED_PLACEHOLDER,
         DOMAIN_FORM_BANNED_TITLE, DOMAIN_FORM_TITLE,
@@ -29,7 +29,9 @@ pub async fn allow(
     let mut data = ctx.data.write().await;
     let settings = data.get_mut::<GuildSettingsMap>().unwrap();
 
-    let guild_settings = settings.entry(guild_id).or_default();
+    let guild_settings = settings
+        .entry(guild_id)
+        .or_insert_with(|| GuildSettings::new(guild_id));
 
     // transform the domain sets from the settings into a string
     let allowed_str = guild_settings
@@ -114,6 +116,7 @@ pub async fn allow(
             }
 
             guild_settings.update_domains();
+            guild_settings.save().unwrap();
 
             // it's now safe to close the modal, so send a response to it
             int.create_interaction_response(&ctx.http, |r| {
