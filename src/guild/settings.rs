@@ -61,7 +61,13 @@ impl GuildSettings {
     pub fn save(&self) -> Result<(), ParrotError> {
         create_dir_all(SETTINGS_PATH.as_str())?;
         let path = format!("{}/{}.json", SETTINGS_PATH.as_str(), self.guild_id);
-        let file = OpenOptions::new().write(true).truncate(true).create(true).open(path)?;
+
+        let file = OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .create(true)
+            .open(path)?;
+
         let writer = BufWriter::new(file);
         serde_json::to_writer(writer, self)?;
         Ok(())
