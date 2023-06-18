@@ -23,7 +23,7 @@ pub struct YouTube {}
 
 impl YouTube {
     pub fn extract(query: &str) -> Option<QueryType> {
-        if query.contains("playlist?list=") {
+        if query.contains("list=") {
             Some(QueryType::PlaylistLink(query.to_string()))
         } else {
             Some(QueryType::VideoLink(query.to_string()))
