@@ -8,6 +8,7 @@ use crate::{
         PLAY_QUEUE, PLAY_TOP, SPOTIFY_AUTH_FAILED, TRACK_DURATION, TRACK_TIME_TO_PLAY,
     },
     sources::{
+        file::{FileRestarter, FileSource},
         spotify::{Spotify, SPOTIFY},
         youtube::{YouTube, YouTubeRestartable},
     },
@@ -17,12 +18,16 @@ use crate::{
     },
 };
 use serenity::{
-    builder::CreateEmbed, client::Context,
-    model::application::interaction::application_command::ApplicationCommandInteraction,
+    builder::CreateEmbed,
+    client::Context,
+    model::{
+        application::interaction::application_command::ApplicationCommandInteraction,
+        prelude::Attachment,
+    },
     prelude::Mutex,
 };
 use songbird::{input::Restartable, tracks::TrackHandle, Call};
-use std::{cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
+use std::{borrow::BorrowMut, cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
 use url::Url;
 
 #[derive(Clone, Copy)]
@@ -41,52 +46,23 @@ pub enum QueryType {
     KeywordList(Vec<String>),
     VideoLink(String),
     PlaylistLink(String),
+    File(Attachment),
 }
 
-pub async fn play(
+async fn match_url(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), ParrotError> {
-    let args = interaction.data.options.clone();
-    let first_arg = args.first().unwrap();
-
-    let mode = match first_arg.name.as_str() {
-        "next" => Mode::Next,
-        "all" => Mode::All,
-        "reverse" => Mode::Reverse,
-        "shuffle" => Mode::Shuffle,
-        "jump" => Mode::Jump,
-        _ => Mode::End,
-    };
-
-    let url = match mode {
-        Mode::End => first_arg.value.as_ref().unwrap().as_str().unwrap(),
-        _ => first_arg
-            .options
-            .first()
-            .unwrap()
-            .value
-            .as_ref()
-            .unwrap()
-            .as_str()
-            .unwrap(),
-    };
-
+    url: &str,
+) -> Result<Option<QueryType>, ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
-    let manager = songbird::get(ctx).await.unwrap();
-
-    // try to join a voice channel if not in one just yet
-    summon(ctx, interaction, false).await?;
-    let call = manager.get(guild_id).unwrap();
-
-    // determine whether this is a link or a query string
-    let query_type = match Url::parse(url) {
+    match Url::parse(url) {
         Ok(url_data) => match url_data.host_str() {
             Some("open.spotify.com") => {
                 let spotify = SPOTIFY.lock().await;
                 let spotify = verify(spotify.as_ref(), ParrotError::Other(SPOTIFY_AUTH_FAILED))?;
-                Some(Spotify::extract(spotify, url).await?)
+                Spotify::extract(spotify, url).await.map(Some)
             }
+            //Some("cdn.discordapp.com") => Some(QueryType::extract()),
             Some(other) => {
                 let mut data = ctx.data.write().await;
                 let settings = data.get_mut::<GuildSettingsMap>().unwrap();
@@ -112,12 +88,13 @@ pub async fn play(
                             domain: other.to_string(),
                         },
                     )
-                    .await;
+                    .await
+                    .map(|_| None);
                 }
 
-                YouTube::extract(url)
+                Ok(YouTube::extract(url))
             }
-            None => None,
+            None => Ok(None),
         },
         Err(_) => {
             let mut data = ctx.data.write().await;
@@ -137,12 +114,52 @@ pub async fn play(
                         domain: "youtube.com".to_string(),
                     },
                 )
-                .await;
+                .await
+                .map(|_| None);
             }
 
-            Some(QueryType::Keywords(url.to_string()))
+            Ok(Some(QueryType::Keywords(url.to_string())))
         }
+    }
+}
+
+pub async fn play(
+    ctx: &Context,
+    interaction: &mut ApplicationCommandInteraction,
+) -> Result<(), ParrotError> {
+    let first_arg = interaction.data.options.first().unwrap().clone();
+
+    let mode = match first_arg.name.as_str() {
+        "next" => Mode::Next,
+        "all" => Mode::All,
+        "reverse" => Mode::Reverse,
+        "shuffle" => Mode::Shuffle,
+        "jump" => Mode::Jump,
+        _ => Mode::End,
     };
+
+    let url = match mode {
+        Mode::End => first_arg.value.as_ref().unwrap().as_str().clone(),
+        _ => first_arg
+            .options
+            .first()
+            .unwrap()
+            .value
+            .as_ref()
+            .unwrap()
+            .as_str(),
+    };
+    let url = url.unwrap().to_string();
+
+    let guild_id = interaction.guild_id.unwrap();
+    let manager = songbird::get(ctx).await.unwrap();
+
+    // try to join a voice channel if not in one just yet
+    summon(ctx, interaction, false).await?;
+    let call = manager.get(guild_id).unwrap();
+
+    // determine whether this is a link or a query string
+    let query_type = match_url(ctx, interaction, &url).await?;
 
     let query_type = verify(
         query_type,
@@ -181,6 +198,12 @@ pub async fn play(
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
+            QueryType::File(attachment) => {
+                let query_type = FileSource::extract(attachment)
+                    .ok_or(ParrotError::Other("failed to load file"))?;
+                let queue = enqueue_track(&call, &query_type).await?;
+                update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
+            }
         },
         Mode::Next => match query_type.clone() {
             QueryType::Keywords(_) | QueryType::VideoLink(_) => {
@@ -203,6 +226,12 @@ pub async fn play(
                         insert_track(&call, &QueryType::Keywords(keywords), idx + 1).await?;
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
+            }
+            QueryType::File(attachment) => {
+                let query_type = FileSource::extract(attachment)
+                    .ok_or(ParrotError::Other("failed to load file"))?;
+                let queue = insert_track(&call, &query_type, 1).await?;
+                update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
             }
         },
         Mode::Jump => match query_type.clone() {
@@ -252,6 +281,12 @@ pub async fn play(
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
+            QueryType::File(attachment) => {
+                let query_type = FileSource::extract(attachment)
+                    .ok_or(ParrotError::Other("failed to load file"))?;
+                let queue = insert_track(&call, &query_type, 1).await?;
+                update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
+            }
         },
         Mode::All | Mode::Reverse | Mode::Shuffle => match query_type.clone() {
             QueryType::VideoLink(url) | QueryType::PlaylistLink(url) => {
@@ -269,6 +304,12 @@ pub async fn play(
                     let queue = enqueue_track(&call, &QueryType::Keywords(keywords)).await?;
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
+            }
+            QueryType::File(attachment) => {
+                let query_type = FileSource::extract(attachment)
+                    .ok_or(ParrotError::Other("failed to load file"))?;
+                let queue = enqueue_track(&call, &query_type).await?;
+                update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
             }
             _ => {
                 edit_response(&ctx.http, interaction, ParrotMessage::PlayAllFailed).await?;

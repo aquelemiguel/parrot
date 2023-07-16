@@ -13,6 +13,7 @@ use crate::{
 };
 use serenity::{
     async_trait,
+    builder::CreateApplicationCommand,
     client::{Context, EventHandler},
     model::{
         application::command::{Command, CommandOptionType},
@@ -78,6 +79,20 @@ impl EventHandler for SerenityHandler {
     }
 }
 
+pub fn create_attachement_option(
+    command: &mut CreateApplicationCommand,
+    description: String,
+    required: bool,
+) -> &mut CreateApplicationCommand {
+    command.create_option(|option| {
+        option
+            .name("attachment")
+            .description(description.clone())
+            .kind(CommandOptionType::Attachment)
+            .required(required)
+    })
+}
+
 impl SerenityHandler {
     async fn create_commands(&self, ctx: &Context) -> Vec<Command> {
         Command::set_global_application_commands(&ctx.http, |commands| {
@@ -121,7 +136,14 @@ impl SerenityHandler {
                                     .name("query")
                                     .description("The media to play")
                                     .kind(CommandOptionType::String)
-                                    .required(true)
+                                    .required(false)
+                        })
+                        .create_option(|option| {
+                                option
+                                    .name("attachment")
+                                    .description("The file to play")
+                                    .kind(CommandOptionType::Attachment)
+                                    .required(false)
                         })
                 })
                 .create_application_command(|command| {

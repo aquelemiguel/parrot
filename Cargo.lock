@@ -355,6 +355,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ffprobe"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc7707b7128d0af25fbb945b6a37969d1d863f62b79d0e0f49519861dce154f2"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "flate2"
 version = "1.0.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -983,6 +993,7 @@ name = "parrot"
 version = "1.6.0"
 dependencies = [
  "dotenv",
+ "ffprobe",
  "lazy_static",
  "rand",
  "regex",
