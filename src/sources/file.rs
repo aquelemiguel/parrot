@@ -1,10 +1,9 @@
-use crate::{commands::play::QueryType, errors::ParrotError};
-use ffprobe::{FfProbe, FfProbeError};
+use crate::commands::play::QueryType;
+use ffprobe::FfProbe;
 //use serenity::futures::stream::iter;
 use serenity::json::Value;
 use serenity::model::prelude::Attachment;
 use serenity::{self, async_trait};
-use songbird::error::ConnectionError;
 use songbird::input::{
     error::Result as SongbirdResult,
     error::{Error, Result},
@@ -12,7 +11,7 @@ use songbird::input::{
     Codec, Container, Input, Metadata, Restartable,
 };
 use std::iter;
-use std::process::{Child, Command, Stdio};
+use std::process::{Command, Stdio};
 use std::time::Duration;
 use tokio::process::Command as TokioCommand;
 use url::Url;

@@ -8,7 +8,7 @@ use crate::{
         PLAY_QUEUE, PLAY_TOP, SPOTIFY_AUTH_FAILED, TRACK_DURATION, TRACK_TIME_TO_PLAY,
     },
     sources::{
-        file::{FileRestarter, FileSource},
+        file::FileSource,
         spotify::{Spotify, SPOTIFY},
         youtube::{YouTube, YouTubeRestartable},
     },
@@ -27,7 +27,7 @@ use serenity::{
     prelude::Mutex,
 };
 use songbird::{input::Restartable, tracks::TrackHandle, Call};
-use std::{borrow::BorrowMut, cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
+use std::{cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
 use url::Url;
 
 #[derive(Clone, Copy)]
