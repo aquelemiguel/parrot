@@ -145,7 +145,7 @@ pub async fn ffprobe_async_config_url(count_frames: bool, url: Url) -> SongbirdR
 
     let mut cmd = TokioCommand::new("ffprobe");
 
-    let out = cmd.args(args).output().await.map_err(|x| Error::Io(x))?;
+    let out = cmd.args(args).output().await.map_err(Error::Io)?;
 
     serde_json::from_slice::<FfProbe>(&out.stdout).map_err(|x| Error::Json {
         error: x,

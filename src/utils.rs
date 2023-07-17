@@ -126,7 +126,7 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
         .as_ref()
         .map(|thumbnail| embed.thumbnail(thumbnail));
 
-    let source_url = metadata.source_url.unwrap_or_else(|| "".to_string());
+    let source_url = metadata.source_url.unwrap_or_default();
 
     let (footer_text, footer_icon_url) = get_footer_info(&source_url);
     embed.footer(|f| f.text(footer_text).icon_url(footer_icon_url));

@@ -174,7 +174,7 @@ pub async fn play(
         }
     };
 
-    let guild_id = interaction.guild_id.unwrap().clone();
+    let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
 
     // try to join a voice channel if not in one just yet
@@ -183,7 +183,7 @@ pub async fn play(
 
     // determine whether this is a link or a query string
     let query_type = match url {
-        Some(url) => match_url(ctx, interaction, &url).await?,
+        Some(url) => match_url(ctx, interaction, url).await?,
         None => FileSource::extract(attachment.unwrap().clone()),
     };
 
