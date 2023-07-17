@@ -8,7 +8,7 @@ use crate::{
         PLAY_QUEUE, PLAY_TOP, SPOTIFY_AUTH_FAILED, TRACK_DURATION, TRACK_TIME_TO_PLAY,
     },
     sources::{
-        file::FileSource,
+        file::{FileRestartable, FileSource},
         spotify::{Spotify, SPOTIFY},
         youtube::{YouTube, YouTubeRestartable},
     },
@@ -22,7 +22,7 @@ use serenity::{
     client::Context,
     model::{
         application::interaction::application_command::ApplicationCommandInteraction,
-        prelude::Attachment,
+        prelude::{interaction::application_command::CommandDataOptionValue, Attachment},
     },
     prelude::Mutex,
 };
@@ -40,7 +40,7 @@ pub enum Mode {
     Jump,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum QueryType {
     Keywords(String),
     KeywordList(Vec<String>),
@@ -127,31 +127,54 @@ pub async fn play(
     ctx: &Context,
     interaction: &mut ApplicationCommandInteraction,
 ) -> Result<(), ParrotError> {
-    let first_arg = interaction.data.options.first().unwrap().clone();
+    let first_arg = interaction.data.options.first().ok_or(ParrotError::Other(
+        "Expected at least one argument for play command",
+    ))?;
+    let mode_str = first_arg.name.as_str();
 
-    let mode = match first_arg.name.as_str() {
-        "next" => Mode::Next,
-        "all" => Mode::All,
-        "reverse" => Mode::Reverse,
-        "shuffle" => Mode::Shuffle,
-        "jump" => Mode::Jump,
-        _ => Mode::End,
+    let (mode, idx) = match mode_str {
+        "next" => (Mode::Next, 1),
+        "all" => (Mode::All, 1),
+        "reverse" => (Mode::Reverse, 1),
+        "shuffle" => (Mode::Shuffle, 1),
+        "jump" => (Mode::Jump, 1),
+        _ => (Mode::End, 0),
     };
 
-    let url = match mode {
-        Mode::End => first_arg.value.as_ref().unwrap().as_str().clone(),
-        _ => first_arg
-            .options
-            .first()
-            .unwrap()
-            .value
-            .as_ref()
-            .unwrap()
-            .as_str(),
-    };
-    let url = url.unwrap().to_string();
+    println!("options: {:?}", interaction.data.options);
 
-    let guild_id = interaction.guild_id.unwrap();
+    let arg = interaction
+        .data
+        .options
+        .get(idx)
+        .expect("Expected attachment or query option")
+        .clone();
+
+    let option = arg
+        .resolved
+        .as_ref()
+        .expect("Expected attachment or query object");
+
+    let (url, attachment) = match option {
+        CommandDataOptionValue::Attachment(attachment) => {
+            println!(
+                "Attachment name: {}, attachment size: {}",
+                attachment.filename, attachment.size
+            );
+            (None, Some(attachment))
+        }
+        CommandDataOptionValue::String(url) => {
+            println!("UrlOrQuery: {}", url);
+            (Some(url), None)
+        }
+        _ => {
+            return Err(ParrotError::Other(
+                "Something went wrong while parsing your query!",
+            ));
+        }
+    };
+
+    let guild_id = interaction.guild_id.unwrap().clone();
     let manager = songbird::get(ctx).await.unwrap();
 
     // try to join a voice channel if not in one just yet
@@ -159,12 +182,17 @@ pub async fn play(
     let call = manager.get(guild_id).unwrap();
 
     // determine whether this is a link or a query string
-    let query_type = match_url(ctx, interaction, &url).await?;
+    let query_type = match url {
+        Some(url) => match_url(ctx, interaction, &url).await?,
+        None => FileSource::extract(attachment.unwrap().clone()),
+    };
 
     let query_type = verify(
         query_type,
         ParrotError::Other("Something went wrong while parsing your query!"),
     )?;
+
+    println!("query_type: {:?}", query_type);
 
     // reply with a temporary message while we fetch the source
     // needed because interactions must be replied within 3s and queueing takes longer
@@ -199,6 +227,7 @@ pub async fn play(
                 }
             }
             QueryType::File(attachment) => {
+                println!("attachment: {:?}", attachment);
                 let query_type = FileSource::extract(attachment)
                     .ok_or(ParrotError::Other("failed to load file"))?;
                 let queue = enqueue_track(&call, &query_type).await?;
@@ -432,6 +461,10 @@ async fn get_track_source(query_type: QueryType) -> Result<Restartable, ParrotEr
             .map_err(ParrotError::TrackFail),
 
         QueryType::Keywords(query) => YouTubeRestartable::ytdl_search(query, true)
+            .await
+            .map_err(ParrotError::TrackFail),
+
+        QueryType::File(attachment) => FileRestartable::download(attachment.url, true)
             .await
             .map_err(ParrotError::TrackFail),
 

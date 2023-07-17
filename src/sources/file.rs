@@ -1,6 +1,5 @@
 use crate::commands::play::QueryType;
 use ffprobe::FfProbe;
-//use serenity::futures::stream::iter;
 use serenity::json::Value;
 use serenity::model::prelude::Attachment;
 use serenity::{self, async_trait};
@@ -13,6 +12,8 @@ use songbird::input::{
 use std::iter;
 use std::process::{Command, Stdio};
 use std::time::Duration;
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 use tokio::process::Command as TokioCommand;
 use url::Url;
 
@@ -79,10 +80,8 @@ async fn _file_metadata(url: &str) -> SongbirdResult<Metadata> {
     let json_res = asdf.as_str();
 
     let val: Value = serde_json::from_str(json_res).unwrap();
-    // tracing::warn!("ffprobe result: {:?}", val);
 
     let mut metadata = Metadata::from_ffprobe_json(&val);
-    // tracing::warn!("metadata: {:?}", metadata);
 
     metadata.source_url = Some(url.to_string());
     metadata.title = Some(
@@ -97,17 +96,32 @@ async fn _file_metadata(url: &str) -> SongbirdResult<Metadata> {
     Ok(metadata)
 }
 
-pub async fn from_uri(uri: &str, metadata: Metadata, pre_args: &[&str]) -> Result<Input> {
-    // let data = download(uri).await.unwrap();
+pub async fn download(url: &str) -> serenity::Result<Vec<u8>> {
+    let bytes = reqwest::get(url).await?.bytes().await?;
+    Ok(bytes.to_vec())
+}
 
-    let child = Command::new("curl")
-        .arg("-s")
-        .arg(uri)
+pub async fn from_uri(uri: &str, metadata: Metadata, pre_args: &[&str]) -> Result<Input> {
+    let data = download(uri).await.unwrap();
+    let url = Url::parse(uri).unwrap();
+    let file_name = url.path_segments().unwrap().last().unwrap();
+
+    File::create(file_name)
+        .await
+        .unwrap()
+        .write_all(&data)
+        .await
+        .unwrap();
+
+    let child = Command::new("cat")
+        .arg(file_name)
         .stdin(Stdio::null())
         .stderr(Stdio::null())
         .stdout(Stdio::piped())
         .spawn()
         .unwrap();
+
+    println!("Spawned cat");
 
     ffmpeg::ffmpeg(child, metadata, pre_args).await
 }
