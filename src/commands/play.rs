@@ -3,9 +3,12 @@ use crate::{
     errors::{verify, ParrotError},
     guild::settings::{GuildSettings, GuildSettingsMap},
     handlers::track_end::update_queue_messages,
-    messaging::message::ParrotMessage,
     messaging::messages::{
         PLAY_QUEUE, PLAY_TOP, SPOTIFY_AUTH_FAILED, TRACK_DURATION, TRACK_TIME_TO_PLAY,
+    },
+    messaging::{
+        message::ParrotMessage,
+        messages::{QUEUE_NO_SRC, QUEUE_NO_TITLE},
     },
     sources::{
         file::{FileRestartable, FileSource},
@@ -430,14 +433,14 @@ async fn create_queued_embed(
     let mut embed = CreateEmbed::default();
     let metadata = track.metadata().clone();
 
-    embed.thumbnail(&metadata.thumbnail.unwrap());
+    embed.thumbnail(&metadata.thumbnail.unwrap_or_default());
 
     embed.field(
         title,
         &format!(
             "[**{}**]({})",
-            metadata.title.unwrap(),
-            metadata.source_url.unwrap()
+            metadata.title.unwrap_or(QUEUE_NO_TITLE.to_string()),
+            metadata.source_url.unwrap_or(QUEUE_NO_SRC.to_string())
         ),
         false,
     );

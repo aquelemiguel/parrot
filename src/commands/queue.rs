@@ -3,8 +3,8 @@ use crate::{
     guild::cache::GuildCacheMap,
     handlers::track_end::ModifyQueueHandler,
     messaging::messages::{
-        QUEUE_EXPIRED, QUEUE_NOTHING_IS_PLAYING, QUEUE_NOW_PLAYING, QUEUE_NO_SONGS, QUEUE_NO_TITLE,
-        QUEUE_PAGE, QUEUE_PAGE_OF, QUEUE_UP_NEXT,
+        QUEUE_EXPIRED, QUEUE_NOTHING_IS_PLAYING, QUEUE_NOW_PLAYING, QUEUE_NO_SONGS, QUEUE_NO_SRC,
+        QUEUE_NO_TITLE, QUEUE_PAGE, QUEUE_PAGE_OF, QUEUE_UP_NEXT,
     },
     utils::get_human_readable_timestamp,
 };
@@ -152,7 +152,10 @@ pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
                 .title
                 .as_ref()
                 .unwrap_or(&String::from(QUEUE_NO_TITLE)),
-            metadata.source_url.as_ref().unwrap(),
+            metadata
+                .source_url
+                .as_ref()
+                .unwrap_or(&String::from(QUEUE_NO_SRC)),
             get_human_readable_timestamp(metadata.duration)
         )
     } else {
