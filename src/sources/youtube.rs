@@ -23,7 +23,7 @@ pub struct YouTube {}
 
 impl YouTube {
     pub fn extract(query: &str) -> Option<QueryType> {
-        if query.contains("playlist?list=") {
+        if query.contains("list=") {
             Some(QueryType::PlaylistLink(query.to_string()))
         } else {
             Some(QueryType::VideoLink(query.to_string()))
@@ -124,6 +124,7 @@ async fn ytdl(uri: &str) -> Result<(Child, Metadata), SongbirdError> {
         "infinite",        // infinite number of download retries
         "--no-playlist",   // only download the video if URL also has playlist info
         "--ignore-config", // disable all configuration files for a yt-dlp run
+        "--no-warnings",   // don't print out warnings
         uri,
         "-o",
         "-", // stream data to stdout
@@ -173,6 +174,7 @@ async fn _ytdl_metadata(uri: &str) -> SongbirdResult<Metadata> {
         "infinite",        // infinite number of download retries
         "--no-playlist",   // only download the video if URL also has playlist info
         "--ignore-config", // disable all configuration files for a yt-dlp run
+        "--no-warnings",   // don't print out warnings
         uri,
         "-o",
         "-", // stream data to stdout

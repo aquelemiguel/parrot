@@ -217,8 +217,9 @@ pub async fn play(
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for url in urls.iter() {
-                    let queue =
-                        enqueue_track(&call, &QueryType::VideoLink(url.to_string())).await?;
+                    let Ok(queue) = enqueue_track(&call, &QueryType::VideoLink(url.to_string())).await else {
+                        continue;
+                    };
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
@@ -248,7 +249,9 @@ pub async fn play(
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for (idx, url) in urls.into_iter().enumerate() {
-                    let queue = insert_track(&call, &QueryType::VideoLink(url), idx + 1).await?;
+                    let Ok(queue) = insert_track(&call, &QueryType::VideoLink(url), idx + 1).await else {
+                        continue;
+                    };
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
@@ -285,8 +288,9 @@ pub async fn play(
                 let mut insert_idx = 1;
 
                 for (i, url) in urls.into_iter().enumerate() {
-                    let mut queue =
-                        insert_track(&call, &QueryType::VideoLink(url), insert_idx).await?;
+                    let Ok(mut queue) = insert_track(&call, &QueryType::VideoLink(url), insert_idx).await else {
+                        continue;
+                    };
 
                     if i == 0 && !queue_was_empty {
                         queue = force_skip_top_track(&call.lock().await).await?;
@@ -327,7 +331,9 @@ pub async fn play(
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
                 for url in urls.into_iter() {
-                    let queue = enqueue_track(&call, &QueryType::VideoLink(url)).await?;
+                    let Ok(queue) = enqueue_track(&call, &QueryType::VideoLink(url)).await else {
+                        continue;
+                    };
                     update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
                 }
             }
