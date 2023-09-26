@@ -79,20 +79,6 @@ impl EventHandler for SerenityHandler {
     }
 }
 
-pub fn create_attachement_option(
-    command: &mut CreateApplicationCommand,
-    description: String,
-    required: bool,
-) -> &mut CreateApplicationCommand {
-    command.create_option(|option| {
-        option
-            .name("attachment")
-            .description(description.clone())
-            .kind(CommandOptionType::Attachment)
-            .required(required)
-    })
-}
-
 impl SerenityHandler {
     async fn create_commands(&self, ctx: &Context) -> Vec<Command> {
         Command::set_global_application_commands(&ctx.http, |commands| {
