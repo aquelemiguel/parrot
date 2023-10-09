@@ -13,7 +13,6 @@ use crate::{
 };
 use serenity::{
     async_trait,
-    builder::CreateApplicationCommand,
     client::{Context, EventHandler},
     model::{
         application::command::{Command, CommandOptionType},
