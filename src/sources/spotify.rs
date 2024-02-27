@@ -94,7 +94,7 @@ impl Spotify {
             .map_err(|_| ParrotError::Other("track ID contains invalid characters"))?;
 
         let track = spotify
-            .track(track_id)
+            .track(track_id, None)
             .await
             .map_err(|_| ParrotError::Other("failed to fetch track"))?;
 
@@ -112,7 +112,7 @@ impl Spotify {
             .map_err(|_| ParrotError::Other("album ID contains invalid characters"))?;
 
         let album = spotify
-            .album(album_id)
+            .album(album_id, None)
             .await
             .map_err(|_| ParrotError::Other("failed to fetch album"))?;
 
