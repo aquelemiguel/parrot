@@ -69,7 +69,7 @@ impl YouTubeRestartable {
 
         let reader = BufReader::new(stdout);
 
-        let lines = reader.lines().flatten().map(|line| {
+        let lines = reader.lines().map_while(Result::ok).map(|line| {
             let entry: Value = serde_json::from_str(&line).unwrap();
             entry
                 .get("webpage_url")
