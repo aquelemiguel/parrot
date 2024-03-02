@@ -101,8 +101,15 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
     let metadata = track.metadata().clone();
 
     embed.author(|author| author.name(ParrotMessage::NowPlaying));
-    embed.title(metadata.title.unwrap());
-    embed.url(metadata.source_url.as_ref().unwrap());
+    metadata
+        .title
+        .as_ref()
+        .map(|title| embed.title(title.clone()));
+
+    metadata
+        .source_url
+        .as_ref()
+        .map(|source_url| embed.url(source_url.clone()));
 
     let position = get_human_readable_timestamp(Some(track.get_info().await.unwrap().position));
     let duration = get_human_readable_timestamp(metadata.duration);
@@ -114,11 +121,14 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
         None => embed.field("Channel", ">>> N/A", true),
     };
 
-    embed.thumbnail(&metadata.thumbnail.unwrap());
+    metadata
+        .thumbnail
+        .as_ref()
+        .map(|thumbnail| embed.thumbnail(thumbnail));
 
-    let source_url = metadata.source_url.as_ref().unwrap();
+    let source_url = metadata.source_url.unwrap_or_default();
 
-    let (footer_text, footer_icon_url) = get_footer_info(source_url);
+    let (footer_text, footer_icon_url) = get_footer_info(&source_url);
     embed.footer(|f| f.text(footer_text).icon_url(footer_icon_url));
 
     embed
