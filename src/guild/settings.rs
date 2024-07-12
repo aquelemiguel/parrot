@@ -12,7 +12,7 @@ use std::{
 use crate::errors::ParrotError;
 
 const DEFAULT_SETTINGS_PATH: &str = "data/settings";
-const DEFAULT_ALLOWED_DOMAINS: [&str; 1] = ["youtube.com"];
+const DEFAULT_ALLOWED_DOMAINS: [&str; 2] = ["youtube.com", "youtu.be"];
 
 lazy_static! {
     static ref SETTINGS_PATH: String =
@@ -103,7 +103,11 @@ impl GuildSettings {
         }
 
         if self.allowed_domains.is_empty() && self.banned_domains.is_empty() {
-            self.allowed_domains.insert(String::from("youtube.com"));
+            self.allowed_domains = DEFAULT_ALLOWED_DOMAINS
+                .iter()
+                .map(|d| d.to_string())
+                .collect();
+
             self.banned_domains.clear();
         }
     }
