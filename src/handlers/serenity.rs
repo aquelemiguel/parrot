@@ -121,7 +121,14 @@ impl SerenityHandler {
                                     .name("query")
                                     .description("The media to play")
                                     .kind(CommandOptionType::String)
-                                    .required(true)
+                                    .required(false)
+                        })
+                        .create_option(|option| {
+                                option
+                                    .name("attachment")
+                                    .description("The file to play")
+                                    .kind(CommandOptionType::Attachment)
+                                    .required(false)
                         })
                 })
                 .create_application_command(|command| {

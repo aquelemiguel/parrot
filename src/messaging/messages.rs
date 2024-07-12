@@ -39,6 +39,8 @@ pub const PLAY_TOP: &str = "📃 Added to top!";
 pub const QUEUE_EXPIRED: &str =
     "In order to save resources, this command has expired.\nPlease feel free to reinvoke it!";
 pub const QUEUE_IS_EMPTY: &str = "Queue is empty!";
+pub const QUEUE_NO_TITLE: &str = "Unknown title";
+pub const QUEUE_NO_SRC: &str = "Unknown source url";
 pub const QUEUE_NO_SONGS: &str = "There's no songs up next!";
 pub const QUEUE_NOTHING_IS_PLAYING: &str = "Nothing is playing!";
 pub const QUEUE_NOW_PLAYING: &str = "🔊 Now playing";
