@@ -9,7 +9,7 @@ license = "MIT"
 keywords = ["discord", "music-bot", "rust"]
 
 [dependencies]
-dotenv = "0.15.0"
+dotenvy = "0.15.7"
 lazy_static = "1.4.0"
 rand = "0.8.5"
 regex = "1.5.5"
