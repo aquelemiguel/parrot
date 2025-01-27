@@ -17,13 +17,16 @@ pub async fn shuffle(
     let call = manager.get(guild_id).unwrap();
 
     let handler = call.lock().await;
-    handler.queue().modify_queue(|queue| {
-        // skip the first track on queue because it's being played
-        fisher_yates(
-            queue.make_contiguous()[1..].as_mut(),
-            &mut rand::thread_rng(),
-        )
-    });
+
+    if !handler.queue().is_empty() {
+        handler.queue().modify_queue(|queue| {
+            // skip the first track on queue because it's being played
+            fisher_yates(
+                queue.make_contiguous()[1..].as_mut(),
+                &mut rand::thread_rng(),
+            )
+        });
+    }
 
     // refetch the queue after modification
     let queue = handler.queue().current_queue();
