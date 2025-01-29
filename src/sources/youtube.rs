@@ -57,19 +57,15 @@ impl YouTubeRestartable {
             _ => {}
         }
 
-        let mut child = Command::new("yt-dlp")
+        let output = Command::new("yt-dlp")
             .args(args)
             .stdout(Stdio::piped())
             .spawn()
+            .unwrap()
+            .wait_with_output()
             .unwrap();
 
-        let Some(stdout) = &mut child.stdout else {
-            return None;
-        };
-
-        let reader = BufReader::new(stdout);
-
-        let lines = reader.lines().map_while(Result::ok).map(|line| {
+        let lines = output.stdout.lines().map_while(Result::ok).map(|line| {
             let entry: Value = serde_json::from_str(&line).unwrap();
             entry
                 .get("webpage_url")
