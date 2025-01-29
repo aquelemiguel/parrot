@@ -155,7 +155,7 @@ pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
     };
 
     embed.field(QUEUE_NOW_PLAYING, &description, false);
-    embed.field(QUEUE_UP_NEXT, &build_queue_page(tracks, page), false);
+    embed.field(QUEUE_UP_NEXT, build_queue_page(tracks, page), false);
 
     embed.footer(|f| {
         f.text(format!(

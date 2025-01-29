@@ -114,7 +114,7 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
         None => embed.field("Channel", ">>> N/A", true),
     };
 
-    embed.thumbnail(&metadata.thumbnail.unwrap());
+    embed.thumbnail(metadata.thumbnail.unwrap());
 
     let source_url = metadata.source_url.as_ref().unwrap();
 

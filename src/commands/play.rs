@@ -371,11 +371,11 @@ async fn create_queued_embed(
     let mut embed = CreateEmbed::default();
     let metadata = track.metadata().clone();
 
-    embed.thumbnail(&metadata.thumbnail.unwrap());
+    embed.thumbnail(metadata.thumbnail.unwrap());
 
     embed.field(
         title,
-        &format!(
+        format!(
             "[**{}**]({})",
             metadata.title.unwrap(),
             metadata.source_url.unwrap()
