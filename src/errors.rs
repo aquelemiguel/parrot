@@ -176,7 +176,6 @@ where
 
 /// Verifies if a value is true (or equivalent).
 /// Returns an [`Err`] with the given error or the value wrapped in [`Ok`].
-#[allow(clippy::result_large_err)]
 pub fn verify<K, T: Verifiable<K>>(verifiable: T, err: ParrotError) -> Result<K, ParrotError> {
     if verifiable.to_bool() {
         Ok(verifiable.unpack())

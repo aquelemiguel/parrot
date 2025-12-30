@@ -42,7 +42,6 @@ impl GuildSettings {
         }
     }
 
-    #[allow(clippy::result_large_err)]
     pub fn load_if_exists(&mut self) -> Result<(), ParrotError> {
         let path = format!("{}/{}.json", SETTINGS_PATH.as_str(), self.guild_id);
         if !Path::new(&path).exists() {
@@ -51,7 +50,6 @@ impl GuildSettings {
         self.load()
     }
 
-    #[allow(clippy::result_large_err)]
     pub fn load(&mut self) -> Result<(), ParrotError> {
         let path = format!("{}/{}.json", SETTINGS_PATH.as_str(), self.guild_id);
         let file = OpenOptions::new().read(true).open(path)?;
@@ -60,7 +58,6 @@ impl GuildSettings {
         Ok(())
     }
 
-    #[allow(clippy::result_large_err)]
     pub fn save(&self) -> Result<(), ParrotError> {
         create_dir_all(SETTINGS_PATH.as_str())?;
         let path = format!("{}/{}.json", SETTINGS_PATH.as_str(), self.guild_id);

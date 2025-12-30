@@ -29,7 +29,6 @@ const ALLOWED_CONTENT_TYPES: &[&str] = &[
     "application/ogg",
 ];
 
-#[allow(clippy::result_large_err)]
 pub fn validate_attachment(attachment: &Attachment) -> std::result::Result<(), ParrotError> {
     // Check file size
     if attachment.size > MAX_FILE_SIZE {
@@ -50,7 +49,6 @@ pub fn validate_attachment(attachment: &Attachment) -> std::result::Result<(), P
     Ok(())
 }
 
-#[allow(clippy::result_large_err)]
 pub fn extract_query_type(attachment: Attachment) -> std::result::Result<QueryType, ParrotError> {
     validate_attachment(&attachment)?;
     Ok(QueryType::File(attachment))
