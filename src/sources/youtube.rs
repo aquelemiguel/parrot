@@ -11,8 +11,7 @@ use songbird::input::{
 };
 use std::{
     io::{BufRead, BufReader, Read},
-    process::Command,
-    process::{Child, Stdio},
+    process::{Child, Command, Stdio},
     time::Duration,
 };
 use tokio::{process::Command as TokioCommand, task};
@@ -57,25 +56,28 @@ impl YouTubeRestartable {
             _ => {}
         }
 
-        let output = Command::new("yt-dlp")
+        let output = TokioCommand::new("yt-dlp")
             .args(args)
             .stdout(Stdio::piped())
-            .spawn()
-            .unwrap()
-            .wait_with_output()
-            .unwrap();
+            .stderr(Stdio::null())
+            .output()
+            .await
+            .ok()?;
 
-        let lines = output.stdout.lines().map_while(Result::ok).map(|line| {
-            let entry: Value = serde_json::from_str(&line).unwrap();
-            entry
-                .get("webpage_url")
-                .unwrap()
-                .as_str()
-                .unwrap()
-                .to_string()
-        });
+        let lines: Vec<String> = output
+            .stdout
+            .lines()
+            .map_while(Result::ok)
+            .filter_map(|line| {
+                let entry: Value = serde_json::from_str(&line).ok()?;
+                entry
+                    .get("webpage_url")
+                    .and_then(|v| v.as_str())
+                    .map(|s| s.to_string())
+            })
+            .collect();
 
-        Some(lines.collect())
+        Some(lines)
     }
 }
 

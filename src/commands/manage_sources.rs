@@ -116,7 +116,9 @@ pub async fn allow(
             }
 
             guild_settings.update_domains();
-            guild_settings.save().unwrap();
+            if let Err(err) = guild_settings.save() {
+                eprintln!("[ERROR] Failed to save guild settings: {}", err);
+            }
 
             // it's now safe to close the modal, so send a response to it
             int.create_interaction_response(&ctx.http, |r| {

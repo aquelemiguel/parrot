@@ -4,7 +4,7 @@ use serenity::{model::id::GuildId, prelude::TypeMapKey};
 use std::{
     collections::{HashMap, HashSet},
     env,
-    fs::{create_dir_all, OpenOptions},
+    fs::{create_dir_all, rename, OpenOptions},
     io::{BufReader, BufWriter},
     path::Path,
 };
@@ -19,7 +19,7 @@ lazy_static! {
         env::var("SETTINGS_PATH").unwrap_or(DEFAULT_SETTINGS_PATH.to_string());
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize)]
 pub struct GuildSettings {
     pub guild_id: GuildId,
     pub autopause: bool,
@@ -61,15 +61,20 @@ impl GuildSettings {
     pub fn save(&self) -> Result<(), ParrotError> {
         create_dir_all(SETTINGS_PATH.as_str())?;
         let path = format!("{}/{}.json", SETTINGS_PATH.as_str(), self.guild_id);
+        let temp_path = format!("{}/{}.json.tmp", SETTINGS_PATH.as_str(), self.guild_id);
 
+        // Write to temporary file first
         let file = OpenOptions::new()
             .write(true)
             .truncate(true)
             .create(true)
-            .open(path)?;
+            .open(&temp_path)?;
 
         let writer = BufWriter::new(file);
         serde_json::to_writer(writer, self)?;
+
+        // Atomically rename temp file to final path
+        rename(&temp_path, &path)?;
         Ok(())
     }
 
