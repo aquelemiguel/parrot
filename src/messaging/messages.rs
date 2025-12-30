@@ -39,6 +39,8 @@ pub const PLAY_TOP: &str = "📃 Added to top!";
 pub const QUEUE_EXPIRED: &str =
     "In order to save resources, this command has expired.\nPlease feel free to reinvoke it!";
 pub const QUEUE_IS_EMPTY: &str = "Queue is empty!";
+pub const QUEUE_NO_TITLE: &str = "Unknown title";
+pub const QUEUE_NO_SRC: &str = "Unknown source url";
 pub const QUEUE_NO_SONGS: &str = "There's no songs up next!";
 pub const QUEUE_NOTHING_IS_PLAYING: &str = "Nothing is playing!";
 pub const QUEUE_NOW_PLAYING: &str = "🔊 Now playing";
@@ -68,3 +70,6 @@ pub const TRACK_INAPPROPRIATE: &str = "⚠️ **Could not play track!**\nThe v
 pub const TRACK_TIME_TO_PLAY: &str = "Estimated time until play: ";
 pub const VERSION_LATEST: &str = "Find the latest version [here]";
 pub const VERSION: &str = "Version";
+
+pub const FILE_TOO_LARGE: &str = "⚠️ File is too large! Maximum size is 50 MB.";
+pub const UNSUPPORTED_FILE_TYPE: &str = "⚠️ Unsupported file type! Only audio files are allowed.";
