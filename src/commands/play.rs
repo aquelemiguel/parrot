@@ -3,11 +3,11 @@ use crate::{
     errors::{verify, ParrotError},
     guild::settings::{GuildSettings, GuildSettingsMap},
     handlers::track_end::update_queue_messages,
+    messaging::message::ParrotMessage,
     messaging::messages::{
         PLAY_QUEUE, PLAY_TOP, QUEUE_NO_SRC, QUEUE_NO_TITLE, SPOTIFY_AUTH_FAILED, TRACK_DURATION,
         TRACK_TIME_TO_PLAY,
     },
-    messaging::message::ParrotMessage,
     sources::{
         file::{extract_query_type, FileRestartable},
         spotify::{Spotify, SPOTIFY},
@@ -428,7 +428,9 @@ async fn create_queued_embed(
         format!(
             "[**{}**]({})",
             metadata.title.unwrap_or_else(|| QUEUE_NO_TITLE.to_string()),
-            metadata.source_url.unwrap_or_else(|| QUEUE_NO_SRC.to_string())
+            metadata
+                .source_url
+                .unwrap_or_else(|| QUEUE_NO_SRC.to_string())
         ),
         false,
     );

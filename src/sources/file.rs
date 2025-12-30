@@ -29,9 +29,10 @@ const ALLOWED_CONTENT_TYPES: &[&str] = &[
     "application/ogg",
 ];
 
+#[allow(clippy::result_large_err)]
 pub fn validate_attachment(attachment: &Attachment) -> std::result::Result<(), ParrotError> {
     // Check file size
-    if attachment.size as u64 > MAX_FILE_SIZE {
+    if attachment.size > MAX_FILE_SIZE {
         return Err(ParrotError::FileTooLarge);
     }
 
@@ -49,6 +50,7 @@ pub fn validate_attachment(attachment: &Attachment) -> std::result::Result<(), P
     Ok(())
 }
 
+#[allow(clippy::result_large_err)]
 pub fn extract_query_type(attachment: Attachment) -> std::result::Result<QueryType, ParrotError> {
     validate_attachment(&attachment)?;
     Ok(QueryType::File(attachment))
@@ -118,8 +120,8 @@ async fn file_metadata(url: &str) -> SongbirdResult<Metadata> {
     metadata.source_url = Some(url.to_string());
 
     // Extract filename from URL path safely
-    if let Some(segments) = url_parsed.path_segments() {
-        if let Some(last_segment) = segments.last() {
+    if let Some(mut segments) = url_parsed.path_segments() {
+        if let Some(last_segment) = segments.next_back() {
             if !last_segment.is_empty() {
                 metadata.title = Some(last_segment.to_string());
             }
@@ -129,6 +131,7 @@ async fn file_metadata(url: &str) -> SongbirdResult<Metadata> {
     Ok(metadata)
 }
 
+#[allow(clippy::io_other_error)]
 async fn download_file(url: &str) -> Result<Vec<u8>> {
     let response = reqwest::get(url).await.map_err(|e| {
         Error::Io(std::io::Error::new(
@@ -174,7 +177,9 @@ async fn create_input_from_uri(uri: &str, metadata: Metadata, pre_args: &[&str])
 
     // Write data to temp file
     {
-        let mut file = tokio::fs::File::create(&temp_path).await.map_err(Error::Io)?;
+        let mut file = tokio::fs::File::create(&temp_path)
+            .await
+            .map_err(Error::Io)?;
         file.write_all(&data).await.map_err(Error::Io)?;
         file.sync_all().await.map_err(Error::Io)?;
     }
