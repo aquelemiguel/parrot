@@ -142,7 +142,7 @@ pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
 
     let description = if !tracks.is_empty() {
         let metadata = tracks[0].metadata();
-        embed.thumbnail(tracks[0].metadata().thumbnail.as_ref().unwrap());
+        embed.thumbnail(tracks[0].metadata().thumbnail.clone().unwrap());
 
         format!(
             "[{}]({}) • `{}`",
@@ -154,7 +154,7 @@ pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
         String::from(QUEUE_NOTHING_IS_PLAYING)
     };
 
-    embed.field(QUEUE_NOW_PLAYING, &description, false);
+    embed.field(QUEUE_NOW_PLAYING, description, false);
     embed.field(QUEUE_UP_NEXT, build_queue_page(tracks, page), false);
 
     embed.footer(|f| {
