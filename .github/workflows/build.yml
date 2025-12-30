@@ -22,7 +22,7 @@ jobs:
           override: true
 
       - name: Cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
 
       - name: Build Binary
         run: cargo build --locked
