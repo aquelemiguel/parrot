@@ -38,7 +38,7 @@ jobs:
 
       - name: Get latest version
         id: get_version
-        run: echo ::set-output name=VERSION::$(cargo pkgid | cut -d# -f2)
+        run: echo "VERSION=$(cargo pkgid | cut -d# -f2)" >> $GITHUB_OUTPUT
 
       - name: Create bump PR
         uses: peter-evans/create-pull-request@v3
