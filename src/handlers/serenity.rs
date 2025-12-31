@@ -61,8 +61,12 @@ impl EventHandler for SerenityHandler {
             return self.self_deafen(&ctx, new.guild_id, new).await;
         }
 
-        let manager = songbird::get(&ctx).await.unwrap();
-        let guild_id = new.guild_id.unwrap();
+        let Some(manager) = songbird::get(&ctx).await else {
+            return;
+        };
+        let Some(guild_id) = new.guild_id else {
+            return;
+        };
 
         if manager.get(guild_id).is_some() {
             manager.remove(guild_id).await.ok();
@@ -205,19 +209,27 @@ impl SerenityHandler {
     ) -> Result<(), ParrotError> {
         let command_name = command.data.name.as_str();
 
-        let guild_id = command.guild_id.unwrap();
+        let guild_id = command
+            .guild_id
+            .ok_or(ParrotError::Other("This command can only be used in a server"))?;
 
         // Clone the guild to avoid holding CacheRef across await points
-        let guild = ctx.cache.guild(guild_id).unwrap().clone();
+        let guild = ctx
+            .cache
+            .guild(guild_id)
+            .ok_or(ParrotError::Other("Guild not found in cache"))?
+            .clone();
 
         // get songbird voice client
-        let manager = songbird::get(ctx).await.unwrap();
+        let manager = songbird::get(ctx)
+            .await
+            .ok_or(ParrotError::Other("Voice manager not configured"))?;
 
         // parrot might have been disconnected manually
         if let Some(call) = manager.get(guild.id) {
             let mut handler = call.lock().await;
             if handler.current_connection().is_none() {
-                handler.leave().await.unwrap();
+                handler.leave().await.ok();
             }
         }
 
@@ -289,11 +301,14 @@ impl SerenityHandler {
         };
 
         if user.id == new.user_id && !new.deaf {
-            guild
-                .unwrap()
-                .edit_member(&ctx.http, new.user_id, EditMember::new().deafen(true))
-                .await
-                .unwrap();
+            if let Some(guild_id) = guild {
+                if let Err(e) = guild_id
+                    .edit_member(&ctx.http, new.user_id, EditMember::new().deafen(true))
+                    .await
+                {
+                    eprintln!("[WARN] Failed to self-deafen: {}", e);
+                }
+            }
         }
     }
 

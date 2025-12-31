@@ -13,9 +13,15 @@ pub async fn skip(
     ctx: &Context,
     interaction: &mut CommandInteraction,
 ) -> Result<(), ParrotError> {
-    let guild_id = interaction.guild_id.unwrap();
-    let manager = songbird::get(ctx).await.unwrap();
-    let call = manager.get(guild_id).unwrap();
+    let guild_id = interaction
+        .guild_id
+        .ok_or(ParrotError::Other("This command can only be used in a server"))?;
+
+    let manager = songbird::get(ctx)
+        .await
+        .ok_or(ParrotError::Other("Voice manager not configured"))?;
+
+    let call = manager.get(guild_id).ok_or(ParrotError::NotConnected)?;
 
     let args = interaction.data.options.clone();
     let to_skip = match args.first() {
@@ -74,7 +80,9 @@ pub async fn force_skip_top_track(
     // apparently, skipping/stopping a track takes a while to remove it from the queue
     // also, manually removing tracks doesn't trigger the next track to play
     // so first, stop the top song, manually remove it and then resume playback
-    handler.queue().current().unwrap().stop().ok();
+    if let Some(track) = handler.queue().current() {
+        track.stop().ok();
+    }
     let _ = handler.queue().dequeue(0);
     handler.queue().resume().ok();
 

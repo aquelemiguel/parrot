@@ -39,9 +39,17 @@ pub async fn queue(
 ) -> Result<(), ParrotError> {
     use serenity::all::EditMessage;
 
-    let guild_id = interaction.guild_id.unwrap();
-    let manager = songbird::get(ctx).await.unwrap();
-    let call = manager.get(guild_id).unwrap();
+    let guild_id = interaction
+        .guild_id
+        .ok_or(ParrotError::Other("This command can only be used in a server"))?;
+
+    let manager = songbird::get(ctx)
+        .await
+        .ok_or(ParrotError::Other("Voice manager not configured"))?;
+
+    let call = manager
+        .get(guild_id)
+        .ok_or(ParrotError::NotConnected)?;
 
     let handler = call.lock().await;
     let tracks = handler.queue().current_queue();
@@ -129,8 +137,8 @@ pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
         let metadata = get_track_metadata(&tracks[0]).unwrap_or_default();
         let desc = format!(
             "[{}]({}) • `{}`",
-            metadata.title.as_ref().map(|s| s.as_str()).unwrap_or("Unknown"),
-            metadata.source_url.as_ref().map(|s| s.as_str()).unwrap_or("#"),
+            metadata.title.as_deref().unwrap_or("Unknown"),
+            metadata.source_url.as_deref().unwrap_or("#"),
             get_human_readable_timestamp(metadata.duration)
         );
         (desc, metadata.thumbnail)

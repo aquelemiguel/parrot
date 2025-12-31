@@ -12,6 +12,7 @@ use std::{error::Error, fmt};
 #[derive(Debug)]
 pub enum ParrotError {
     Other(&'static str),
+    Dynamic(String),
     QueueEmpty,
     NotInRange(&'static str, isize, isize, isize),
     NotConnected,
@@ -38,6 +39,7 @@ impl Display for ParrotError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Other(msg) => f.write_str(msg),
+            Self::Dynamic(msg) => f.write_str(msg),
             Self::QueueEmpty => f.write_str(QUEUE_IS_EMPTY),
             Self::NotInRange(param, value, lower, upper) => f.write_str(&format!(
                 "`{param}` should be between {lower} and {upper} but was {value}"

@@ -19,13 +19,23 @@ pub async fn summon(
     interaction: &mut CommandInteraction,
     send_reply: bool,
 ) -> Result<(), ParrotError> {
-    let guild_id = interaction.guild_id.unwrap();
-    // Clone the guild to avoid holding CacheRef across await points
-    let guild = ctx.cache.guild(guild_id).unwrap().clone();
+    let guild_id = interaction
+        .guild_id
+        .ok_or(ParrotError::Other("This command can only be used in a server"))?;
 
-    let manager = songbird::get(ctx).await.unwrap();
-    let channel_opt = get_voice_channel_for_user(&guild, &interaction.user.id);
-    let channel_id = channel_opt.unwrap();
+    // Clone the guild to avoid holding CacheRef across await points
+    let guild = ctx
+        .cache
+        .guild(guild_id)
+        .ok_or(ParrotError::Other("Guild not found in cache"))?
+        .clone();
+
+    let manager = songbird::get(ctx)
+        .await
+        .ok_or(ParrotError::Other("Voice manager not configured"))?;
+
+    let channel_id = get_voice_channel_for_user(&guild, &interaction.user.id)
+        .ok_or(ParrotError::AuthorNotFound)?;
 
     if let Some(call) = manager.get(guild.id) {
         let handler = call.lock().await;
@@ -33,13 +43,18 @@ pub async fn summon(
 
         if has_current_connection && send_reply {
             // bot is in another channel
-            let bot_channel_id: ChannelId = handler.current_channel().unwrap().0.into();
-            return Err(ParrotError::AlreadyConnected(bot_channel_id.mention()));
+            if let Some(current_channel) = handler.current_channel() {
+                let bot_channel_id: ChannelId = current_channel.0.into();
+                return Err(ParrotError::AlreadyConnected(bot_channel_id.mention()));
+            }
         }
     }
 
     // join the channel
-    manager.join(guild.id, channel_id).await.unwrap();
+    manager
+        .join(guild.id, channel_id)
+        .await
+        .map_err(|e| ParrotError::Dynamic(format!("Failed to join channel: {}", e)))?;
 
     // unregister existing events and register idle notifier
     if let Some(call) = manager.get(guild.id) {

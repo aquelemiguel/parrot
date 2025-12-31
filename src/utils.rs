@@ -101,7 +101,10 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
 
     let metadata = get_track_metadata(track).unwrap_or_default();
 
-    let position = get_human_readable_timestamp(Some(track.get_info().await.unwrap().position));
+    let position = match track.get_info().await {
+        Ok(info) => get_human_readable_timestamp(Some(info.position)),
+        Err(_) => "??:??".to_string(),
+    };
     let duration = get_human_readable_timestamp(metadata.duration);
 
     let channel_value = match metadata.channel {
@@ -128,11 +131,10 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
 }
 
 pub fn get_footer_info(url: &str) -> (String, String) {
-    let url_data = Url::parse(url).unwrap();
-    let domain = url_data.host_str().unwrap();
-
-    // remove www prefix because it looks ugly
-    let domain = domain.replace("www.", "");
+    let domain = Url::parse(url)
+        .ok()
+        .and_then(|u| u.host_str().map(|h| h.replace("www.", "")))
+        .unwrap_or_else(|| "unknown".to_string());
 
     (
         format!("Streaming via {}", domain),

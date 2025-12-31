@@ -26,12 +26,20 @@ use songbird::{input::AuxMetadata, tracks::TrackHandle, Call};
 use std::{cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
 use url::Url;
 
-/// Helper function to get AuxMetadata from a TrackHandle's user data
+/// Helper function to safely get AuxMetadata from a TrackHandle's user data.
 ///
-/// Note: This assumes all tracks are queued via our enqueue_track function
-/// which stores AuxMetadata as user data. Will panic for tracks without metadata.
+/// Songbird 0.5's `TrackHandle::data<T>()` panics if the stored type doesn't match `T`.
+/// Since songbird doesn't provide a `try_data` method, we use `catch_unwind` as a
+/// workaround to safely handle tracks that may have been created without our metadata
+/// or with a different type.
+///
+/// All tracks queued via our `enqueue_track` function store `AuxMetadata` as user data.
+///
+/// Note: This approach has limitations:
+/// - May not work with `-C panic=abort` compilation
+/// - Has some performance overhead
+/// - Should be replaced if songbird adds a fallible data access method
 pub fn get_track_metadata(track: &TrackHandle) -> Option<AuxMetadata> {
-    // Use catch_unwind to handle tracks that may not have AuxMetadata
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         let data: Arc<AuxMetadata> = track.data();
         (*data).clone()
@@ -87,12 +95,20 @@ pub async fn play(
 
     let url = url.as_str();
 
-    let guild_id = interaction.guild_id.unwrap();
-    let manager = songbird::get(ctx).await.unwrap();
+    let guild_id = interaction
+        .guild_id
+        .ok_or(ParrotError::Other("This command can only be used in a server"))?;
+
+    let manager = songbird::get(ctx)
+        .await
+        .ok_or(ParrotError::Other("Voice manager not configured"))?;
 
     // try to join a voice channel if not in one just yet
     summon(ctx, interaction, false).await?;
-    let call = manager.get(guild_id).unwrap();
+
+    let call = manager
+        .get(guild_id)
+        .ok_or(ParrotError::Other("Failed to get voice call"))?;
 
     // determine whether this is a link or a query string
     let query_type = match Url::parse(url) {
@@ -350,7 +366,7 @@ async fn calculate_time_until_play(queue: &[TrackHandle], mode: Mode) -> Option<
     }
 
     let top_track = queue.first()?;
-    let top_track_elapsed = top_track.get_info().await.unwrap().position;
+    let top_track_elapsed = top_track.get_info().await.ok()?.position;
 
     let top_track_metadata = get_track_metadata(top_track)?;
     let top_track_duration = match top_track_metadata.duration {

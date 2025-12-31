@@ -15,9 +15,15 @@ pub async fn remove(
     ctx: &Context,
     interaction: &mut CommandInteraction,
 ) -> Result<(), ParrotError> {
-    let guild_id = interaction.guild_id.unwrap();
-    let manager = songbird::get(ctx).await.unwrap();
-    let call = manager.get(guild_id).unwrap();
+    let guild_id = interaction
+        .guild_id
+        .ok_or(ParrotError::Other("This command can only be used in a server"))?;
+
+    let manager = songbird::get(ctx)
+        .await
+        .ok_or(ParrotError::Other("Voice manager not configured"))?;
+
+    let call = manager.get(guild_id).ok_or(ParrotError::NotConnected)?;
 
     let args = interaction.data.options.clone();
 
