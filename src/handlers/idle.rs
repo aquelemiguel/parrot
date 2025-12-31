@@ -1,7 +1,4 @@
-use serenity::{
-    async_trait, http::Http,
-    model::application::interaction::application_command::ApplicationCommandInteraction,
-};
+use serenity::{all::CommandInteraction, async_trait, http::Http};
 use songbird::{tracks::PlayMode, Event, EventContext, EventHandler, Songbird};
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
@@ -13,7 +10,7 @@ use crate::messaging::messages::IDLE_ALERT;
 pub struct IdleHandler {
     pub http: Arc<Http>,
     pub manager: Arc<Songbird>,
-    pub interaction: ApplicationCommandInteraction,
+    pub interaction: CommandInteraction,
     pub limit: usize,
     pub count: Arc<AtomicUsize>,
 }

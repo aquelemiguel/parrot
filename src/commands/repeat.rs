@@ -2,15 +2,12 @@ use crate::{
     errors::ParrotError, messaging::message::ParrotMessage, messaging::messages::FAIL_LOOP,
     utils::create_response,
 };
-use serenity::{
-    client::Context,
-    model::application::interaction::application_command::ApplicationCommandInteraction,
-};
+use serenity::{all::CommandInteraction, client::Context};
 use songbird::tracks::{LoopState, TrackHandle};
 
 pub async fn repeat(
     ctx: &Context,
-    interaction: &mut ApplicationCommandInteraction,
+    interaction: &mut CommandInteraction,
 ) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();

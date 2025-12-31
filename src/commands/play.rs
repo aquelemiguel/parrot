@@ -17,13 +17,27 @@ use crate::{
     },
 };
 use serenity::{
-    builder::CreateEmbed, client::Context,
-    model::application::interaction::application_command::ApplicationCommandInteraction,
+    all::{CommandDataOptionValue, CommandInteraction, CreateEmbedFooter},
+    builder::CreateEmbed,
+    client::Context,
     prelude::Mutex,
 };
-use songbird::{input::Restartable, tracks::TrackHandle, Call};
+use songbird::{input::AuxMetadata, tracks::TrackHandle, Call};
 use std::{cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
 use url::Url;
+
+/// Helper function to get AuxMetadata from a TrackHandle's user data
+///
+/// Note: This assumes all tracks are queued via our enqueue_track function
+/// which stores AuxMetadata as user data. Will panic for tracks without metadata.
+pub fn get_track_metadata(track: &TrackHandle) -> Option<AuxMetadata> {
+    // Use catch_unwind to handle tracks that may not have AuxMetadata
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let data: Arc<AuxMetadata> = track.data();
+        (*data).clone()
+    }))
+    .ok()
+}
 
 #[derive(Clone, Copy)]
 pub enum Mode {
@@ -45,32 +59,33 @@ pub enum QueryType {
 
 pub async fn play(
     ctx: &Context,
-    interaction: &mut ApplicationCommandInteraction,
+    interaction: &mut CommandInteraction,
 ) -> Result<(), ParrotError> {
     let args = interaction.data.options.clone();
     let first_arg = args.first().unwrap();
 
-    let mode = match first_arg.name.as_str() {
-        "next" => Mode::Next,
-        "all" => Mode::All,
-        "reverse" => Mode::Reverse,
-        "shuffle" => Mode::Shuffle,
-        "jump" => Mode::Jump,
-        _ => Mode::End,
+    let (mode, url) = match &first_arg.value {
+        CommandDataOptionValue::String(s) => (Mode::End, s.clone()),
+        CommandDataOptionValue::SubCommand(sub_options) => {
+            let mode = match first_arg.name.as_str() {
+                "next" => Mode::Next,
+                "all" => Mode::All,
+                "reverse" => Mode::Reverse,
+                "shuffle" => Mode::Shuffle,
+                "jump" => Mode::Jump,
+                _ => Mode::End,
+            };
+            let query = sub_options
+                .first()
+                .and_then(|opt| opt.value.as_str())
+                .unwrap_or("")
+                .to_string();
+            (mode, query)
+        }
+        _ => (Mode::End, String::new()),
     };
 
-    let url = match mode {
-        Mode::End => first_arg.value.as_ref().unwrap().as_str().unwrap(),
-        _ => first_arg
-            .options
-            .first()
-            .unwrap()
-            .value
-            .as_ref()
-            .unwrap()
-            .as_str()
-            .unwrap(),
-    };
+    let url = url.as_str();
 
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
@@ -337,7 +352,8 @@ async fn calculate_time_until_play(queue: &[TrackHandle], mode: Mode) -> Option<
     let top_track = queue.first()?;
     let top_track_elapsed = top_track.get_info().await.unwrap().position;
 
-    let top_track_duration = match top_track.metadata().duration {
+    let top_track_metadata = get_track_metadata(top_track)?;
+    let top_track_duration = match top_track_metadata.duration {
         Some(duration) => duration,
         None => return Some(Duration::MAX),
     };
@@ -346,8 +362,12 @@ async fn calculate_time_until_play(queue: &[TrackHandle], mode: Mode) -> Option<
         Mode::Next => Some(top_track_duration - top_track_elapsed),
         _ => {
             let center = &queue[1..queue.len() - 1];
-            let livestreams =
-                center.len() - center.iter().filter_map(|t| t.metadata().duration).count();
+            let livestreams = center
+                .len()
+                - center
+                    .iter()
+                    .filter_map(|t| get_track_metadata(t).and_then(|m| m.duration))
+                    .count();
 
             // if any of the tracks before are livestreams, the new track will never play
             if livestreams > 0 {
@@ -355,7 +375,9 @@ async fn calculate_time_until_play(queue: &[TrackHandle], mode: Mode) -> Option<
             }
 
             let durations = center.iter().fold(Duration::ZERO, |acc, x| {
-                acc + x.metadata().duration.unwrap()
+                acc + get_track_metadata(x)
+                    .and_then(|m| m.duration)
+                    .unwrap_or(Duration::ZERO)
             });
 
             Some(durations + top_track_duration - top_track_elapsed)
@@ -368,20 +390,7 @@ async fn create_queued_embed(
     track: &TrackHandle,
     estimated_time: Duration,
 ) -> CreateEmbed {
-    let mut embed = CreateEmbed::default();
-    let metadata = track.metadata().clone();
-
-    embed.thumbnail(metadata.thumbnail.unwrap());
-
-    embed.field(
-        title,
-        format!(
-            "[**{}**]({})",
-            metadata.title.unwrap(),
-            metadata.source_url.unwrap()
-        ),
-        false,
-    );
+    let metadata = get_track_metadata(track).unwrap_or_default();
 
     let footer_text = format!(
         "{}{}\n{}{}",
@@ -391,20 +400,29 @@ async fn create_queued_embed(
         get_human_readable_timestamp(Some(estimated_time))
     );
 
-    embed.footer(|footer| footer.text(footer_text));
-    embed
+    let mut embed = CreateEmbed::new().field(
+        title,
+        format!(
+            "[**{}**]({})",
+            metadata.title.unwrap_or_default(),
+            metadata.source_url.unwrap_or_default()
+        ),
+        false,
+    );
+
+    if let Some(thumbnail) = metadata.thumbnail {
+        embed = embed.thumbnail(thumbnail);
+    }
+
+    embed.footer(CreateEmbedFooter::new(footer_text))
 }
 
-async fn get_track_source(query_type: QueryType) -> Result<Restartable, ParrotError> {
+async fn get_track_source(
+    query_type: QueryType,
+) -> Result<(songbird::input::Input, AuxMetadata), ParrotError> {
     match query_type {
-        QueryType::VideoLink(query) => YouTubeRestartable::ytdl(query, true)
-            .await
-            .map_err(ParrotError::TrackFail),
-
-        QueryType::Keywords(query) => YouTubeRestartable::ytdl_search(query, true)
-            .await
-            .map_err(ParrotError::TrackFail),
-
+        QueryType::VideoLink(query) => YouTubeRestartable::ytdl(query).await,
+        QueryType::Keywords(query) => YouTubeRestartable::ytdl_search(query).await,
         _ => unreachable!(),
     }
 }
@@ -413,11 +431,16 @@ async fn enqueue_track(
     call: &Arc<Mutex<Call>>,
     query_type: &QueryType,
 ) -> Result<Vec<TrackHandle>, ParrotError> {
+    use songbird::tracks::Track;
+
     // safeguard against ytdl dying on a private/deleted video and killing the playlist
-    let source = get_track_source(query_type.clone()).await?;
+    let (source, metadata) = get_track_source(query_type.clone()).await?;
+
+    // Create a track with the metadata stored as user data
+    let track = Track::new_with_data(source, Arc::new(metadata));
 
     let mut handler = call.lock().await;
-    handler.enqueue_source(source.into());
+    handler.enqueue(track).await;
 
     Ok(handler.queue().current_queue())
 }

@@ -1,11 +1,10 @@
 use crate::messaging::messages::{
     FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
     FAIL_NO_VOICE_CONNECTION, FAIL_WRONG_CHANNEL, NOTHING_IS_PLAYING, QUEUE_IS_EMPTY,
-    TRACK_INAPPROPRIATE, TRACK_NOT_FOUND,
+    TRACK_NOT_FOUND,
 };
 use rspotify::ClientError as RSpotifyClientError;
 use serenity::{model::mention::Mention, prelude::SerenityError};
-use songbird::input::error::Error as InputError;
 use std::fmt::{Debug, Display};
 use std::{error::Error, fmt};
 
@@ -20,7 +19,7 @@ pub enum ParrotError {
     WrongVoiceChannel,
     AuthorNotFound,
     NothingPlaying,
-    TrackFail(InputError),
+    TrackFail(String),
     AlreadyConnected(Mention),
     Serenity(Box<SerenityError>),
     RSpotify(RSpotifyClientError),
@@ -53,19 +52,13 @@ impl Display for ParrotError {
                 f.write_fmt(format_args!("{} {}", FAIL_ANOTHER_CHANNEL, mention))
             }
             Self::NothingPlaying => f.write_str(NOTHING_IS_PLAYING),
-            Self::TrackFail(err) => match err {
-                InputError::Json {
-                    error: _,
-                    parsed_text,
-                } => {
-                    if parsed_text.contains("Sign in to confirm your age") {
-                        f.write_str(TRACK_INAPPROPRIATE)
-                    } else {
-                        f.write_str(TRACK_NOT_FOUND)
-                    }
+            Self::TrackFail(err) => {
+                if err.is_empty() {
+                    f.write_str(TRACK_NOT_FOUND)
+                } else {
+                    f.write_str(err)
                 }
-                _ => f.write_str(&format!("{err}")),
-            },
+            }
             Self::Serenity(err) => f.write_str(&format!("{err}")),
             Self::RSpotify(err) => f.write_str(&format!("{err}")),
             Self::IO(err) => f.write_str(&format!("{err}")),
@@ -113,13 +106,7 @@ impl From<serde_json::Error> for ParrotError {
 /// Provides an implementation to convert a [`SerenityError`] to a [`ParrotError`].
 impl From<SerenityError> for ParrotError {
     fn from(err: SerenityError) -> Self {
-        match err {
-            SerenityError::NotInRange(param, value, lower, upper) => {
-                Self::NotInRange(param, value as isize, lower as isize, upper as isize)
-            }
-            SerenityError::Other(msg) => Self::Other(msg),
-            _ => Self::Serenity(Box::new(err)),
-        }
+        Self::Serenity(Box::new(err))
     }
 }
 
