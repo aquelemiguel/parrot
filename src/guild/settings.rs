@@ -31,7 +31,10 @@ pub struct GuildSettings {
 }
 
 fn default_allowed_domains() -> HashSet<String> {
-    DEFAULT_ALLOWED_DOMAINS.iter().map(|d| d.to_string()).collect()
+    DEFAULT_ALLOWED_DOMAINS
+        .iter()
+        .map(|d| d.to_string())
+        .collect()
 }
 
 impl GuildSettings {
