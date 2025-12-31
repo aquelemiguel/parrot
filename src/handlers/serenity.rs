@@ -229,9 +229,13 @@ impl SerenityHandler {
             CreateCommand::new("voteskip").description("Starts a vote to skip the current track"),
         ];
 
-        Command::set_global_commands(&ctx.http, commands)
-            .await
-            .expect("failed to create command")
+        match Command::set_global_commands(&ctx.http, commands).await {
+            Ok(cmds) => cmds,
+            Err(e) => {
+                eprintln!("[ERROR] Failed to create global commands: {}", e);
+                vec![]
+            }
+        }
     }
 
     async fn load_guilds_settings(&self, ctx: &Context, ready: &Ready) {

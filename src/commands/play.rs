@@ -26,6 +26,11 @@ use songbird::{input::AuxMetadata, tracks::TrackHandle, Call};
 use std::{cmp::Ordering, error::Error as StdError, sync::Arc, time::Duration};
 use url::Url;
 
+// This crate requires panic=unwind for safe metadata access from songbird tracks.
+// The catch_unwind pattern in get_track_metadata() will not work with panic=abort.
+#[cfg(panic = "abort")]
+compile_error!("This crate requires panic=unwind due to songbird metadata access patterns");
+
 /// Helper function to safely get AuxMetadata from a TrackHandle's user data.
 ///
 /// Songbird 0.5's `TrackHandle::data<T>()` panics if the stored type doesn't match `T`.
@@ -36,7 +41,7 @@ use url::Url;
 /// All tracks queued via our `enqueue_track` function store `AuxMetadata` as user data.
 ///
 /// Note: This approach has limitations:
-/// - May not work with `-C panic=abort` compilation
+/// - May not work with `-C panic=abort` compilation (compile-time error added)
 /// - Has some performance overhead
 /// - Should be replaced if songbird adds a fallible data access method
 pub fn get_track_metadata(track: &TrackHandle) -> Option<AuxMetadata> {
@@ -67,7 +72,9 @@ pub enum QueryType {
 
 pub async fn play(ctx: &Context, interaction: &mut CommandInteraction) -> Result<(), ParrotError> {
     let args = interaction.data.options.clone();
-    let first_arg = args.first().unwrap();
+    let first_arg = args
+        .first()
+        .ok_or(ParrotError::Other("Missing query argument"))?;
 
     let (mode, url) = match &first_arg.value {
         CommandDataOptionValue::String(s) => (Mode::End, s.clone()),
@@ -370,20 +377,22 @@ pub async fn play(ctx: &Context, interaction: &mut CommandInteraction) -> Result
 
     match queue.len().cmp(&1) {
         Ordering::Greater => {
-            let estimated_time = calculate_time_until_play(&queue, mode).await.unwrap();
+            let estimated_time = calculate_time_until_play(&queue, mode)
+                .await
+                .unwrap_or(Duration::MAX);
 
             match (query_type, mode) {
                 (QueryType::VideoLink(_) | QueryType::Keywords(_), Mode::Next) => {
-                    let track = queue.get(1).unwrap();
-                    let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
-
-                    edit_embed_response(&ctx.http, interaction, embed).await?;
+                    if let Some(track) = queue.get(1) {
+                        let embed = create_queued_embed(PLAY_TOP, track, estimated_time).await;
+                        edit_embed_response(&ctx.http, interaction, embed).await?;
+                    }
                 }
                 (QueryType::VideoLink(_) | QueryType::Keywords(_), Mode::End) => {
-                    let track = queue.last().unwrap();
-                    let embed = create_queued_embed(PLAY_QUEUE, track, estimated_time).await;
-
-                    edit_embed_response(&ctx.http, interaction, embed).await?;
+                    if let Some(track) = queue.last() {
+                        let embed = create_queued_embed(PLAY_QUEUE, track, estimated_time).await;
+                        edit_embed_response(&ctx.http, interaction, embed).await?;
+                    }
                 }
                 (QueryType::PlaylistLink(_) | QueryType::KeywordList(_), _) => {
                     edit_response(&ctx.http, interaction, ParrotMessage::PlaylistQueued).await?;
@@ -392,10 +401,10 @@ pub async fn play(ctx: &Context, interaction: &mut CommandInteraction) -> Result
             }
         }
         Ordering::Equal => {
-            let track = queue.first().unwrap();
-            let embed = create_now_playing_embed(track).await;
-
-            edit_embed_response(&ctx.http, interaction, embed).await?;
+            if let Some(track) = queue.first() {
+                let embed = create_now_playing_embed(track).await;
+                edit_embed_response(&ctx.http, interaction, embed).await?;
+            }
         }
         _ => unreachable!(),
     }

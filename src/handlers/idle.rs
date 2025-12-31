@@ -38,11 +38,14 @@ impl EventHandler for IdleHandler {
             let guild_id = self.interaction.guild_id?;
 
             if self.manager.remove(guild_id).await.is_ok() {
-                self.interaction
+                if let Err(e) = self
+                    .interaction
                     .channel_id
                     .say(&self.http, IDLE_ALERT)
                     .await
-                    .unwrap();
+                {
+                    eprintln!("[WARN] Failed to send idle alert: {}", e);
+                }
             }
         }
 

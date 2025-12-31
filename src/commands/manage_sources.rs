@@ -16,10 +16,14 @@ use serenity::{
 };
 
 pub async fn allow(ctx: &Context, interaction: &mut CommandInteraction) -> Result<(), ParrotError> {
-    let guild_id = interaction.guild_id.unwrap();
+    let guild_id = interaction.guild_id.ok_or(ParrotError::Other(
+        "This command can only be used in a server",
+    ))?;
 
     let mut data = ctx.data.write().await;
-    let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+    let settings = data
+        .get_mut::<GuildSettingsMap>()
+        .ok_or(ParrotError::Other("Guild settings not initialized"))?;
 
     let guild_settings = settings
         .entry(guild_id)
@@ -77,7 +81,10 @@ pub async fn allow(ctx: &Context, interaction: &mut CommandInteraction) -> Resul
 
     while let Some(int) = collector.next().await {
         let mut data = ctx.data.write().await;
-        let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+        let Some(settings) = data.get_mut::<GuildSettingsMap>() else {
+            eprintln!("[ERROR] Guild settings not initialized");
+            continue;
+        };
 
         let inputs: Vec<_> = int
             .data
@@ -86,7 +93,10 @@ pub async fn allow(ctx: &Context, interaction: &mut CommandInteraction) -> Resul
             .flat_map(|r| r.components.iter())
             .collect();
 
-        let guild_settings = settings.get_mut(&guild_id).unwrap();
+        let Some(guild_settings) = settings.get_mut(&guild_id) else {
+            eprintln!("[ERROR] Guild settings not found for {:?}", guild_id);
+            continue;
+        };
 
         for input in inputs.iter() {
             if let ActionRowComponent::InputText(it) = input {

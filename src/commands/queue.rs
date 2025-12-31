@@ -117,7 +117,9 @@ pub async fn queue(ctx: &Context, interaction: &mut CommandInteraction) -> Resul
     let edit = EditMessage::new()
         .embed(CreateEmbed::new().description(QUEUE_EXPIRED))
         .components(vec![]);
-    message.edit(&ctx.http, edit).await.unwrap();
+    if let Err(e) = message.edit(&ctx.http, edit).await {
+        eprintln!("[WARN] Failed to edit queue message: {}", e);
+    }
 
     forget_queue_message(&ctx.data, &mut message, guild_id)
         .await
