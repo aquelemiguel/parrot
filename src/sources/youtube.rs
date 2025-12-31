@@ -8,15 +8,17 @@ use tokio::process::Command as TokioCommand;
 
 static HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
-fn get_http_client() -> reqwest::Client {
-    HTTP_CLIENT.get_or_init(reqwest::Client::new).clone()
+fn get_http_client() -> &'static reqwest::Client {
+    HTTP_CLIENT.get_or_init(reqwest::Client::new)
 }
 
 pub struct YouTube {}
 
 impl YouTube {
     pub fn extract(query: &str) -> Option<QueryType> {
-        if query.contains("list=") {
+        // Check for playlist parameter in URL query string
+        // Match ?list= or &list= to avoid matching URLs with "list=" in other parts
+        if query.contains("?list=") || query.contains("&list=") {
             Some(QueryType::PlaylistLink(query.to_string()))
         } else {
             Some(QueryType::VideoLink(query.to_string()))
@@ -31,8 +33,7 @@ impl YouTubeRestartable {
     pub async fn ytdl<P: AsRef<str> + Send + Clone + Sync + 'static>(
         uri: P,
     ) -> Result<(Input, AuxMetadata), crate::errors::ParrotError> {
-        let client = get_http_client();
-        let mut source = YoutubeDl::new(client, uri.as_ref().to_string());
+        let mut source = YoutubeDl::new(get_http_client().clone(), uri.as_ref().to_string());
         let metadata = source.aux_metadata().await.map_err(|e| {
             crate::errors::ParrotError::TrackFail(format!("Failed to get metadata: {}", e))
         })?;
@@ -43,8 +44,7 @@ impl YouTubeRestartable {
     pub async fn ytdl_search<P: AsRef<str> + Send + Clone + Sync + 'static>(
         uri: P,
     ) -> Result<(Input, AuxMetadata), crate::errors::ParrotError> {
-        let client = get_http_client();
-        let mut source = YoutubeDl::new_search(client, uri.as_ref().to_string());
+        let mut source = YoutubeDl::new_search(get_http_client().clone(), uri.as_ref().to_string());
         let metadata = source.aux_metadata().await.map_err(|e| {
             crate::errors::ParrotError::TrackFail(format!("Failed to get metadata: {}", e))
         })?;

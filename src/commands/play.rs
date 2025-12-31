@@ -196,13 +196,24 @@ pub async fn play(ctx: &Context, interaction: &mut CommandInteraction) -> Result
                     .await
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
+                let mut failed_count = 0;
                 for url in urls.iter() {
-                    let Ok(queue) =
-                        enqueue_track(&call, &QueryType::VideoLink(url.to_string())).await
-                    else {
-                        continue;
-                    };
-                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
+                    match enqueue_track(&call, &QueryType::VideoLink(url.to_string())).await {
+                        Ok(queue) => {
+                            update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
+                        }
+                        Err(e) => {
+                            eprintln!("[WARN] Failed to enqueue track {}: {}", url, e);
+                            failed_count += 1;
+                        }
+                    }
+                }
+                if failed_count > 0 {
+                    eprintln!(
+                        "[WARN] Playlist: {}/{} tracks failed to enqueue",
+                        failed_count,
+                        urls.len()
+                    );
                 }
             }
             QueryType::KeywordList(keywords_list) => {
@@ -223,12 +234,24 @@ pub async fn play(ctx: &Context, interaction: &mut CommandInteraction) -> Result
                     .await
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
+                let total = urls.len();
+                let mut failed_count = 0;
                 for (idx, url) in urls.into_iter().enumerate() {
-                    let Ok(queue) = insert_track(&call, &QueryType::VideoLink(url), idx + 1).await
-                    else {
-                        continue;
-                    };
-                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
+                    match insert_track(&call, &QueryType::VideoLink(url.clone()), idx + 1).await {
+                        Ok(queue) => {
+                            update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
+                        }
+                        Err(e) => {
+                            eprintln!("[WARN] Failed to insert track {}: {}", url, e);
+                            failed_count += 1;
+                        }
+                    }
+                }
+                if failed_count > 0 {
+                    eprintln!(
+                        "[WARN] Playlist: {}/{} tracks failed to insert",
+                        failed_count, total
+                    );
                 }
             }
             QueryType::KeywordList(keywords_list) => {
@@ -255,22 +278,32 @@ pub async fn play(ctx: &Context, interaction: &mut CommandInteraction) -> Result
                     .await
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
+                let total = urls.len();
                 let mut insert_idx = 1;
+                let mut failed_count = 0;
 
                 for (i, url) in urls.into_iter().enumerate() {
-                    let Ok(mut queue) =
-                        insert_track(&call, &QueryType::VideoLink(url), insert_idx).await
-                    else {
-                        continue;
-                    };
-
-                    if i == 0 && !queue_was_empty {
-                        queue = force_skip_top_track(&call.lock().await).await?;
-                    } else {
-                        insert_idx += 1;
+                    match insert_track(&call, &QueryType::VideoLink(url.clone()), insert_idx).await
+                    {
+                        Ok(mut queue) => {
+                            if i == 0 && !queue_was_empty {
+                                queue = force_skip_top_track(&call.lock().await).await?;
+                            } else {
+                                insert_idx += 1;
+                            }
+                            update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
+                        }
+                        Err(e) => {
+                            eprintln!("[WARN] Failed to insert track {}: {}", url, e);
+                            failed_count += 1;
+                        }
                     }
-
-                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
+                }
+                if failed_count > 0 {
+                    eprintln!(
+                        "[WARN] Playlist (jump): {}/{} tracks failed to insert",
+                        failed_count, total
+                    );
                 }
             }
             QueryType::KeywordList(keywords_list) => {
@@ -296,11 +329,24 @@ pub async fn play(ctx: &Context, interaction: &mut CommandInteraction) -> Result
                     .await
                     .ok_or(ParrotError::Other("failed to fetch playlist"))?;
 
+                let total = urls.len();
+                let mut failed_count = 0;
                 for url in urls.into_iter() {
-                    let Ok(queue) = enqueue_track(&call, &QueryType::VideoLink(url)).await else {
-                        continue;
-                    };
-                    update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
+                    match enqueue_track(&call, &QueryType::VideoLink(url.clone())).await {
+                        Ok(queue) => {
+                            update_queue_messages(&ctx.http, &ctx.data, &queue, guild_id).await;
+                        }
+                        Err(e) => {
+                            eprintln!("[WARN] Failed to enqueue track {}: {}", url, e);
+                            failed_count += 1;
+                        }
+                    }
+                }
+                if failed_count > 0 {
+                    eprintln!(
+                        "[WARN] Playlist: {}/{} tracks failed to enqueue",
+                        failed_count, total
+                    );
                 }
             }
             QueryType::KeywordList(keywords_list) => {

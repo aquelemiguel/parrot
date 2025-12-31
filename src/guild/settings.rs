@@ -22,9 +22,16 @@ lazy_static! {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct GuildSettings {
     pub guild_id: GuildId,
+    #[serde(default)]
     pub autopause: bool,
+    #[serde(default = "default_allowed_domains")]
     pub allowed_domains: HashSet<String>,
+    #[serde(default)]
     pub banned_domains: HashSet<String>,
+}
+
+fn default_allowed_domains() -> HashSet<String> {
+    DEFAULT_ALLOWED_DOMAINS.iter().map(|d| d.to_string()).collect()
 }
 
 impl GuildSettings {
@@ -70,8 +77,12 @@ impl GuildSettings {
             .create(true)
             .open(&temp_path)?;
 
-        let writer = BufWriter::new(file);
-        serde_json::to_writer(writer, self)?;
+        let mut writer = BufWriter::new(file);
+        serde_json::to_writer(&mut writer, self)?;
+
+        // Flush and sync before atomic rename
+        let file = writer.into_inner().map_err(|e| e.into_error())?;
+        file.sync_all()?;
 
         // Atomically rename temp file to final path
         rename(&temp_path, &path)?;
