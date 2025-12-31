@@ -9,9 +9,7 @@ use tokio::process::Command as TokioCommand;
 static HTTP_CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
 
 fn get_http_client() -> reqwest::Client {
-    HTTP_CLIENT
-        .get_or_init(reqwest::Client::new)
-        .clone()
+    HTTP_CLIENT.get_or_init(reqwest::Client::new).clone()
 }
 
 pub struct YouTube {}

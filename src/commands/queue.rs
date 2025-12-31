@@ -11,8 +11,7 @@ use crate::{
 };
 use serenity::{
     all::{
-        ButtonStyle, CommandInteraction,
-        CreateActionRow, CreateButton, CreateEmbedFooter,
+        ButtonStyle, CommandInteraction, CreateActionRow, CreateButton, CreateEmbedFooter,
         CreateInteractionResponse, CreateInteractionResponseMessage,
     },
     builder::CreateEmbed,
@@ -33,23 +32,18 @@ use std::{
 const EMBED_PAGE_SIZE: usize = 6;
 const EMBED_TIMEOUT: u64 = 3600;
 
-pub async fn queue(
-    ctx: &Context,
-    interaction: &mut CommandInteraction,
-) -> Result<(), ParrotError> {
+pub async fn queue(ctx: &Context, interaction: &mut CommandInteraction) -> Result<(), ParrotError> {
     use serenity::all::EditMessage;
 
-    let guild_id = interaction
-        .guild_id
-        .ok_or(ParrotError::Other("This command can only be used in a server"))?;
+    let guild_id = interaction.guild_id.ok_or(ParrotError::Other(
+        "This command can only be used in a server",
+    ))?;
 
     let manager = songbird::get(ctx)
         .await
         .ok_or(ParrotError::Other("Voice manager not configured"))?;
 
-    let call = manager
-        .get(guild_id)
-        .ok_or(ParrotError::NotConnected)?;
+    let call = manager.get(guild_id).ok_or(ParrotError::NotConnected)?;
 
     let handler = call.lock().await;
     let tracks = handler.queue().current_queue();
@@ -59,7 +53,7 @@ pub async fn queue(
     let response = CreateInteractionResponse::Message(
         CreateInteractionResponseMessage::new()
             .add_embed(create_queue_embed(&tracks, 0))
-            .components(vec![build_nav_btns(0, num_pages)])
+            .components(vec![build_nav_btns(0, num_pages)]),
     );
 
     interaction.create_response(&ctx.http, response).await?;
@@ -115,7 +109,7 @@ pub async fn queue(
         let response = CreateInteractionResponse::UpdateMessage(
             CreateInteractionResponseMessage::new()
                 .add_embed(create_queue_embed(&tracks, *page_wlock))
-                .components(vec![build_nav_btns(*page_wlock, num_pages)])
+                .components(vec![build_nav_btns(*page_wlock, num_pages)]),
         );
         mci.create_response(&ctx, response).await?;
     }

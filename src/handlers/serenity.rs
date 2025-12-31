@@ -16,7 +16,10 @@ use serenity::{
     async_trait,
     client::{Context, EventHandler},
     gateway::ActivityData,
-    model::{application::Command, application::Interaction, gateway::Ready, id::GuildId, voice::VoiceState},
+    model::{
+        application::Command, application::Interaction, gateway::Ready, id::GuildId,
+        voice::VoiceState,
+    },
     prelude::Mentionable,
 };
 
@@ -81,100 +84,149 @@ impl SerenityHandler {
         let commands = vec![
             CreateCommand::new("autopause")
                 .description("Toggles whether to pause after a song ends"),
-            CreateCommand::new("clear")
-                .description("Clears the queue"),
+            CreateCommand::new("clear").description("Clears the queue"),
             CreateCommand::new("leave")
                 .description("Leave the voice channel the bot is connected to"),
             CreateCommand::new("managesources")
                 .description("Manage streaming from different sources"),
-            CreateCommand::new("np")
-                .description("Displays information about the current track"),
-            CreateCommand::new("pause")
-                .description("Pauses the current track"),
+            CreateCommand::new("np").description("Displays information about the current track"),
+            CreateCommand::new("pause").description("Pauses the current track"),
             CreateCommand::new("play")
                 .description("Add a track to the queue")
                 .add_option(
-                    CreateCommandOption::new(CommandOptionType::String, "query", "The media to play")
-                        .required(true)
+                    CreateCommandOption::new(
+                        CommandOptionType::String,
+                        "query",
+                        "The media to play",
+                    )
+                    .required(true),
                 ),
             CreateCommand::new("superplay")
                 .description("Add a track to the queue in a special way")
                 .add_option(
-                    CreateCommandOption::new(CommandOptionType::SubCommand, "next", "Add a track to be played up next")
-                        .add_sub_option(
-                            CreateCommandOption::new(CommandOptionType::String, "query", "The media to play")
-                                .required(true)
+                    CreateCommandOption::new(
+                        CommandOptionType::SubCommand,
+                        "next",
+                        "Add a track to be played up next",
+                    )
+                    .add_sub_option(
+                        CreateCommandOption::new(
+                            CommandOptionType::String,
+                            "query",
+                            "The media to play",
                         )
+                        .required(true),
+                    ),
                 )
                 .add_option(
-                    CreateCommandOption::new(CommandOptionType::SubCommand, "jump", "Instantly plays a track, skipping the current one")
-                        .add_sub_option(
-                            CreateCommandOption::new(CommandOptionType::String, "query", "The media to play")
-                                .required(true)
+                    CreateCommandOption::new(
+                        CommandOptionType::SubCommand,
+                        "jump",
+                        "Instantly plays a track, skipping the current one",
+                    )
+                    .add_sub_option(
+                        CreateCommandOption::new(
+                            CommandOptionType::String,
+                            "query",
+                            "The media to play",
                         )
+                        .required(true),
+                    ),
                 )
                 .add_option(
-                    CreateCommandOption::new(CommandOptionType::SubCommand, "all", "Add all tracks if the URL refers to a video and a playlist")
-                        .add_sub_option(
-                            CreateCommandOption::new(CommandOptionType::String, "query", "The media to play")
-                                .required(true)
+                    CreateCommandOption::new(
+                        CommandOptionType::SubCommand,
+                        "all",
+                        "Add all tracks if the URL refers to a video and a playlist",
+                    )
+                    .add_sub_option(
+                        CreateCommandOption::new(
+                            CommandOptionType::String,
+                            "query",
+                            "The media to play",
                         )
+                        .required(true),
+                    ),
                 )
                 .add_option(
-                    CreateCommandOption::new(CommandOptionType::SubCommand, "reverse", "Add a playlist to the queue in reverse order")
-                        .add_sub_option(
-                            CreateCommandOption::new(CommandOptionType::String, "query", "The media to play")
-                                .required(true)
+                    CreateCommandOption::new(
+                        CommandOptionType::SubCommand,
+                        "reverse",
+                        "Add a playlist to the queue in reverse order",
+                    )
+                    .add_sub_option(
+                        CreateCommandOption::new(
+                            CommandOptionType::String,
+                            "query",
+                            "The media to play",
                         )
+                        .required(true),
+                    ),
                 )
                 .add_option(
-                    CreateCommandOption::new(CommandOptionType::SubCommand, "shuffle", "Add a playlist to the queue in random order")
-                        .add_sub_option(
-                            CreateCommandOption::new(CommandOptionType::String, "query", "The media to play")
-                                .required(true)
+                    CreateCommandOption::new(
+                        CommandOptionType::SubCommand,
+                        "shuffle",
+                        "Add a playlist to the queue in random order",
+                    )
+                    .add_sub_option(
+                        CreateCommandOption::new(
+                            CommandOptionType::String,
+                            "query",
+                            "The media to play",
                         )
+                        .required(true),
+                    ),
                 ),
-            CreateCommand::new("queue")
-                .description("Shows the queue"),
+            CreateCommand::new("queue").description("Shows the queue"),
             CreateCommand::new("remove")
                 .description("Removes a track from the queue")
                 .add_option(
-                    CreateCommandOption::new(CommandOptionType::Integer, "index", "Position of the track in the queue (1 is the next track to be played)")
-                        .required(true)
-                        .min_int_value(1)
+                    CreateCommandOption::new(
+                        CommandOptionType::Integer,
+                        "index",
+                        "Position of the track in the queue (1 is the next track to be played)",
+                    )
+                    .required(true)
+                    .min_int_value(1),
                 )
                 .add_option(
-                    CreateCommandOption::new(CommandOptionType::Integer, "until", "Upper range track position to remove a range of tracks")
-                        .required(false)
-                        .min_int_value(1)
+                    CreateCommandOption::new(
+                        CommandOptionType::Integer,
+                        "until",
+                        "Upper range track position to remove a range of tracks",
+                    )
+                    .required(false)
+                    .min_int_value(1),
                 ),
-            CreateCommand::new("repeat")
-                .description("Toggles looping for the current track"),
-            CreateCommand::new("resume")
-                .description("Resumes the current track"),
+            CreateCommand::new("repeat").description("Toggles looping for the current track"),
+            CreateCommand::new("resume").description("Resumes the current track"),
             CreateCommand::new("seek")
                 .description("Seeks current track to the given position")
                 .add_option(
-                    CreateCommandOption::new(CommandOptionType::String, "timestamp", "Timestamp in the format HH:MM:SS")
-                        .required(true)
+                    CreateCommandOption::new(
+                        CommandOptionType::String,
+                        "timestamp",
+                        "Timestamp in the format HH:MM:SS",
+                    )
+                    .required(true),
                 ),
-            CreateCommand::new("shuffle")
-                .description("Shuffles the queue"),
+            CreateCommand::new("shuffle").description("Shuffles the queue"),
             CreateCommand::new("skip")
                 .description("Skips the current track")
                 .add_option(
-                    CreateCommandOption::new(CommandOptionType::Integer, "to", "Track index to skip to")
-                        .required(false)
-                        .min_int_value(1)
+                    CreateCommandOption::new(
+                        CommandOptionType::Integer,
+                        "to",
+                        "Track index to skip to",
+                    )
+                    .required(false)
+                    .min_int_value(1),
                 ),
-            CreateCommand::new("stop")
-                .description("Stops the bot and clears the queue"),
-            CreateCommand::new("summon")
-                .description("Summons the bot in your voice channel"),
-            CreateCommand::new("version")
-                .description("Displays the current version"),
-            CreateCommand::new("voteskip")
-                .description("Starts a vote to skip the current track"),
+            CreateCommand::new("stop").description("Stops the bot and clears the queue"),
+            CreateCommand::new("summon").description("Summons the bot in your voice channel"),
+            CreateCommand::new("version").description("Displays the current version"),
+            CreateCommand::new("voteskip").description("Starts a vote to skip the current track"),
         ];
 
         Command::set_global_commands(&ctx.http, commands)
@@ -209,9 +261,9 @@ impl SerenityHandler {
     ) -> Result<(), ParrotError> {
         let command_name = command.data.name.as_str();
 
-        let guild_id = command
-            .guild_id
-            .ok_or(ParrotError::Other("This command can only be used in a server"))?;
+        let guild_id = command.guild_id.ok_or(ParrotError::Other(
+            "This command can only be used in a server",
+        ))?;
 
         // Clone the guild to avoid holding CacheRef across await points
         let guild = ctx

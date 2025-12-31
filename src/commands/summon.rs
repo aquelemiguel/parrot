@@ -6,10 +6,7 @@ use crate::{
     utils::create_response,
 };
 use serenity::{
-    all::CommandInteraction,
-    client::Context,
-    model::id::ChannelId,
-    prelude::Mentionable,
+    all::CommandInteraction, client::Context, model::id::ChannelId, prelude::Mentionable,
 };
 use songbird::{Event, TrackEvent};
 use std::time::Duration;
@@ -19,9 +16,9 @@ pub async fn summon(
     interaction: &mut CommandInteraction,
     send_reply: bool,
 ) -> Result<(), ParrotError> {
-    let guild_id = interaction
-        .guild_id
-        .ok_or(ParrotError::Other("This command can only be used in a server"))?;
+    let guild_id = interaction.guild_id.ok_or(ParrotError::Other(
+        "This command can only be used in a server",
+    ))?;
 
     // Clone the guild to avoid holding CacheRef across await points
     let guild = ctx

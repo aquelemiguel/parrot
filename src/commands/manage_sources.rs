@@ -15,10 +15,7 @@ use serenity::{
     futures::StreamExt,
 };
 
-pub async fn allow(
-    ctx: &Context,
-    interaction: &mut CommandInteraction,
-) -> Result<(), ParrotError> {
+pub async fn allow(ctx: &Context, interaction: &mut CommandInteraction) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
 
     let mut data = ctx.data.write().await;
@@ -45,21 +42,28 @@ pub async fn allow(
 
     drop(data);
 
-    let allowed_input = CreateInputText::new(InputTextStyle::Paragraph, DOMAIN_FORM_ALLOWED_TITLE, "allowed_domains")
-        .placeholder(DOMAIN_FORM_ALLOWED_PLACEHOLDER)
-        .value(allowed_str)
-        .required(false);
+    let allowed_input = CreateInputText::new(
+        InputTextStyle::Paragraph,
+        DOMAIN_FORM_ALLOWED_TITLE,
+        "allowed_domains",
+    )
+    .placeholder(DOMAIN_FORM_ALLOWED_PLACEHOLDER)
+    .value(allowed_str)
+    .required(false);
 
-    let banned_input = CreateInputText::new(InputTextStyle::Paragraph, DOMAIN_FORM_BANNED_TITLE, "banned_domains")
-        .placeholder(DOMAIN_FORM_BANNED_PLACEHOLDER)
-        .value(banned_str)
-        .required(false);
+    let banned_input = CreateInputText::new(
+        InputTextStyle::Paragraph,
+        DOMAIN_FORM_BANNED_TITLE,
+        "banned_domains",
+    )
+    .placeholder(DOMAIN_FORM_BANNED_PLACEHOLDER)
+    .value(banned_str)
+    .required(false);
 
-    let modal = CreateModal::new("manage_domains", DOMAIN_FORM_TITLE)
-        .components(vec![
-            CreateActionRow::InputText(allowed_input),
-            CreateActionRow::InputText(banned_input),
-        ]);
+    let modal = CreateModal::new("manage_domains", DOMAIN_FORM_TITLE).components(vec![
+        CreateActionRow::InputText(allowed_input),
+        CreateActionRow::InputText(banned_input),
+    ]);
 
     let response = CreateInteractionResponse::Modal(modal);
     interaction.create_response(&ctx.http, response).await?;

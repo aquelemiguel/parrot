@@ -1,5 +1,8 @@
 use serenity::{
-    all::{CommandInteraction, CreateInteractionResponse, CreateInteractionResponseMessage, EditInteractionResponse},
+    all::{
+        CommandInteraction, CreateInteractionResponse, CreateInteractionResponseMessage,
+        EditInteractionResponse,
+    },
     builder::CreateEmbed,
     http::{Http, HttpError},
     model::channel::Message,
@@ -10,9 +13,7 @@ use std::{sync::Arc, time::Duration};
 use url::Url;
 
 use crate::{
-    commands::play::get_track_metadata,
-    errors::ParrotError,
-    messaging::message::ParrotMessage,
+    commands::play::get_track_metadata, errors::ParrotError, messaging::message::ParrotMessage,
 };
 
 pub async fn create_response(
@@ -57,7 +58,7 @@ pub async fn create_embed_response(
     embed: CreateEmbed,
 ) -> Result<(), ParrotError> {
     let response = CreateInteractionResponse::Message(
-        CreateInteractionResponseMessage::new().add_embed(embed.clone())
+        CreateInteractionResponseMessage::new().add_embed(embed.clone()),
     );
 
     match interaction
@@ -116,7 +117,10 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
     let (footer_text, footer_icon_url) = get_footer_info(&source_url);
 
     let mut embed = CreateEmbed::new()
-        .author(CreateEmbedAuthor::new(format!("{}", ParrotMessage::NowPlaying)))
+        .author(CreateEmbedAuthor::new(format!(
+            "{}",
+            ParrotMessage::NowPlaying
+        )))
         .title(metadata.title.unwrap_or_default())
         .url(&source_url)
         .field("Progress", format!(">>> {} / {}", position, duration), true)

@@ -9,13 +9,10 @@ use songbird::{tracks::TrackHandle, Call};
 use std::cmp::min;
 use tokio::sync::MutexGuard;
 
-pub async fn skip(
-    ctx: &Context,
-    interaction: &mut CommandInteraction,
-) -> Result<(), ParrotError> {
-    let guild_id = interaction
-        .guild_id
-        .ok_or(ParrotError::Other("This command can only be used in a server"))?;
+pub async fn skip(ctx: &Context, interaction: &mut CommandInteraction) -> Result<(), ParrotError> {
+    let guild_id = interaction.guild_id.ok_or(ParrotError::Other(
+        "This command can only be used in a server",
+    ))?;
 
     let manager = songbird::get(ctx)
         .await

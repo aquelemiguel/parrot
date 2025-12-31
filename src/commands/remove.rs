@@ -15,9 +15,9 @@ pub async fn remove(
     ctx: &Context,
     interaction: &mut CommandInteraction,
 ) -> Result<(), ParrotError> {
-    let guild_id = interaction
-        .guild_id
-        .ok_or(ParrotError::Other("This command can only be used in a server"))?;
+    let guild_id = interaction.guild_id.ok_or(ParrotError::Other(
+        "This command can only be used in a server",
+    ))?;
 
     let manager = songbird::get(ctx)
         .await
@@ -27,10 +27,7 @@ pub async fn remove(
 
     let args = interaction.data.options.clone();
 
-    let remove_index = args
-        .first()
-        .and_then(|opt| opt.value.as_i64())
-        .unwrap_or(1) as usize;
+    let remove_index = args.first().and_then(|opt| opt.value.as_i64()).unwrap_or(1) as usize;
 
     let remove_until = match args.get(1) {
         Some(arg) => arg.value.as_i64().unwrap_or(remove_index as i64) as usize,

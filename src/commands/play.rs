@@ -65,10 +65,7 @@ pub enum QueryType {
     PlaylistLink(String),
 }
 
-pub async fn play(
-    ctx: &Context,
-    interaction: &mut CommandInteraction,
-) -> Result<(), ParrotError> {
+pub async fn play(ctx: &Context, interaction: &mut CommandInteraction) -> Result<(), ParrotError> {
     let args = interaction.data.options.clone();
     let first_arg = args.first().unwrap();
 
@@ -95,9 +92,9 @@ pub async fn play(
 
     let url = url.as_str();
 
-    let guild_id = interaction
-        .guild_id
-        .ok_or(ParrotError::Other("This command can only be used in a server"))?;
+    let guild_id = interaction.guild_id.ok_or(ParrotError::Other(
+        "This command can only be used in a server",
+    ))?;
 
     let manager = songbird::get(ctx)
         .await
@@ -378,8 +375,7 @@ async fn calculate_time_until_play(queue: &[TrackHandle], mode: Mode) -> Option<
         Mode::Next => Some(top_track_duration - top_track_elapsed),
         _ => {
             let center = &queue[1..queue.len() - 1];
-            let livestreams = center
-                .len()
+            let livestreams = center.len()
                 - center
                     .iter()
                     .filter_map(|t| get_track_metadata(t).and_then(|m| m.duration))

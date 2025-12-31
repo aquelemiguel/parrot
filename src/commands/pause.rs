@@ -5,10 +5,7 @@ use crate::{
 };
 use serenity::{all::CommandInteraction, client::Context};
 
-pub async fn pause(
-    ctx: &Context,
-    interaction: &mut CommandInteraction,
-) -> Result<(), ParrotError> {
+pub async fn pause(ctx: &Context, interaction: &mut CommandInteraction) -> Result<(), ParrotError> {
     let guild_id = interaction.guild_id.unwrap();
     let manager = songbird::get(ctx).await.unwrap();
     let call = manager.get(guild_id).unwrap();
