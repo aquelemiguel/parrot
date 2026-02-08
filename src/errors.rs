@@ -91,6 +91,7 @@ impl PartialEq for ParrotError {
                 l0.to_string() == r0.to_string()
             }
             (Self::Serenity(l0), Self::Serenity(r0)) => format!("{l0:?}") == format!("{r0:?}"),
+            (Self::TrackFail(l0), Self::TrackFail(r0)) => format!("{l0:?}") == format!("{r0:?}"),
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
         }
     }
