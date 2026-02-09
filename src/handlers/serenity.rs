@@ -117,11 +117,18 @@ impl SerenityHandler {
                         .name("play")
                         .description("Add a track to the queue")
                         .create_option(|option| {
-                                option
-                                    .name("query")
-                                    .description("The media to play")
-                                    .kind(CommandOptionType::String)
-                                    .required(true)
+                            option
+                                .name("query")
+                                .description("The media to play")
+                                .kind(CommandOptionType::String)
+                                .required(false)
+                        })
+                        .create_option(|option| {
+                            option
+                                .name("attachment")
+                                .description("An audio file to play")
+                                .kind(CommandOptionType::Attachment)
+                                .required(false)
                         })
                 })
                 .create_application_command(|command| {

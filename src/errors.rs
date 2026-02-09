@@ -1,7 +1,7 @@
 use crate::messaging::messages::{
     FAIL_ANOTHER_CHANNEL, FAIL_AUTHOR_DISCONNECTED, FAIL_AUTHOR_NOT_FOUND,
-    FAIL_NO_VOICE_CONNECTION, FAIL_WRONG_CHANNEL, NOTHING_IS_PLAYING, QUEUE_IS_EMPTY,
-    TRACK_INAPPROPRIATE, TRACK_NOT_FOUND,
+    FAIL_NO_VOICE_CONNECTION, FAIL_WRONG_CHANNEL, FILE_TOO_LARGE, NOTHING_IS_PLAYING,
+    QUEUE_IS_EMPTY, TRACK_INAPPROPRIATE, TRACK_NOT_FOUND, UNSUPPORTED_FILE_TYPE,
 };
 use rspotify::ClientError as RSpotifyClientError;
 use serenity::{model::mention::Mention, prelude::SerenityError};
@@ -26,6 +26,8 @@ pub enum ParrotError {
     RSpotify(RSpotifyClientError),
     IO(std::io::Error),
     Serde(serde_json::Error),
+    FileTooLarge,
+    UnsupportedFileType,
 }
 
 /// `ParrotError` implements the [`Debug`] and [`Display`] traits
@@ -70,6 +72,8 @@ impl Display for ParrotError {
             Self::RSpotify(err) => f.write_str(&format!("{err}")),
             Self::IO(err) => f.write_str(&format!("{err}")),
             Self::Serde(err) => f.write_str(&format!("{err}")),
+            Self::FileTooLarge => f.write_str(FILE_TOO_LARGE),
+            Self::UnsupportedFileType => f.write_str(UNSUPPORTED_FILE_TYPE),
         }
     }
 }

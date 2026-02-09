@@ -3,8 +3,8 @@ use crate::{
     guild::cache::GuildCacheMap,
     handlers::track_end::ModifyQueueHandler,
     messaging::messages::{
-        QUEUE_EXPIRED, QUEUE_NOTHING_IS_PLAYING, QUEUE_NOW_PLAYING, QUEUE_NO_SONGS, QUEUE_PAGE,
-        QUEUE_PAGE_OF, QUEUE_UP_NEXT,
+        QUEUE_EXPIRED, QUEUE_NOTHING_IS_PLAYING, QUEUE_NOW_PLAYING, QUEUE_NO_SONGS, QUEUE_NO_SRC,
+        QUEUE_NO_TITLE, QUEUE_PAGE, QUEUE_PAGE_OF, QUEUE_UP_NEXT,
     },
     utils::get_human_readable_timestamp,
 };
@@ -142,12 +142,17 @@ pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
 
     let description = if !tracks.is_empty() {
         let metadata = tracks[0].metadata();
-        embed.thumbnail(tracks[0].metadata().thumbnail.clone().unwrap());
+        if let Some(thumbnail) = metadata.thumbnail.as_ref() {
+            embed.thumbnail(thumbnail);
+        }
+
+        let title = metadata.title.as_deref().unwrap_or(QUEUE_NO_TITLE);
+        let source_url = metadata.source_url.as_deref().unwrap_or(QUEUE_NO_SRC);
 
         format!(
             "[{}]({}) • `{}`",
-            metadata.title.as_ref().unwrap(),
-            metadata.source_url.as_ref().unwrap(),
+            title,
+            source_url,
             get_human_readable_timestamp(metadata.duration)
         )
     } else {
@@ -210,8 +215,8 @@ fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
     let mut description = String::new();
 
     for (i, t) in queue.iter().enumerate() {
-        let title = t.metadata().title.as_ref().unwrap();
-        let url = t.metadata().source_url.as_ref().unwrap();
+        let title = t.metadata().title.as_deref().unwrap_or(QUEUE_NO_TITLE);
+        let url = t.metadata().source_url.as_deref().unwrap_or(QUEUE_NO_SRC);
         let duration = get_human_readable_timestamp(t.metadata().duration);
 
         let _ = writeln!(

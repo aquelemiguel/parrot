@@ -104,10 +104,20 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
     let metadata = track.metadata().clone();
 
     embed.author(|author| author.name(ParrotMessage::NowPlaying));
-    embed.title(metadata.title.unwrap());
-    embed.url(metadata.source_url.as_ref().unwrap());
 
-    let position = get_human_readable_timestamp(Some(track.get_info().await.unwrap().position));
+    let title = metadata.title.as_deref().unwrap_or("Unknown title");
+    embed.title(title);
+
+    if let Some(ref source_url) = metadata.source_url {
+        embed.url(source_url);
+    }
+
+    let position = track
+        .get_info()
+        .await
+        .ok()
+        .map(|info| get_human_readable_timestamp(Some(info.position)))
+        .unwrap_or_else(|| "N/A".to_string());
     let duration = get_human_readable_timestamp(metadata.duration);
 
     embed.field("Progress", format!(">>> {} / {}", position, duration), true);
@@ -117,10 +127,11 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
         None => embed.field("Channel", ">>> N/A", true),
     };
 
-    embed.thumbnail(metadata.thumbnail.unwrap());
+    if let Some(ref thumbnail) = metadata.thumbnail {
+        embed.thumbnail(thumbnail);
+    }
 
-    let source_url = metadata.source_url.as_ref().unwrap();
-
+    let source_url = metadata.source_url.as_deref().unwrap_or("Unknown source");
     let (footer_text, footer_icon_url) = get_footer_info(source_url);
     embed.footer(|f| f.text(footer_text).icon_url(footer_icon_url));
 
@@ -128,8 +139,10 @@ pub async fn create_now_playing_embed(track: &TrackHandle) -> CreateEmbed {
 }
 
 pub fn get_footer_info(url: &str) -> (String, String) {
-    let url_data = Url::parse(url).unwrap();
-    let domain = url_data.host_str().unwrap();
+    let domain = Url::parse(url)
+        .ok()
+        .and_then(|u| u.host_str().map(|s| s.to_string()))
+        .unwrap_or_else(|| "Unknown source".to_string());
 
     // remove www prefix because it looks ugly
     let domain = domain.replace("www.", "");
