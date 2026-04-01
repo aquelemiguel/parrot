@@ -21,10 +21,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: -- -D clippy::all -D warnings
+        run: cargo clippy -- -D clippy::all -D warnings
 
   rustfmt:
     name: Format
