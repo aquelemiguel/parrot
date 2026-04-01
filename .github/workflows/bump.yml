@@ -41,7 +41,7 @@ jobs:
         run: echo ::set-output name=VERSION::$(cargo pkgid | cut -d# -f2)
 
       - name: Create bump PR
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: 'chore: bump version to ${{ steps.get_version.outputs.VERSION }}'
