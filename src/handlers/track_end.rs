@@ -1,4 +1,5 @@
 use serenity::{
+    all::EditMessage,
     async_trait,
     http::Http,
     model::id::GuildId,
@@ -87,12 +88,11 @@ pub async fn update_queue_messages(
 
         let embed = create_queue_embed(tracks, *page);
 
-        let edit_message = message
-            .edit(&http, |edit| {
-                edit.set_embed(embed);
-                edit.components(|components| build_nav_btns(components, *page, num_pages))
-            })
-            .await;
+        let edit = EditMessage::new()
+            .embed(embed)
+            .components(vec![build_nav_btns(*page, num_pages)]);
+
+        let edit_message = message.edit(&http, edit).await;
 
         if edit_message.is_err() {
             forget_queue_message(ctx_data, message, guild_id).await.ok();

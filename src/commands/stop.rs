@@ -4,18 +4,16 @@ use crate::{
     messaging::message::ParrotMessage,
     utils::create_response,
 };
-use serenity::{
-    client::Context,
-    model::application::interaction::application_command::ApplicationCommandInteraction,
-};
+use serenity::{all::CommandInteraction, client::Context};
 
-pub async fn stop(
-    ctx: &Context,
-    interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), ParrotError> {
-    let guild_id = interaction.guild_id.unwrap();
-    let manager = songbird::get(ctx).await.unwrap();
-    let call = manager.get(guild_id).unwrap();
+pub async fn stop(ctx: &Context, interaction: &mut CommandInteraction) -> Result<(), ParrotError> {
+    let guild_id = interaction.guild_id.ok_or(ParrotError::Other(
+        "This command can only be used in a server",
+    ))?;
+    let manager = songbird::get(ctx)
+        .await
+        .ok_or(ParrotError::Other("Voice manager not configured"))?;
+    let call = manager.get(guild_id).ok_or(ParrotError::NotConnected)?;
 
     let handler = call.lock().await;
     let queue = handler.queue();

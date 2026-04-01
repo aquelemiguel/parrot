@@ -7,27 +7,23 @@ use crate::{
     },
 };
 use serenity::{
-    builder::{CreateComponents, CreateInputText},
-    client::Context,
-    collector::ModalInteractionCollectorBuilder,
-    futures::StreamExt,
-    model::{
-        application::interaction::application_command::ApplicationCommandInteraction,
-        prelude::{
-            component::{ActionRowComponent, InputTextStyle},
-            interaction::InteractionResponseType,
-        },
+    all::{
+        ActionRowComponent, CommandInteraction, CreateActionRow, CreateInputText,
+        CreateInteractionResponse, CreateModal, InputTextStyle,
     },
+    client::Context,
+    futures::StreamExt,
 };
 
-pub async fn allow(
-    ctx: &Context,
-    interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), ParrotError> {
-    let guild_id = interaction.guild_id.unwrap();
+pub async fn allow(ctx: &Context, interaction: &mut CommandInteraction) -> Result<(), ParrotError> {
+    let guild_id = interaction.guild_id.ok_or(ParrotError::Other(
+        "This command can only be used in a server",
+    ))?;
 
     let mut data = ctx.data.write().await;
-    let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+    let settings = data
+        .get_mut::<GuildSettingsMap>()
+        .ok_or(ParrotError::Other("Guild settings not initialized"))?;
 
     let guild_settings = settings
         .entry(guild_id)
@@ -50,85 +46,84 @@ pub async fn allow(
 
     drop(data);
 
-    let mut allowed_input = CreateInputText::default();
-    allowed_input
-        .label(DOMAIN_FORM_ALLOWED_TITLE)
-        .custom_id("allowed_domains")
-        .style(InputTextStyle::Paragraph)
-        .placeholder(DOMAIN_FORM_ALLOWED_PLACEHOLDER)
-        .value(allowed_str)
-        .required(false);
+    let allowed_input = CreateInputText::new(
+        InputTextStyle::Paragraph,
+        DOMAIN_FORM_ALLOWED_TITLE,
+        "allowed_domains",
+    )
+    .placeholder(DOMAIN_FORM_ALLOWED_PLACEHOLDER)
+    .value(allowed_str)
+    .required(false);
 
-    let mut banned_input = CreateInputText::default();
-    banned_input
-        .label(DOMAIN_FORM_BANNED_TITLE)
-        .custom_id("banned_domains")
-        .style(InputTextStyle::Paragraph)
-        .placeholder(DOMAIN_FORM_BANNED_PLACEHOLDER)
-        .value(banned_str)
-        .required(false);
+    let banned_input = CreateInputText::new(
+        InputTextStyle::Paragraph,
+        DOMAIN_FORM_BANNED_TITLE,
+        "banned_domains",
+    )
+    .placeholder(DOMAIN_FORM_BANNED_PLACEHOLDER)
+    .value(banned_str)
+    .required(false);
 
-    let mut components = CreateComponents::default();
-    components
-        .create_action_row(|r| r.add_input_text(allowed_input))
-        .create_action_row(|r| r.add_input_text(banned_input));
+    let modal = CreateModal::new("manage_domains", DOMAIN_FORM_TITLE).components(vec![
+        CreateActionRow::InputText(allowed_input),
+        CreateActionRow::InputText(banned_input),
+    ]);
 
-    interaction
-        .create_interaction_response(&ctx.http, |r| {
-            r.kind(InteractionResponseType::Modal);
-            r.interaction_response_data(|d| {
-                d.title(DOMAIN_FORM_TITLE);
-                d.custom_id("manage_domains");
-                d.set_components(components)
-            })
-        })
-        .await?;
+    let response = CreateInteractionResponse::Modal(modal);
+    interaction.create_response(&ctx.http, response).await?;
 
     // collect the submitted data
-    let collector = ModalInteractionCollectorBuilder::new(ctx)
-        .filter(|int| int.data.custom_id == "manage_domains")
-        .build();
+    let mut collector = interaction
+        .get_response(&ctx.http)
+        .await?
+        .await_modal_interaction(ctx)
+        .stream();
 
-    collector
-        .then(|int| async move {
-            let mut data = ctx.data.write().await;
-            let settings = data.get_mut::<GuildSettingsMap>().unwrap();
+    while let Some(int) = collector.next().await {
+        let mut data = ctx.data.write().await;
+        let Some(settings) = data.get_mut::<GuildSettingsMap>() else {
+            eprintln!("[ERROR] Guild settings not initialized");
+            continue;
+        };
 
-            let inputs: Vec<_> = int
-                .data
-                .components
-                .iter()
-                .flat_map(|r| r.components.iter())
-                .collect();
+        let inputs: Vec<_> = int
+            .data
+            .components
+            .iter()
+            .flat_map(|r| r.components.iter())
+            .collect();
 
-            let guild_settings = settings.get_mut(&guild_id).unwrap();
+        let Some(guild_settings) = settings.get_mut(&guild_id) else {
+            eprintln!("[ERROR] Guild settings not found for {:?}", guild_id);
+            continue;
+        };
 
-            for input in inputs.iter() {
-                if let ActionRowComponent::InputText(it) = input {
-                    if it.custom_id == "allowed_domains" {
-                        guild_settings.set_allowed_domains(&it.value);
+        for input in inputs.iter() {
+            if let ActionRowComponent::InputText(it) = input {
+                if it.custom_id == "allowed_domains" {
+                    if let Some(ref value) = it.value {
+                        guild_settings.set_allowed_domains(value);
                     }
+                }
 
-                    if it.custom_id == "banned_domains" {
-                        guild_settings.set_banned_domains(&it.value);
+                if it.custom_id == "banned_domains" {
+                    if let Some(ref value) = it.value {
+                        guild_settings.set_banned_domains(value);
                     }
                 }
             }
+        }
 
-            guild_settings.update_domains();
-            if let Err(err) = guild_settings.save() {
-                eprintln!("[ERROR] Failed to save guild settings: {}", err);
-            }
+        guild_settings.update_domains();
+        if let Err(err) = guild_settings.save() {
+            eprintln!("[ERROR] Failed to save guild settings: {}", err);
+        }
 
-            // it's now safe to close the modal, so send a response to it
-            int.create_interaction_response(&ctx.http, |r| {
-                r.kind(InteractionResponseType::DeferredUpdateMessage)
-            })
+        // it's now safe to close the modal, so send a response to it
+        int.create_response(&ctx.http, CreateInteractionResponse::Acknowledge)
             .await
             .ok();
-        })
-        .collect::<Vec<_>>()
-        .await;
+    }
 
     Ok(())
 }

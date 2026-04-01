@@ -1,5 +1,5 @@
 use serenity::model::gateway::GatewayIntents;
-use songbird::serenity::SerenityInit;
+use songbird::SerenityInit;
 
 use std::{collections::HashMap, env, error::Error};
 
@@ -19,15 +19,10 @@ impl Client {
     }
 
     pub async fn new(token: String) -> Result<Client, Box<dyn Error>> {
-        let application_id = env::var("DISCORD_APP_ID")
-            .expect("Fatality! DISCORD_APP_ID not set!")
-            .parse()?;
-
         let gateway_intents = GatewayIntents::non_privileged();
 
         let client = serenity::Client::builder(token, gateway_intents)
             .event_handler(SerenityHandler)
-            .application_id(application_id)
             .register_songbird()
             .await?;
 

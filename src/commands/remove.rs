@@ -1,4 +1,5 @@
 use crate::{
+    commands::play::get_track_metadata,
     errors::{verify, ParrotError},
     handlers::track_end::update_queue_messages,
     messaging::message::ParrotMessage,
@@ -6,34 +7,30 @@ use crate::{
     utils::create_embed_response,
     utils::create_response,
 };
-use serenity::{
-    builder::CreateEmbed, client::Context,
-    model::application::interaction::application_command::ApplicationCommandInteraction,
-};
+use serenity::{all::CommandInteraction, builder::CreateEmbed, client::Context};
 use songbird::tracks::TrackHandle;
 use std::cmp::min;
 
 pub async fn remove(
     ctx: &Context,
-    interaction: &mut ApplicationCommandInteraction,
+    interaction: &mut CommandInteraction,
 ) -> Result<(), ParrotError> {
-    let guild_id = interaction.guild_id.unwrap();
-    let manager = songbird::get(ctx).await.unwrap();
-    let call = manager.get(guild_id).unwrap();
+    let guild_id = interaction.guild_id.ok_or(ParrotError::Other(
+        "This command can only be used in a server",
+    ))?;
+
+    let manager = songbird::get(ctx)
+        .await
+        .ok_or(ParrotError::Other("Voice manager not configured"))?;
+
+    let call = manager.get(guild_id).ok_or(ParrotError::NotConnected)?;
 
     let args = interaction.data.options.clone();
 
-    let remove_index = args
-        .first()
-        .unwrap()
-        .value
-        .as_ref()
-        .unwrap()
-        .as_u64()
-        .unwrap() as usize;
+    let remove_index = args.first().and_then(|opt| opt.value.as_i64()).unwrap_or(1) as usize;
 
     let remove_until = match args.get(1) {
-        Some(arg) => arg.value.as_ref().unwrap().as_u64().unwrap() as usize,
+        Some(arg) => arg.value.as_i64().unwrap_or(remove_index as i64) as usize,
         None => remove_index,
     };
 
@@ -80,19 +77,21 @@ pub async fn remove(
 }
 
 async fn create_remove_enqueued_embed(track: &TrackHandle) -> CreateEmbed {
-    let mut embed = CreateEmbed::default();
-    let metadata = track.metadata().clone();
+    let metadata = get_track_metadata(track).unwrap_or_default();
 
-    embed.field(
+    let mut embed = CreateEmbed::new().field(
         REMOVED_QUEUE,
         format!(
             "[**{}**]({})",
-            metadata.title.unwrap(),
-            metadata.source_url.unwrap()
+            metadata.title.unwrap_or_default(),
+            metadata.source_url.unwrap_or_default()
         ),
         false,
     );
-    embed.thumbnail(metadata.thumbnail.unwrap());
+
+    if let Some(thumbnail) = metadata.thumbnail {
+        embed = embed.thumbnail(thumbnail);
+    }
 
     embed
 }

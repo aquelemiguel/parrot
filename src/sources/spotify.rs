@@ -144,12 +144,16 @@ impl Spotify {
             .tracks
             .items
             .iter()
-            .filter_map(|item| match item.track.as_ref().unwrap() {
-                PlayableItem::Track(track) => {
-                    let artist_names = Self::join_artist_names(&track.album.artists);
-                    Some(Self::build_query(&artist_names, &track.name))
+            .filter_map(|item| {
+                // item.track can be None for local tracks
+                let track = item.track.as_ref()?;
+                match track {
+                    PlayableItem::Track(t) => {
+                        let artist_names = Self::join_artist_names(&t.album.artists);
+                        Some(Self::build_query(&artist_names, &t.name))
+                    }
+                    PlayableItem::Episode(_) => None,
                 }
-                PlayableItem::Episode(_) => None,
             })
             .collect();
 

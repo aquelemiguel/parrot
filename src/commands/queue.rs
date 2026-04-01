@@ -1,4 +1,5 @@
 use crate::{
+    commands::play::get_track_metadata,
     errors::ParrotError,
     guild::cache::GuildCacheMap,
     handlers::track_end::ModifyQueueHandler,
@@ -9,19 +10,14 @@ use crate::{
     utils::get_human_readable_timestamp,
 };
 use serenity::{
-    builder::{CreateButton, CreateComponents, CreateEmbed},
+    all::{
+        ButtonStyle, CommandInteraction, CreateActionRow, CreateButton, CreateEmbedFooter,
+        CreateInteractionResponse, CreateInteractionResponseMessage,
+    },
+    builder::CreateEmbed,
     client::Context,
     futures::StreamExt,
-    model::{
-        application::{
-            component::ButtonStyle,
-            interaction::{
-                application_command::ApplicationCommandInteraction, InteractionResponseType,
-            },
-        },
-        channel::Message,
-        id::GuildId,
-    },
+    model::{channel::Message, id::GuildId},
     prelude::{RwLock, TypeMap},
 };
 use songbird::{tracks::TrackHandle, Event, TrackEvent};
@@ -36,33 +32,33 @@ use std::{
 const EMBED_PAGE_SIZE: usize = 6;
 const EMBED_TIMEOUT: u64 = 3600;
 
-pub async fn queue(
-    ctx: &Context,
-    interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), ParrotError> {
-    let guild_id = interaction.guild_id.unwrap();
-    let manager = songbird::get(ctx).await.unwrap();
-    let call = manager.get(guild_id).unwrap();
+pub async fn queue(ctx: &Context, interaction: &mut CommandInteraction) -> Result<(), ParrotError> {
+    use serenity::all::EditMessage;
+
+    let guild_id = interaction.guild_id.ok_or(ParrotError::Other(
+        "This command can only be used in a server",
+    ))?;
+
+    let manager = songbird::get(ctx)
+        .await
+        .ok_or(ParrotError::Other("Voice manager not configured"))?;
+
+    let call = manager.get(guild_id).ok_or(ParrotError::NotConnected)?;
 
     let handler = call.lock().await;
     let tracks = handler.queue().current_queue();
     drop(handler);
 
-    interaction
-        .create_interaction_response(&ctx.http, |response| {
-            response
-                .kind(InteractionResponseType::ChannelMessageWithSource)
-                .interaction_response_data(|message| {
-                    let num_pages = calculate_num_pages(&tracks);
+    let num_pages = calculate_num_pages(&tracks);
+    let response = CreateInteractionResponse::Message(
+        CreateInteractionResponseMessage::new()
+            .add_embed(create_queue_embed(&tracks, 0))
+            .components(vec![build_nav_btns(0, num_pages)]),
+    );
 
-                    message
-                        .add_embed(create_queue_embed(&tracks, 0))
-                        .components(|components| build_nav_btns(components, 0, num_pages))
-                })
-        })
-        .await?;
+    interaction.create_response(&ctx.http, response).await?;
 
-    let mut message = interaction.get_interaction_response(&ctx.http).await?;
+    let mut message = interaction.get_response(&ctx.http).await?;
     let page: Arc<RwLock<usize>> = Arc::new(RwLock::new(0));
 
     // store this interaction to context.data for later edits
@@ -86,12 +82,12 @@ pub async fn queue(
     );
     drop(handler);
 
-    let mut cib = message
+    let mut collector = message
         .await_component_interactions(ctx)
         .timeout(Duration::from_secs(EMBED_TIMEOUT))
-        .build();
+        .stream();
 
-    while let Some(mci) = cib.next().await {
+    while let Some(mci) = collector.next().await {
         let btn_id = &mci.data.custom_id;
 
         // refetch the queue in case it changed
@@ -110,25 +106,20 @@ pub async fn queue(
             _ => continue,
         };
 
-        mci.create_interaction_response(&ctx, |r| {
-            r.kind(InteractionResponseType::UpdateMessage);
-            r.interaction_response_data(|d| {
-                d.add_embed(create_queue_embed(&tracks, *page_wlock));
-                d.components(|components| build_nav_btns(components, *page_wlock, num_pages))
-            })
-        })
-        .await?;
+        let response = CreateInteractionResponse::UpdateMessage(
+            CreateInteractionResponseMessage::new()
+                .add_embed(create_queue_embed(&tracks, *page_wlock))
+                .components(vec![build_nav_btns(*page_wlock, num_pages)]),
+        );
+        mci.create_response(&ctx, response).await?;
     }
 
-    message
-        .edit(&ctx.http, |edit| {
-            let mut embed = CreateEmbed::default();
-            embed.description(QUEUE_EXPIRED);
-            edit.set_embed(embed);
-            edit.components(|f| f)
-        })
-        .await
-        .unwrap();
+    let edit = EditMessage::new()
+        .embed(CreateEmbed::new().description(QUEUE_EXPIRED))
+        .components(vec![]);
+    if let Err(e) = message.edit(&ctx.http, edit).await {
+        eprintln!("[WARN] Failed to edit queue message: {}", e);
+    }
 
     forget_queue_message(&ctx.data, &mut message, guild_id)
         .await
@@ -138,61 +129,55 @@ pub async fn queue(
 }
 
 pub fn create_queue_embed(tracks: &[TrackHandle], page: usize) -> CreateEmbed {
-    let mut embed: CreateEmbed = CreateEmbed::default();
-
-    let description = if !tracks.is_empty() {
-        let metadata = tracks[0].metadata();
-        embed.thumbnail(tracks[0].metadata().thumbnail.clone().unwrap());
-
-        format!(
+    let (description, thumbnail) = if !tracks.is_empty() {
+        let metadata = get_track_metadata(&tracks[0]).unwrap_or_default();
+        let desc = format!(
             "[{}]({}) • `{}`",
-            metadata.title.as_ref().unwrap(),
-            metadata.source_url.as_ref().unwrap(),
+            metadata.title.as_deref().unwrap_or("Unknown"),
+            metadata.source_url.as_deref().unwrap_or("#"),
             get_human_readable_timestamp(metadata.duration)
-        )
+        );
+        (desc, metadata.thumbnail)
     } else {
-        String::from(QUEUE_NOTHING_IS_PLAYING)
+        (String::from(QUEUE_NOTHING_IS_PLAYING), None)
     };
 
-    embed.field(QUEUE_NOW_PLAYING, description, false);
-    embed.field(QUEUE_UP_NEXT, build_queue_page(tracks, page), false);
+    let footer_text = format!(
+        "{} {} {} {}",
+        QUEUE_PAGE,
+        page + 1,
+        QUEUE_PAGE_OF,
+        calculate_num_pages(tracks),
+    );
 
-    embed.footer(|f| {
-        f.text(format!(
-            "{} {} {} {}",
-            QUEUE_PAGE,
-            page + 1,
-            QUEUE_PAGE_OF,
-            calculate_num_pages(tracks),
-        ))
-    });
+    let mut embed = CreateEmbed::new()
+        .field(QUEUE_NOW_PLAYING, &description, false)
+        .field(QUEUE_UP_NEXT, build_queue_page(tracks, page), false)
+        .footer(CreateEmbedFooter::new(footer_text));
+
+    if let Some(thumb) = thumbnail {
+        embed = embed.thumbnail(thumb);
+    }
 
     embed
 }
 
 fn build_single_nav_btn(label: &str, is_disabled: bool) -> CreateButton {
-    CreateButton::default()
-        .custom_id(label.to_string().to_ascii_lowercase())
+    CreateButton::new(label.to_string().to_ascii_lowercase())
         .label(label)
         .style(ButtonStyle::Primary)
         .disabled(is_disabled)
-        .to_owned()
 }
 
-pub fn build_nav_btns(
-    components: &mut CreateComponents,
-    page: usize,
-    num_pages: usize,
-) -> &mut CreateComponents {
-    components.create_action_row(|action_row| {
-        let (cant_left, cant_right) = (page < 1, page >= num_pages - 1);
+pub fn build_nav_btns(page: usize, num_pages: usize) -> CreateActionRow {
+    let (cant_left, cant_right) = (page < 1, page >= num_pages - 1);
 
-        action_row
-            .add_button(build_single_nav_btn("<<", cant_left))
-            .add_button(build_single_nav_btn("<", cant_left))
-            .add_button(build_single_nav_btn(">", cant_right))
-            .add_button(build_single_nav_btn(">>", cant_right))
-    })
+    CreateActionRow::Buttons(vec![
+        build_single_nav_btn("<<", cant_left),
+        build_single_nav_btn("<", cant_left),
+        build_single_nav_btn(">", cant_right),
+        build_single_nav_btn(">>", cant_right),
+    ])
 }
 
 fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
@@ -210,9 +195,10 @@ fn build_queue_page(tracks: &[TrackHandle], page: usize) -> String {
     let mut description = String::new();
 
     for (i, t) in queue.iter().enumerate() {
-        let title = t.metadata().title.as_ref().unwrap();
-        let url = t.metadata().source_url.as_ref().unwrap();
-        let duration = get_human_readable_timestamp(t.metadata().duration);
+        let metadata = get_track_metadata(t).unwrap_or_default();
+        let title = metadata.title.as_deref().unwrap_or("Unknown");
+        let url = metadata.source_url.as_deref().unwrap_or("#");
+        let duration = get_human_readable_timestamp(metadata.duration);
 
         let _ = writeln!(
             description,

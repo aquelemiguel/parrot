@@ -1,27 +1,28 @@
 use crate::{
+    commands::play::get_track_metadata,
     errors::{verify, ParrotError},
     messaging::message::ParrotMessage,
     utils::create_response,
 };
-use serenity::{
-    client::Context,
-    model::application::interaction::application_command::ApplicationCommandInteraction,
-};
+use serenity::{all::CommandInteraction, client::Context};
 use songbird::{tracks::TrackHandle, Call};
 use std::cmp::min;
 use tokio::sync::MutexGuard;
 
-pub async fn skip(
-    ctx: &Context,
-    interaction: &mut ApplicationCommandInteraction,
-) -> Result<(), ParrotError> {
-    let guild_id = interaction.guild_id.unwrap();
-    let manager = songbird::get(ctx).await.unwrap();
-    let call = manager.get(guild_id).unwrap();
+pub async fn skip(ctx: &Context, interaction: &mut CommandInteraction) -> Result<(), ParrotError> {
+    let guild_id = interaction.guild_id.ok_or(ParrotError::Other(
+        "This command can only be used in a server",
+    ))?;
+
+    let manager = songbird::get(ctx)
+        .await
+        .ok_or(ParrotError::Other("Voice manager not configured"))?;
+
+    let call = manager.get(guild_id).ok_or(ParrotError::NotConnected)?;
 
     let args = interaction.data.options.clone();
     let to_skip = match args.first() {
-        Some(arg) => arg.value.as_ref().unwrap().as_u64().unwrap() as usize,
+        Some(arg) => arg.value.as_i64().unwrap_or(1) as usize,
         None => 1,
     };
 
@@ -42,18 +43,19 @@ pub async fn skip(
 
 pub async fn create_skip_response(
     ctx: &Context,
-    interaction: &mut ApplicationCommandInteraction,
+    interaction: &mut CommandInteraction,
     handler: &MutexGuard<'_, Call>,
     tracks_to_skip: usize,
 ) -> Result<(), ParrotError> {
     match handler.queue().current() {
         Some(track) => {
+            let metadata = get_track_metadata(&track).unwrap_or_default();
             create_response(
                 &ctx.http,
                 interaction,
                 ParrotMessage::SkipTo {
-                    title: track.metadata().title.as_ref().unwrap().to_owned(),
-                    url: track.metadata().source_url.as_ref().unwrap().to_owned(),
+                    title: metadata.title.unwrap_or_else(|| "Unknown".to_string()),
+                    url: metadata.source_url.unwrap_or_else(|| "#".to_string()),
                 },
             )
             .await
@@ -75,8 +77,10 @@ pub async fn force_skip_top_track(
     // apparently, skipping/stopping a track takes a while to remove it from the queue
     // also, manually removing tracks doesn't trigger the next track to play
     // so first, stop the top song, manually remove it and then resume playback
-    handler.queue().current().unwrap().stop().ok();
-    handler.queue().dequeue(0);
+    if let Some(track) = handler.queue().current() {
+        track.stop().ok();
+    }
+    let _ = handler.queue().dequeue(0);
     handler.queue().resume().ok();
 
     Ok(handler.queue().current_queue())
