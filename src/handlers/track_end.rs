@@ -3,9 +3,9 @@ use serenity::{
     async_trait,
     http::Http,
     model::id::GuildId,
-    prelude::{Mutex, RwLock, TypeMap},
+    prelude::{RwLock, TypeMap},
 };
-use songbird::{tracks::TrackHandle, Call, Event, EventContext, EventHandler};
+use songbird::{Event, EventContext, EventHandler, Songbird, tracks::TrackHandle};
 use std::sync::Arc;
 
 use crate::{
@@ -18,14 +18,14 @@ use crate::{
 
 pub struct TrackEndHandler {
     pub guild_id: GuildId,
-    pub call: Arc<Mutex<Call>>,
+    pub manager: Arc<Songbird>,
     pub ctx_data: Arc<RwLock<TypeMap>>,
 }
 
 pub struct ModifyQueueHandler {
     pub http: Arc<Http>,
     pub ctx_data: Arc<RwLock<TypeMap>>,
-    pub call: Arc<Mutex<Call>>,
+    pub manager: Arc<Songbird>,
     pub guild_id: GuildId,
 }
 
@@ -40,8 +40,8 @@ impl EventHandler for TrackEndHandler {
             .map(|guild_settings| guild_settings.autopause)
             .unwrap_or_default();
 
-        if autopause {
-            let handler = self.call.lock().await;
+        if autopause && let Some(call) = self.manager.get(self.guild_id) {
+            let handler = call.lock().await;
             let queue = handler.queue();
             queue.pause().ok();
         }
@@ -56,7 +56,8 @@ impl EventHandler for TrackEndHandler {
 #[async_trait]
 impl EventHandler for ModifyQueueHandler {
     async fn act(&self, _ctx: &EventContext<'_>) -> Option<Event> {
-        let handler = self.call.lock().await;
+        let call = self.manager.get(self.guild_id)?;
+        let handler = call.lock().await;
         let queue = handler.queue().current_queue();
         drop(handler);
 

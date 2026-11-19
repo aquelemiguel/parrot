@@ -63,7 +63,7 @@ pub async fn summon(
             Event::Periodic(Duration::from_secs(1), None),
             IdleHandler {
                 http: ctx.http.clone(),
-                manager,
+                manager: manager.clone(),
                 interaction: interaction.clone(),
                 limit: 60 * 10,
                 count: Default::default(),
@@ -74,7 +74,7 @@ pub async fn summon(
             Event::Track(TrackEvent::End),
             TrackEndHandler {
                 guild_id: guild.id,
-                call: call.clone(),
+                manager: manager.clone(),
                 ctx_data: ctx.data.clone(),
             },
         );

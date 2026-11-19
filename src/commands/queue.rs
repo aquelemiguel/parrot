@@ -76,7 +76,7 @@ pub async fn queue(ctx: &Context, interaction: &mut CommandInteraction) -> Resul
         ModifyQueueHandler {
             http: ctx.http.clone(),
             ctx_data: ctx.data.clone(),
-            call: call.clone(),
+            manager: manager.clone(),
             guild_id,
         },
     );
